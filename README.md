@@ -291,12 +291,12 @@ Este projeto foi desenvolvido por **Marcos Garçon** como um sistema integrado d
 
 Para sugestões, melhorias ou relatórios de bugs, entre em contato através dos canais oficiais.
 
-## 📞 Contato
+## 📞 Contato: chiafarelo@gmail.com
 
 **Desenvolvedor**: Marcos Garçon  
 **Sistema**: Eng Process Quality and Statistics (EPQS)  
 **Versão**: 1.0.0  
-**Data**: 2024
+**Data**: 2025
 
 ---
 
