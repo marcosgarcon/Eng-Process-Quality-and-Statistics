@@ -1,0 +1,66 @@
+EPQS - Sistema Completo
+Versão: 1.0.0
+Desenvolvido por: Marcos Garçon
+Data de Build: Tue Sep 30 03:12:44 EDT 2025
+
+Arquivos do Sistema:
+57
+
+Estrutura:
+./README.md
+./SYSTEM_STATUS.txt
+./app.js
+./data-manager.js
+./external-integration.js
+./icons/icon-128x128.png
+./icons/icon-144x144.png
+./icons/icon-152x152.png
+./icons/icon-192x192.png
+./icons/icon-32x32.png
+./icons/icon-384x384.png
+./icons/icon-512x512.png
+./icons/icon-72x72.png
+./icons/icon-96x96.png
+./index.html
+./manifest.json
+./package-system.js
+./platform-optimization.js
+./reports-dashboard.js
+./screenshots/desktop-screenshot.png
+./screenshots/mobile-screenshot.png
+./service-worker.js
+./settings.js
+./system-validator.js
+./test-integration.html
+./tool-processor.js
+./tools/5_porques.html
+./tools/5s.html
+./tools/8d.html
+./tools/DashboarddeIndicadores.html
+./tools/GerenciadordeDashboards.html
+./tools/apqp.html
+./tools/cep.html
+./tools/controle_injecao.html
+./tools/cronoanalise.html
+./tools/diagrama-dispersao.html
+./tools/dmaic.html
+./tools/estamparia.html
+./tools/fmea.html
+./tools/folha_verificacao.html
+./tools/histograma.html
+./tools/ishikawa.html
+./tools/kaizen.html
+./tools/manutencao.html
+./tools/mapeamento-de-processos.html
+./tools/masp.html
+./tools/matriz-esforco-impacto.html
+./tools/matriz-gut.html
+./tools/msa.html
+./tools/pareto.html
+./tools/planejamento.html
+./tools/ppap.html
+./tools/relatorio-a3.html
+./tools/sucata.html
+./tools/swot.html
+./tools/treinamento.html
+./tools/vsm.html

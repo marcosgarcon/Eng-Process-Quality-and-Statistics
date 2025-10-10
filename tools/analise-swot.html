@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Análise SWOT Estratégica</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .form-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap;}.form-tab{flex:1;padding:10px;background:var(--muted);border:1px solid #243041;border-radius:8px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;}.form-tab.active{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent;}
+      .form-tab-content{padding-top:15px;border-top:1px solid var(--muted);}
+      .quadrant{background:var(--card);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px; border: 1px solid var(--muted);}.quadrant h4{border-bottom:1px solid var(--muted);padding-bottom:8px;margin-bottom:4px;}
+      .factor-item, .strategy-item{display:flex;gap:8px;align-items:center;}.factor-item input, .strategy-item input{flex:1;}.factor-item select{width:100px;}.remove-item-btn{background:none;color:var(--bad);border:none;font-size:24px;cursor:pointer;padding:0;box-shadow:none;min-height:auto}
+      .action-item-block{padding:12px;border:1px solid var(--muted);border-radius:12px;background:var(--card);position:relative;margin-top:10px;}
+      .remove-action-btn{position:absolute;top:5px;right:5px;background:none;border:none;color:#fca5a5;font-size:1.5rem;cursor:pointer;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn,.form-tabs,.remove-action-btn,.remove-item-btn{display:none !important;}.form-tab-content{display:block !important;border-top:none;padding-top:0;}main{padding:0;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black}.quadrant{background:#f9f9f9;}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Análise SWOT Estratégica</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Análises SWOT: <span id="swot-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Análises SWOT Salvas</h2><button id="btn-new-swot" class="btn primary">+ Nova Análise</button></div>
+                <table id="swot-list-table">
+                    <thead><tr><th>Objetivo da Análise</th><th>Data</th><th>Responsável</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <section>
+                <form id="swot-form">
+                    <input type="hidden" id="swot-id">
+                    <section>
+                        <h4>Informações Gerais</h4>
+                        <div class="grid">
+                           <div class="field" style="grid-column:span 6;"><label for="swot-objective">Objetivo da Análise</label><input type="text" id="swot-objective" required placeholder="Ex: Lançamento do Produto X"></div>
+                           <div class="field" style="grid-column:span 3;"><label for="swot-date">Data</label><input type="date" id="swot-date"></div>
+                           <div class="field" style="grid-column:span 3;"><label for="swot-lead">Responsável</label><input type="text" id="swot-lead"></div>
+                        </div>
+                    </section>
+                    <nav class="form-tabs">
+                        <div class="form-tab active" data-tab="swot-factors">1. Fatores (SWOT)</div>
+                        <div class="form-tab" data-tab="tows-strategies">2. Estratégias (TOWS)</div>
+                        <div class="form-tab" data-tab="action-plan">3. Plano de Ação</div>
+                    </nav>
+
+                    <div id="swot-factors" class="form-tab-content">
+                        <div class="grid">
+                            <div class="quadrant" style="grid-column:span 6;"><h4 style="color:#22c55e">Forças (Strengths)</h4><div class="factors-list" data-type="strengths"></div><button type="button" class="btn ghost btn-add-factor" data-type="strengths">+ Adicionar Força</button></div>
+                            <div class="quadrant" style="grid-column:span 6;"><h4 style="color:#ef4444">Fraquezas (Weaknesses)</h4><div class="factors-list" data-type="weaknesses"></div><button type="button" class="btn ghost btn-add-factor" data-type="weaknesses">+ Adicionar Fraqueza</button></div>
+                            <div class="quadrant" style="grid-column:span 6;"><h4 style="color:#3b82f6">Oportunidades (Opportunities)</h4><div class="factors-list" data-type="opportunities"></div><button type="button" class="btn ghost btn-add-factor" data-type="opportunities">+ Adicionar Oportunidade</button></div>
+                            <div class="quadrant" style="grid-column:span 6;"><h4 style="color:#f59e0b">Ameaças (Threats)</h4><div class="factors-list" data-type="threats"></div><button type="button" class="btn ghost btn-add-factor" data-type="threats">+ Adicionar Ameaça</button></div>
+                        </div>
+                    </div>
+                    <div id="tows-strategies" class="form-tab-content hidden">
+                         <div class="grid">
+                            <div class="quadrant" style="grid-column:span 6;"><h4>Estratégias Ofensivas (Forças + Oportunidades)</h4><div class="strategies-list" data-type="so"></div><button type="button" class="btn ghost btn-add-strategy" data-type="so">+ Adicionar Estratégia</button></div>
+                            <div class="quadrant" style="grid-column:span 6;"><h4>Estratégias de Confronto (Forças + Ameaças)</h4><div class="strategies-list" data-type="st"></div><button type="button" class="btn ghost btn-add-strategy" data-type="st">+ Adicionar Estratégia</button></div>
+                            <div class="quadrant" style="grid-column:span 6;"><h4>Estratégias de Reforço (Fraquezas + Oportunidades)</h4><div class="strategies-list" data-type="wo"></div><button type="button" class="btn ghost btn-add-strategy" data-type="wo">+ Adicionar Estratégia</button></div>
+                            <div class="quadrant" style="grid-column:span 6;"><h4>Estratégias Defensivas (Fraquezas + Ameaças)</h4><div class="strategies-list" data-type="wt"></div><button type="button" class="btn ghost btn-add-strategy" data-type="wt">+ Adicionar Estratégia</button></div>
+                        </div>
+                    </div>
+                    <div id="action-plan" class="form-tab-content hidden">
+                        <div id="action-plan-container"></div>
+                        <button type="button" class="btn ghost btn-add-action-plan" style="width:100%">+ Adicionar Ação</button>
+                    </div>
+
+                    <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                        <button type="button" id="btn-save-swot" class="btn primary">Salvar Análise</button>
+                        <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Análise SWOT Estratégica</h2>
+                <p>Esta ferramenta vai além de uma simples Análise SWOT, transformando-a em um plano estratégico acionável através da Matriz TOWS e de um Plano de Ação integrado.</p>
+                
+                <h3>Fluxo de Trabalho Estratégico</h3>
+                <p>A ferramenta é dividida em 3 etapas principais, acessíveis pelas abas no topo do formulário:</p>
+                <ol>
+                    <li><strong>Fatores (SWOT):</strong> Identifique os pontos internos e externos.</li>
+                    <li><strong>Estratégias (TOWS):</strong> Cruze os fatores para criar estratégias.</li>
+                    <li><strong>Plano de Ação:</strong> Transforme as estratégias em tarefas concretas.</li>
+                </ol>
+
+                <h3>1. Aba "Fatores (SWOT)"</h3>
+                <p>Aqui você irá listar os elementos da sua análise. Em vez de um campo de texto único, cada quadrante é uma lista dinâmica.</p>
+                <ul>
+                    <li>Clique em <code>+ Adicionar Força/Fraqueza/etc.</code> para criar um novo item na lista.</li>
+                    <li><strong>Priorize os Fatores:</strong> Para cada item, você pode atribuir um <strong>Peso</strong> (Alto, Médio, Baixo). Isso ajuda a focar nos fatores mais críticos na hora de definir as estratégias.</li>
+                    <li>Clique no botão <code>&times;</code> para remover um fator.</li>
+                </ul>
+
+                <h3>2. Aba "Estratégias (TOWS)"</h3>
+                <p>Esta é a etapa mais importante, onde a análise se torna estratégia. O objetivo é cruzar os fatores que você listou na primeira aba.</p>
+                <ul>
+                    <li><strong>Estratégias Ofensivas (S+O):</strong> Olhe para sua lista de Forças e Oportunidades. Como você pode usar suas forças para maximizar as oportunidades? Liste as estratégias aqui.</li>
+                    <li><strong>Estratégias de Confronto (S+T):</strong> Como suas forças podem ser usadas para minimizar ou evitar as ameaças?</li>
+                    <li><strong>Estratégias de Reforço (W+O):</strong> Como as oportunidades externas podem ajudar a corrigir ou melhorar suas fraquezas internas?</li>
+                    <li><strong>Estratégias Defensivas (W+T):</strong> Quais ações devem ser tomadas para minimizar o impacto de suas fraquezas e das ameaças externas?</li>
+                </ul>
+                <p>Assim como na aba anterior, você pode adicionar e remover múltiplas estratégias em cada quadrante.</p>
+
+                <h3>3. Aba "Plano de Ação"</h3>
+                <p>Depois de definir suas estratégias na Matriz TOWS, esta aba permite que você as transforme em ações concretas e gerenciáveis.</p>
+                <ul>
+                    <li>Use o botão <code>+ Adicionar Ação</code> para criar um novo item no plano.</li>
+                    <li>Para cada ação, defina o responsável, status, e datas de início e fim.</li>
+                    <li>Este plano de ação é o resultado final e prático de toda a sua análise estratégica.</li>
+                </ul>
+
+                <h3>Funcionalidades Gerais</h3>
+                <p>A ferramenta conta com o mesmo sistema de gerenciamento das outras: um <strong>Dashboard</strong> para visualizar todas as suas análises salvas, e as funções de <strong>Backup</strong>, <strong>Restauração</strong> e <strong>Exportação para PDF</strong> no cabeçalho.</p>
+                <p><strong>Aviso Importante:</strong> Lembre-se que todos os dados são salvos localmente no seu navegador. Use a função de backup com frequência para não perder seu trabalho.</p>
+            </section>
+        </div>
+    </main>
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 12px;">
+            <div class="field" style="grid-column:span 12;"><label>Ação</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column:span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+        </div></div>
+    </template>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE, DBs & CONSTANTS ---
+        let swotAnalyses = [];
+        const DB_KEY = 'mg_swot_analyses_v1';
+
+        // --- DOM ELEMENTS ---
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const btnNewSwot = document.getElementById('btn-new-swot');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveSwot = document.getElementById('btn-save-swot');
+        const swotListContainer = document.querySelector('#swot-list-table tbody');
+        const swotCountSpan = document.getElementById('swot-count');
+        const actionPlanFormTemplate = document.getElementById('action-plan-form-template');
+
+        // --- HELPERS & NAVIGATION ---
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(swotAnalyses)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { swotAnalyses = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            if(tabId !== 'form-container') document.getElementById('form-container').classList.add('hidden');
+        };
+        const showForm = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            formContainer.classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+        };
+        const showDashboard = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            dashboardContainer.classList.remove('hidden');
+            const dashboardLink = document.querySelector('.menu a[onclick*="dashboard-container"]');
+            if (dashboardLink) {
+                document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+                dashboardLink.classList.add('active');
+            }
+            renderSwotList();
+        };
+
+        // --- RENDER FUNCTIONS ---
+        const renderSwotList = () => {
+            swotListContainer.innerHTML = '';
+            if (swotAnalyses.length === 0) { swotListContainer.innerHTML = '<tr><td colspan="4">Nenhuma análise salva.</td></tr>'; }
+            else {
+                swotAnalyses.sort((a, b) => b.id - a.id).forEach(swot => {
+                    const row = swotListContainer.insertRow();
+                    row.innerHTML = `<td>${swot.objective || 'N/A'}</td><td>${swot.date ? new Date(swot.date + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td>${swot.lead || 'N/A'}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${swot.id}">Editar</button><button class="btn ghost btn-delete" data-id="${swot.id}">Excluir</button></div></td>`;
+                });
+            }
+            swotCountSpan.textContent = swotAnalyses.length;
+        };
+        
+        const createFactorRow = (factor = {}) => {
+            const item = document.createElement('div');
+            item.className = 'factor-item';
+            item.innerHTML = `<input type="text" class="factor-text" placeholder="Descreva o fator..." value="${factor.text || ''}"><select class="factor-weight"><option value="media">Média</option><option value="alta">Alta</option><option value="baixa">Baixa</option></select><button type="button" class="remove-item-btn">&times;</button>`;
+            item.querySelector('.factor-weight').value = factor.weight || 'media';
+            return item;
+        };
+
+        const createStrategyRow = (strategy = {}) => {
+            const item = document.createElement('div');
+            item.className = 'strategy-item';
+            item.innerHTML = `<input type="text" class="strategy-text" placeholder="Descreva a estratégia..." value="${strategy.text || ''}"><button type="button" class="remove-item-btn">&times;</button>`;
+            return item;
+        };
+        
+        const populateForm = (swot) => {
+            document.getElementById('swot-id').value = swot.id || '';
+            document.getElementById('swot-objective').value = swot.objective || '';
+            document.getElementById('swot-date').value = swot.date || '';
+            document.getElementById('swot-lead').value = swot.lead || '';
+            
+            ['strengths', 'weaknesses', 'opportunities', 'threats'].forEach(type => {
+                const container = document.querySelector(`.factors-list[data-type="${type}"]`);
+                container.innerHTML = '';
+                if(swot.factors && swot.factors[type]) {
+                    swot.factors[type].forEach(factor => container.appendChild(createFactorRow(factor)));
+                }
+            });
+            ['so', 'st', 'wo', 'wt'].forEach(type => {
+                const container = document.querySelector(`.strategies-list[data-type="${type}"]`);
+                container.innerHTML = '';
+                if(swot.strategies && swot.strategies[type]) {
+                    swot.strategies[type].forEach(strategy => container.appendChild(createStrategyRow(strategy)));
+                }
+            });
+            renderActionPlans(swot.actionPlans);
+        };
+        
+        const renderActionPlans = (plans = []) => {
+            const container = document.getElementById('action-plan-container');
+            container.innerHTML = '';
+            if (!plans) return;
+            plans.forEach(plan => {
+                const clone = actionPlanFormTemplate.content.cloneNode(true);
+                const block = clone.querySelector('.action-item-block');
+                block.querySelector('.action-input').value = plan.action || '';
+                block.querySelector('.responsible-input').value = plan.responsible || '';
+                block.querySelector('.status-input').value = plan.status || 'aberto';
+                block.querySelector('.start-date-input').value = plan.startDate || '';
+                block.querySelector('.end-date-input').value = plan.endDate || '';
+                container.appendChild(clone);
+            });
+        };
+
+        // --- DATA GATHERING ---
+        const gatherFormData = () => {
+            const swotData = {
+                id: document.getElementById('swot-id').value ? parseInt(document.getElementById('swot-id').value) : Date.now(),
+                objective: document.getElementById('swot-objective').value,
+                date: document.getElementById('swot-date').value,
+                lead: document.getElementById('swot-lead').value,
+                factors: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
+                strategies: { so: [], st: [], wo: [], wt: [] },
+                actionPlans: []
+            };
+
+            document.querySelectorAll('.factors-list').forEach(list => {
+                const type = list.dataset.type;
+                list.querySelectorAll('.factor-item').forEach(item => {
+                    swotData.factors[type].push({
+                        text: item.querySelector('.factor-text').value,
+                        weight: item.querySelector('.factor-weight').value
+                    });
+                });
+            });
+
+            document.querySelectorAll('.strategies-list').forEach(list => {
+                const type = list.dataset.type;
+                list.querySelectorAll('.strategy-item').forEach(item => {
+                    swotData.strategies[type].push({ text: item.querySelector('.strategy-text').value });
+                });
+            });
+            
+            document.querySelectorAll('#action-plan-container .action-item-block').forEach(block => {
+                 swotData.actionPlans.push({
+                    action: block.querySelector('.action-input').value,
+                    responsible: block.querySelector('.responsible-input').value,
+                    status: block.querySelector('.status-input').value,
+                    startDate: block.querySelector('.start-date-input').value,
+                    endDate: block.querySelector('.end-date-input').value,
+                });
+            });
+
+            return swotData;
+        };
+        
+        // --- EVENT LISTENERS ---
+        btnNewSwot.addEventListener('click', () => {
+            document.getElementById('swot-form').reset();
+            populateForm({});
+            document.getElementById('swot-date').value = new Date().toISOString().slice(0, 10);
+            showForm();
+        });
+
+        btnSaveSwot.addEventListener('click', () => {
+            const swotData = gatherFormData();
+            const index = swotAnalyses.findIndex(s => s.id == swotData.id);
+            if (index > -1) { swotAnalyses[index] = swotData; } else { swotAnalyses.push(swotData); }
+            saveData(); showToast('Análise salva com sucesso!', 'success'); showDashboard();
+        });
+
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if (target.classList.contains('btn-add-factor')) {
+                const type = target.dataset.type;
+                document.querySelector(`.factors-list[data-type="${type}"]`).appendChild(createFactorRow());
+            } else if (target.classList.contains('btn-add-strategy')) {
+                const type = target.dataset.type;
+                document.querySelector(`.strategies-list[data-type="${type}"]`).appendChild(createStrategyRow());
+            } else if (target.classList.contains('btn-add-action-plan')) {
+                 document.getElementById('action-plan-container').appendChild(actionPlanFormTemplate.content.cloneNode(true));
+            } else if (target.classList.contains('remove-item-btn')) {
+                target.parentElement.remove();
+            } else if (target.classList.contains('remove-action-btn')) {
+                 target.closest('.action-item-block').remove();
+            } else if (target.closest('.form-tab')) {
+                const tabButton = target.closest('.form-tab');
+                document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+                tabButton.classList.add('active');
+                document.querySelectorAll('.form-tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById(tabButton.dataset.tab).classList.remove('hidden');
+            } else if (target.classList.contains('btn-edit')) {
+                const swot = swotAnalyses.find(s => s.id == target.dataset.id);
+                if (swot) { populateForm(swot); showForm(); }
+            } else if (target.classList.contains('btn-delete')){ 
+                if(confirm('Tem certeza que deseja excluir esta análise?')) { 
+                    swotAnalyses = swotAnalyses.filter(s => s.id != target.dataset.id); 
+                    saveData(); 
+                    renderSwotList(); 
+                }
+            }
+        });
+        
+        // --- INITIALIZATION ---
+        const initApp = () => {
+            loadData();
+            showDashboard();
+        };
+
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra uma análise para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(swotAnalyses, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`swot_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){swotAnalyses=d;saveData();renderSwotList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

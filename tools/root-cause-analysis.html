@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Causa Raiz (RCA) - EPQS</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #111827;
+            --muted: #1f2937;
+            --card: #0b1220;
+            --text: #e5e7eb;
+            --accent: #22d3ee;
+            --accent2: #a78bfa;
+            --ok: #22c55e;
+            --warn: #f59e0b;
+            --bad: #ef4444;
+            --shadow: 0 10px 30px rgba(0,0,0,.35);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg) 0%, var(--panel) 100%);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid #334155;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            margin: 0;
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--muted);
+            border-radius: var(--radius);
+            padding: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #334155;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab.active {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(34, 211, 238, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid #334155;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--muted);
+            border: 1px solid #374151;
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #0891b2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(34, 211, 238, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--muted);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #374151;
+        }
+
+        .btn-success {
+            background: var(--ok);
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .btn-warning {
+            background: var(--warn);
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: var(--bad);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .why-level {
+            background: var(--muted);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #374151;
+            transition: all 0.3s ease;
+        }
+
+        .why-level:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(34, 211, 238, 0.1);
+        }
+
+        .why-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .why-number {
+            background: var(--accent);
+            color: var(--bg);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .why-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin: 0;
+            flex: 1;
+        }
+
+        .cause-item {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+
+        .cause-item:hover {
+            border-color: var(--accent2);
+        }
+
+        .cause-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .cause-title {
+            font-weight: 600;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .cause-category {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .category-people {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .category-process {
+            background: var(--accent2);
+            color: white;
+        }
+
+        .category-environment {
+            background: var(--ok);
+            color: white;
+        }
+
+        .category-material {
+            background: var(--warn);
+            color: white;
+        }
+
+        .category-machine {
+            background: var(--bad);
+            color: white;
+        }
+
+        .category-method {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .chart-container {
+            background: var(--muted);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #374151;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: var(--muted);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #374151;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .summary-label {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .notification {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+            display: none;
+        }
+
+        .notification.success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--ok);
+            color: var(--ok);
+        }
+
+        .notification.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--bad);
+            color: var(--bad);
+        }
+
+        .notification.info {
+            background: rgba(34, 211, 238, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .fishbone-container {
+            background: var(--muted);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid #374151;
+            overflow-x: auto;
+        }
+
+        .fishbone-diagram {
+            min-width: 800px;
+            height: 400px;
+            position: relative;
+            background: var(--card);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .timeline-container {
+            background: var(--muted);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #374151;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: var(--card);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .timeline-time {
+            background: var(--accent);
+            color: var(--bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-right: 16px;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .timeline-description {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .why-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .cause-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .timeline-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .timeline-time {
+                margin-right: 0;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="ph ph-tree-structure"></i> Análise de Causa Raiz (RCA)</h1>
+            <p>Identifique e analise as causas fundamentais dos problemas usando metodologias estruturadas</p>
+        </div>
+
+        <div id="notification" class="notification"></div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="problem">
+                <i class="ph ph-warning-circle"></i> Problema
+            </button>
+            <button class="tab" data-tab="five-whys">
+                <i class="ph ph-question"></i> 5 Porquês
+            </button>
+            <button class="tab" data-tab="fishbone">
+                <i class="ph ph-fish"></i> Ishikawa
+            </button>
+            <button class="tab" data-tab="timeline">
+                <i class="ph ph-clock"></i> Timeline
+            </button>
+            <button class="tab" data-tab="analysis">
+                <i class="ph ph-chart-pie"></i> Análise
+            </button>
+            <button class="tab" data-tab="report">
+                <i class="ph ph-file-text"></i> Relatório
+            </button>
+        </div>
+
+        <!-- Problem Definition Tab -->
+        <div class="tab-content active" id="problem">
+            <h2 style="color: var(--accent); margin-bottom: 20px;">
+                <i class="ph ph-warning-circle"></i> Definição do Problema
+            </h2>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="problem-title">Título do Problema</label>
+                    <input type="text" class="form-input" id="problem-title" placeholder="Ex: Falha no equipamento de produção">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="problem-category">Categoria</label>
+                    <select class="form-select" id="problem-category">
+                        <option value="">Selecione a categoria</option>
+                        <option value="quality">Qualidade</option>
+                        <option value="safety">Segurança</option>
+                        <option value="production">Produção</option>
+                        <option value="maintenance">Manutenção</option>
+                        <option value="process">Processo</option>
+                        <option value="customer">Cliente</option>
+                        <option value="financial">Financeiro</option>
+                        <option value="environmental">Ambiental</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="problem-severity">Severidade</label>
+                    <select class="form-select" id="problem-severity">
+                        <option value="">Selecione a severidade</option>
+                        <option value="critical">Crítica</option>
+                        <option value="high">Alta</option>
+                        <option value="medium">Média</option>
+                        <option value="low">Baixa</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="problem-frequency">Frequência</label>
+                    <select class="form-select" id="problem-frequency">
+                        <option value="">Selecione a frequência</option>
+                        <option value="continuous">Contínua</option>
+                        <option value="frequent">Frequente</option>
+                        <option value="occasional">Ocasional</option>
+                        <option value="rare">Rara</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="problem-date">Data de Ocorrência</label>
+                    <input type="datetime-local" class="form-input" id="problem-date">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="problem-reporter">Reportado por</label>
+                    <input type="text" class="form-input" id="problem-reporter" placeholder="Nome do responsável">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="problem-description">Descrição Detalhada</label>
+                <textarea class="form-textarea" id="problem-description" placeholder="Descreva o problema em detalhes, incluindo sintomas, impactos e contexto..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="problem-impact">Impacto do Problema</label>
+                <textarea class="form-textarea" id="problem-impact" placeholder="Descreva os impactos do problema (financeiro, operacional, qualidade, segurança...)"></textarea>
+            </div>
+            
+            <div class="actions">
+                <button class="btn" onclick="rcaSystem.saveProblem()">
+                    <i class="ph ph-floppy-disk"></i> Salvar Problema
+                </button>
+                <button class="btn btn-secondary" onclick="rcaSystem.loadProblem()">
+                    <i class="ph ph-folder-open"></i> Carregar Problema
+                </button>
+            </div>
+        </div>
+
+        <!-- Five Whys Tab -->
+        <div class="tab-content" id="five-whys">
+            <h2 style="color: var(--accent); margin-bottom: 20px;">
+                <i class="ph ph-question"></i> Análise dos 5 Porquês
+            </h2>
+            
+            <div id="whys-container">
+                <!-- Five whys will be populated here -->
+            </div>
+            
+            <div class="actions">
+                <button class="btn" onclick="rcaSystem.addWhy()">
+                    <i class="ph ph-plus"></i> Adicionar Porquê
+                </button>
+                <button class="btn btn-secondary" onclick="rcaSystem.resetWhys()">
+                    <i class="ph ph-arrow-clockwise"></i> Reiniciar
+                </button>
+            </div>
+        </div>
+
+        <!-- Fishbone Tab -->
+        <div class="tab-content" id="fishbone">
+            <h2 style="color: var(--accent); margin-bottom: 20px;">
+                <i class="ph ph-fish"></i> Diagrama de Ishikawa (Espinha de Peixe)
+            </h2>
+            
+            <div class="fishbone-container">
+                <div class="chart-title">Diagrama de Causa e Efeito</div>
+                <div class="fishbone-diagram" id="fishbone-diagram">
+                    <!-- Fishbone diagram will be rendered here -->
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <button class="btn" onclick="rcaSystem.addCause()">
+                    <i class="ph ph-plus"></i> Adicionar Causa
+                </button>
+                <button class="btn btn-secondary" onclick="rcaSystem.generateFishbone()">
+                    <i class="ph ph-chart-line"></i> Gerar Diagrama
+                </button>
+            </div>
+            
+            <div id="causes-list">
+                <!-- Causes will be populated here -->
+            </div>
+        </div>
+
+        <!-- Timeline Tab -->
+        <div class="tab-content" id="timeline">
+            <h2 style="color: var(--accent); margin-bottom: 20px;">
+                <i class="ph ph-clock"></i> Linha do Tempo dos Eventos
+            </h2>
+            
+            <div style="margin-bottom: 20px;">
+                <button class="btn" onclick="rcaSystem.addTimelineEvent()">
+                    <i class="ph ph-plus"></i> Adicionar Evento
+                </button>
+            </div>
+            
+            <div class="timeline-container">
+                <div id="timeline-events">
+                    <!-- Timeline events will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Tab -->
+        <div class="tab-content" id="analysis">
+            <h2 style="color: var(--accent); margin-bottom: 20px;">
+                <i class="ph ph-chart-pie"></i> Análise e Resultados
+            </h2>
+            
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-value" id="total-causes">0</div>
+                    <div class="summary-label">Causas Identificadas</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" id="root-causes">0</div>
+                    <div class="summary-label">Causas Raiz</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" id="timeline-events-count">0</div>
+                    <div class="summary-label">Eventos na Timeline</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" id="analysis-completeness">0%</div>
+                    <div class="summary-label">Completude da Análise</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Distribuição de Causas por Categoria</div>
+                <canvas id="causesChart" width="400" height="200"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Severidade vs Frequência</div>
+                <canvas id="severityChart" width="400" height="200"></canvas>
+            </div>
+            
+            <div class="actions">
+                <button class="btn" onclick="rcaSystem.analyzeData()">
+                    <i class="ph ph-chart-bar"></i> Analisar Dados
+                </button>
+                <button class="btn btn-secondary" onclick="rcaSystem.identifyRootCauses()">
+                    <i class="ph ph-target"></i> Identificar Causas Raiz
+                </button>
+            </div>
+        </div>
+
+        <!-- Report Tab -->
+        <div class="tab-content" id="report">
+            <h2 style="color: var(--accent); margin-bottom: 20px;">
+                <i class="ph ph-file-text"></i> Relatório de Análise de Causa Raiz
+            </h2>
+            
+            <div class="actions" style="margin-bottom: 30px;">
+                <button class="btn" onclick="rcaSystem.generateReport()">
+                    <i class="ph ph-file-text"></i> Gerar Relatório
+                </button>
+                <button class="btn btn-secondary" onclick="rcaSystem.exportPDF()">
+                    <i class="ph ph-file-pdf"></i> Exportar PDF
+                </button>
+                <button class="btn btn-secondary" onclick="rcaSystem.exportExcel()">
+                    <i class="ph ph-file-xls"></i> Exportar Excel
+                </button>
+            </div>
+            
+            <div id="report-content" style="background: var(--muted); padding: 30px; border-radius: 12px; border: 1px solid #374151;">
+                <!-- Report content will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RootCauseAnalysisSystem {
+            constructor() {
+                this.data = {
+                    problem: {},
+                    whys: [],
+                    causes: [],
+                    timeline: [],
+                    analysis: {}
+                };
+                this.charts = {};
+                this.init();
+            }
+
+            init() {
+                this.setupTabs();
+                this.setupEventListeners();
+                this.loadData();
+                this.initializeWhys();
+                this.setDefaultDateTime();
+            }
+
+            setupTabs() {
+                const tabs = document.querySelectorAll('.tab');
+                const tabContents = document.querySelectorAll('.tab-content');
+
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const targetTab = tab.dataset.tab;
+                        
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tabContents.forEach(tc => tc.classList.remove('active'));
+                        
+                        tab.classList.add('active');
+                        document.getElementById(targetTab).classList.add('active');
+                    });
+                });
+            }
+
+            setupEventListeners() {
+                // Auto-save on input changes
+                const inputs = document.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.addEventListener('change', () => this.autoSave());
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 's') {
+                        e.preventDefault();
+                        this.saveData();
+                    }
+                });
+            }
+
+            setDefaultDateTime() {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('problem-date').value = now.toISOString().slice(0, 16);
+            }
+
+            initializeWhys() {
+                if (this.data.whys.length === 0) {
+                    this.data.whys = [
+                        { level: 1, question: '', answer: '', isRootCause: false }
+                    ];
+                }
+                this.renderWhys();
+            }
+
+            saveProblem() {
+                this.data.problem = {
+                    title: document.getElementById('problem-title').value,
+                    category: document.getElementById('problem-category').value,
+                    severity: document.getElementById('problem-severity').value,
+                    frequency: document.getElementById('problem-frequency').value,
+                    date: document.getElementById('problem-date').value,
+                    reporter: document.getElementById('problem-reporter').value,
+                    description: document.getElementById('problem-description').value,
+                    impact: document.getElementById('problem-impact').value
+                };
+
+                this.saveData();
+                this.showNotification('Problema salvo com sucesso!', 'success');
+            }
+
+            loadProblem() {
+                const problem = this.data.problem;
+                if (Object.keys(problem).length === 0) {
+                    this.showNotification('Nenhum problema salvo encontrado.', 'info');
+                    return;
+                }
+
+                document.getElementById('problem-title').value = problem.title || '';
+                document.getElementById('problem-category').value = problem.category || '';
+                document.getElementById('problem-severity').value = problem.severity || '';
+                document.getElementById('problem-frequency').value = problem.frequency || '';
+                document.getElementById('problem-date').value = problem.date || '';
+                document.getElementById('problem-reporter').value = problem.reporter || '';
+                document.getElementById('problem-description').value = problem.description || '';
+                document.getElementById('problem-impact').value = problem.impact || '';
+
+                this.showNotification('Problema carregado com sucesso!', 'success');
+            }
+
+            addWhy() {
+                const nextLevel = this.data.whys.length + 1;
+                this.data.whys.push({
+                    level: nextLevel,
+                    question: '',
+                    answer: '',
+                    isRootCause: false
+                });
+                this.renderWhys();
+                this.saveData();
+            }
+
+            renderWhys() {
+                const container = document.getElementById('whys-container');
+                container.innerHTML = '';
+
+                this.data.whys.forEach((why, index) => {
+                    const whyElement = document.createElement('div');
+                    whyElement.className = 'why-level';
+                    whyElement.innerHTML = `
+                        <div class="why-header">
+                            <div class="why-number">${why.level}</div>
+                            <h3 class="why-title">Por que ${why.level}?</h3>
+                            <label style="display: flex; align-items: center; gap: 8px; color: var(--ok);">
+                                <input type="checkbox" ${why.isRootCause ? 'checked' : ''} 
+                                       onchange="rcaSystem.toggleRootCause(${index})">
+                                Causa Raiz
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Pergunta</label>
+                            <input type="text" class="form-input" 
+                                   value="${why.question}" 
+                                   onchange="rcaSystem.updateWhy(${index}, 'question', this.value)"
+                                   placeholder="Por que este problema ocorreu?">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Resposta</label>
+                            <textarea class="form-textarea" 
+                                      onchange="rcaSystem.updateWhy(${index}, 'answer', this.value)"
+                                      placeholder="Resposta detalhada...">${why.answer}</textarea>
+                        </div>
+                        <div style="margin-top: 16px;">
+                            <button class="btn btn-danger" onclick="rcaSystem.removeWhy(${index})">
+                                <i class="ph ph-trash"></i> Remover
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(whyElement);
+                });
+            }
+
+            updateWhy(index, field, value) {
+                if (this.data.whys[index]) {
+                    this.data.whys[index][field] = value;
+                    this.autoSave();
+                }
+            }
+
+            toggleRootCause(index) {
+                if (this.data.whys[index]) {
+                    this.data.whys[index].isRootCause = !this.data.whys[index].isRootCause;
+                    this.autoSave();
+                }
+            }
+
+            removeWhy(index) {
+                if (confirm('Tem certeza que deseja remover este porquê?')) {
+                    this.data.whys.splice(index, 1);
+                    // Renumber the remaining whys
+                    this.data.whys.forEach((why, i) => {
+                        why.level = i + 1;
+                    });
+                    this.renderWhys();
+                    this.saveData();
+                }
+            }
+
+            resetWhys() {
+                if (confirm('Tem certeza que deseja reiniciar a análise dos 5 porquês?')) {
+                    this.data.whys = [
+                        { level: 1, question: '', answer: '', isRootCause: false }
+                    ];
+                    this.renderWhys();
+                    this.saveData();
+                }
+            }
+
+            addCause() {
+                const cause = {
+                    id: Date.now(),
+                    title: 'Nova Causa',
+                    description: '',
+                    category: 'process',
+                    severity: 'medium',
+                    likelihood: 'medium'
+                };
+
+                this.data.causes.push(cause);
+                this.renderCauses();
+                this.saveData();
+            }
+
+            renderCauses() {
+                const container = document.getElementById('causes-list');
+                container.innerHTML = '';
+
+                this.data.causes.forEach(cause => {
+                    const causeElement = document.createElement('div');
+                    causeElement.className = 'cause-item';
+                    causeElement.innerHTML = `
+                        <div class="cause-header">
+                            <h3 class="cause-title">${cause.title}</h3>
+                            <span class="cause-category category-${cause.category}">${this.getCategoryLabel(cause.category)}</span>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <strong>Descrição:</strong> ${cause.description || 'Não definida'}
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                            <div>
+                                <strong>Severidade:</strong> ${this.getSeverityLabel(cause.severity)}
+                            </div>
+                            <div>
+                                <strong>Probabilidade:</strong> ${this.getLikelihoodLabel(cause.likelihood)}
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" onclick="rcaSystem.editCause(${cause.id})">
+                                <i class="ph ph-pencil"></i> Editar
+                            </button>
+                            <button class="btn btn-danger" onclick="rcaSystem.deleteCause(${cause.id})">
+                                <i class="ph ph-trash"></i> Excluir
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(causeElement);
+                });
+            }
+
+            editCause(causeId) {
+                const cause = this.data.causes.find(c => c.id === causeId);
+                if (!cause) return;
+
+                const newTitle = prompt('Título da causa:', cause.title);
+                if (newTitle !== null) cause.title = newTitle;
+
+                const newDescription = prompt('Descrição da causa:', cause.description);
+                if (newDescription !== null) cause.description = newDescription;
+
+                const newCategory = prompt('Categoria (people/process/environment/material/machine/method):', cause.category);
+                if (newCategory && ['people', 'process', 'environment', 'material', 'machine', 'method'].includes(newCategory)) {
+                    cause.category = newCategory;
+                }
+
+                const newSeverity = prompt('Severidade (critical/high/medium/low):', cause.severity);
+                if (newSeverity && ['critical', 'high', 'medium', 'low'].includes(newSeverity)) {
+                    cause.severity = newSeverity;
+                }
+
+                const newLikelihood = prompt('Probabilidade (high/medium/low):', cause.likelihood);
+                if (newLikelihood && ['high', 'medium', 'low'].includes(newLikelihood)) {
+                    cause.likelihood = newLikelihood;
+                }
+
+                this.renderCauses();
+                this.saveData();
+            }
+
+            deleteCause(causeId) {
+                if (confirm('Tem certeza que deseja excluir esta causa?')) {
+                    this.data.causes = this.data.causes.filter(c => c.id !== causeId);
+                    this.renderCauses();
+                    this.saveData();
+                }
+            }
+
+            generateFishbone() {
+                // Simple fishbone diagram representation
+                const diagram = document.getElementById('fishbone-diagram');
+                diagram.innerHTML = `
+                    <div style="position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: var(--accent);"></div>
+                    <div style="position: absolute; top: 50%; right: 5%; width: 0; height: 0; 
+                                border-left: 20px solid var(--accent); 
+                                border-top: 10px solid transparent; 
+                                border-bottom: 10px solid transparent;"></div>
+                    <div style="position: absolute; top: 50%; right: 2%; transform: translateY(-50%); 
+                                background: var(--accent); color: var(--bg); padding: 8px 16px; 
+                                border-radius: 8px; font-weight: 600;">
+                        ${this.data.problem.title || 'Problema'}
+                    </div>
+                `;
+
+                // Add category branches
+                const categories = ['people', 'process', 'environment', 'material', 'machine', 'method'];
+                categories.forEach((category, index) => {
+                    const isTop = index < 3;
+                    const position = (index % 3) * 25 + 15;
+                    const causes = this.data.causes.filter(c => c.category === category);
+                    
+                    if (causes.length > 0) {
+                        const branch = document.createElement('div');
+                        branch.style.position = 'absolute';
+                        branch.style.left = position + '%';
+                        branch.style.top = isTop ? '20%' : '80%';
+                        branch.style.transform = 'translateX(-50%)';
+                        branch.innerHTML = `
+                            <div style="background: var(--accent2); color: white; padding: 6px 12px; 
+                                        border-radius: 6px; font-weight: 600; margin-bottom: 8px;">
+                                ${this.getCategoryLabel(category)}
+                            </div>
+                            ${causes.map(cause => `
+                                <div style="background: var(--muted); padding: 4px 8px; 
+                                           border-radius: 4px; margin-bottom: 4px; font-size: 12px;">
+                                    ${cause.title}
+                                </div>
+                            `).join('')}
+                        `;
+                        diagram.appendChild(branch);
+                    }
+                });
+
+                this.showNotification('Diagrama de Ishikawa gerado!', 'success');
+            }
+
+            addTimelineEvent() {
+                const event = {
+                    id: Date.now(),
+                    time: new Date().toISOString().slice(0, 16),
+                    title: 'Novo Evento',
+                    description: ''
+                };
+
+                this.data.timeline.push(event);
+                this.renderTimeline();
+                this.saveData();
+            }
+
+            renderTimeline() {
+                const container = document.getElementById('timeline-events');
+                container.innerHTML = '';
+
+                // Sort events by time
+                const sortedEvents = [...this.data.timeline].sort((a, b) => new Date(a.time) - new Date(b.time));
+
+                sortedEvents.forEach(event => {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'timeline-item';
+                    eventElement.innerHTML = `
+                        <div class="timeline-time">
+                            ${new Date(event.time).toLocaleString('pt-BR')}
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">${event.title}</div>
+                            <div class="timeline-description">${event.description || 'Sem descrição'}</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" onclick="rcaSystem.editTimelineEvent(${event.id})">
+                                <i class="ph ph-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger" onclick="rcaSystem.deleteTimelineEvent(${event.id})">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(eventElement);
+                });
+            }
+
+            editTimelineEvent(eventId) {
+                const event = this.data.timeline.find(e => e.id === eventId);
+                if (!event) return;
+
+                const newTime = prompt('Data e hora (YYYY-MM-DDTHH:MM):', event.time);
+                if (newTime !== null) event.time = newTime;
+
+                const newTitle = prompt('Título do evento:', event.title);
+                if (newTitle !== null) event.title = newTitle;
+
+                const newDescription = prompt('Descrição do evento:', event.description);
+                if (newDescription !== null) event.description = newDescription;
+
+                this.renderTimeline();
+                this.saveData();
+            }
+
+            deleteTimelineEvent(eventId) {
+                if (confirm('Tem certeza que deseja excluir este evento?')) {
+                    this.data.timeline = this.data.timeline.filter(e => e.id !== eventId);
+                    this.renderTimeline();
+                    this.saveData();
+                }
+            }
+
+            analyzeData() {
+                this.updateAnalysisSummary();
+                this.updateCharts();
+                this.showNotification('Análise de dados atualizada!', 'success');
+            }
+
+            updateAnalysisSummary() {
+                const totalCauses = this.data.causes.length;
+                const rootCauses = this.data.whys.filter(w => w.isRootCause).length;
+                const timelineEvents = this.data.timeline.length;
+                
+                // Calculate completeness based on filled fields
+                let completeness = 0;
+                const problemFields = Object.values(this.data.problem).filter(v => v && v.trim()).length;
+                const whyFields = this.data.whys.filter(w => w.question && w.answer).length;
+                
+                completeness = Math.round(((problemFields / 8) * 30 + (whyFields / 5) * 30 + (totalCauses / 6) * 40));
+                completeness = Math.min(100, completeness);
+
+                document.getElementById('total-causes').textContent = totalCauses;
+                document.getElementById('root-causes').textContent = rootCauses;
+                document.getElementById('timeline-events-count').textContent = timelineEvents;
+                document.getElementById('analysis-completeness').textContent = completeness + '%';
+            }
+
+            updateCharts() {
+                this.updateCausesChart();
+                this.updateSeverityChart();
+            }
+
+            updateCausesChart() {
+                const ctx = document.getElementById('causesChart').getContext('2d');
+                
+                if (this.charts.causes) {
+                    this.charts.causes.destroy();
+                }
+
+                const categories = ['people', 'process', 'environment', 'material', 'machine', 'method'];
+                const data = categories.map(cat => 
+                    this.data.causes.filter(c => c.category === cat).length
+                );
+
+                this.charts.causes = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categories.map(cat => this.getCategoryLabel(cat)),
+                        datasets: [{
+                            data: data,
+                            backgroundColor: [
+                                'rgba(34, 211, 238, 0.8)',
+                                'rgba(167, 139, 250, 0.8)',
+                                'rgba(34, 197, 94, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(239, 68, 68, 0.8)',
+                                'rgba(139, 92, 246, 0.8)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#e5e7eb'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateSeverityChart() {
+                const ctx = document.getElementById('severityChart').getContext('2d');
+                
+                if (this.charts.severity) {
+                    this.charts.severity.destroy();
+                }
+
+                const severityData = {
+                    critical: this.data.causes.filter(c => c.severity === 'critical').length,
+                    high: this.data.causes.filter(c => c.severity === 'high').length,
+                    medium: this.data.causes.filter(c => c.severity === 'medium').length,
+                    low: this.data.causes.filter(c => c.severity === 'low').length
+                };
+
+                this.charts.severity = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Crítica', 'Alta', 'Média', 'Baixa'],
+                        datasets: [{
+                            label: 'Número de Causas',
+                            data: [severityData.critical, severityData.high, severityData.medium, severityData.low],
+                            backgroundColor: [
+                                'rgba(239, 68, 68, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(34, 211, 238, 0.8)',
+                                'rgba(34, 197, 94, 0.8)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#e5e7eb'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#e5e7eb'
+                                },
+                                grid: {
+                                    color: '#374151'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#e5e7eb'
+                                },
+                                grid: {
+                                    color: '#374151'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            identifyRootCauses() {
+                // Automatically identify potential root causes based on analysis
+                const potentialRootCauses = [];
+                
+                // From 5 whys
+                this.data.whys.forEach(why => {
+                    if (why.level >= 3 && why.answer && why.answer.length > 20) {
+                        potentialRootCauses.push({
+                            source: '5 Porquês',
+                            description: why.answer,
+                            confidence: why.level >= 5 ? 'Alta' : 'Média'
+                        });
+                    }
+                });
+
+                // From high severity causes
+                this.data.causes.forEach(cause => {
+                    if (cause.severity === 'critical' || cause.severity === 'high') {
+                        potentialRootCauses.push({
+                            source: 'Ishikawa',
+                            description: cause.title + ': ' + cause.description,
+                            confidence: cause.severity === 'critical' ? 'Alta' : 'Média'
+                        });
+                    }
+                });
+
+                if (potentialRootCauses.length > 0) {
+                    let message = 'Possíveis causas raiz identificadas:\n\n';
+                    potentialRootCauses.forEach((cause, index) => {
+                        message += `${index + 1}. [${cause.source}] ${cause.description} (Confiança: ${cause.confidence})\n\n`;
+                    });
+                    alert(message);
+                } else {
+                    this.showNotification('Nenhuma causa raiz identificada automaticamente. Continue a análise.', 'info');
+                }
+            }
+
+            generateReport() {
+                const reportContent = document.getElementById('report-content');
+                const problem = this.data.problem;
+
+                reportContent.innerHTML = `
+                    <h3 style="color: var(--accent); margin-bottom: 20px;">Relatório de Análise de Causa Raiz</h3>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--accent2);">Definição do Problema</h4>
+                        <p><strong>Título:</strong> ${problem.title || 'Não definido'}</p>
+                        <p><strong>Categoria:</strong> ${this.getCategoryLabel(problem.category) || 'Não definida'}</p>
+                        <p><strong>Severidade:</strong> ${this.getSeverityLabel(problem.severity) || 'Não definida'}</p>
+                        <p><strong>Frequência:</strong> ${this.getFrequencyLabel(problem.frequency) || 'Não definida'}</p>
+                        <p><strong>Data:</strong> ${problem.date ? new Date(problem.date).toLocaleString('pt-BR') : 'Não definida'}</p>
+                        <p><strong>Reportado por:</strong> ${problem.reporter || 'Não definido'}</p>
+                        <p><strong>Descrição:</strong> ${problem.description || 'Não definida'}</p>
+                        <p><strong>Impacto:</strong> ${problem.impact || 'Não definido'}</p>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--accent2);">Análise dos 5 Porquês</h4>
+                        ${this.data.whys.map(why => `
+                            <div style="margin-bottom: 16px; padding: 12px; background: var(--card); border-radius: 8px;">
+                                <strong>Por que ${why.level}:</strong> ${why.question || 'Não definido'}<br>
+                                <strong>Resposta:</strong> ${why.answer || 'Não definida'}
+                                ${why.isRootCause ? '<br><strong style="color: var(--ok);">✓ Identificada como Causa Raiz</strong>' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--accent2);">Causas Identificadas (Ishikawa)</h4>
+                        ${this.data.causes.map(cause => `
+                            <div style="margin-bottom: 12px; padding: 12px; background: var(--card); border-radius: 8px;">
+                                <strong>${cause.title}</strong> (${this.getCategoryLabel(cause.category)})<br>
+                                ${cause.description}<br>
+                                <small>Severidade: ${this.getSeverityLabel(cause.severity)} | Probabilidade: ${this.getLikelihoodLabel(cause.likelihood)}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--accent2);">Linha do Tempo</h4>
+                        ${this.data.timeline.sort((a, b) => new Date(a.time) - new Date(b.time)).map(event => `
+                            <div style="margin-bottom: 12px; padding: 12px; background: var(--card); border-radius: 8px;">
+                                <strong>${new Date(event.time).toLocaleString('pt-BR')}</strong> - ${event.title}<br>
+                                ${event.description}
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--accent2);">Resumo da Análise</h4>
+                        <p><strong>Total de Causas Identificadas:</strong> ${this.data.causes.length}</p>
+                        <p><strong>Causas Raiz Identificadas:</strong> ${this.data.whys.filter(w => w.isRootCause).length}</p>
+                        <p><strong>Eventos na Timeline:</strong> ${this.data.timeline.length}</p>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--accent2);">Recomendações</h4>
+                        <ul>
+                            <li>Implementar ações corretivas para as causas raiz identificadas</li>
+                            <li>Estabelecer controles preventivos</li>
+                            <li>Monitorar a eficácia das ações implementadas</li>
+                            <li>Documentar lições aprendidas</li>
+                            <li>Revisar processos relacionados</li>
+                        </ul>
+                    </div>
+                `;
+
+                this.showNotification('Relatório gerado com sucesso!', 'success');
+            }
+
+            exportPDF() {
+                this.showNotification('Funcionalidade de exportação PDF em desenvolvimento.', 'info');
+            }
+
+            exportExcel() {
+                this.showNotification('Funcionalidade de exportação Excel em desenvolvimento.', 'info');
+            }
+
+            getCategoryLabel(category) {
+                const labels = {
+                    people: 'Pessoas',
+                    process: 'Processo',
+                    environment: 'Ambiente',
+                    material: 'Material',
+                    machine: 'Máquina',
+                    method: 'Método',
+                    quality: 'Qualidade',
+                    safety: 'Segurança',
+                    production: 'Produção',
+                    maintenance: 'Manutenção',
+                    customer: 'Cliente',
+                    financial: 'Financeiro',
+                    environmental: 'Ambiental'
+                };
+                return labels[category] || category;
+            }
+
+            getSeverityLabel(severity) {
+                const labels = {
+                    critical: 'Crítica',
+                    high: 'Alta',
+                    medium: 'Média',
+                    low: 'Baixa'
+                };
+                return labels[severity] || severity;
+            }
+
+            getLikelihoodLabel(likelihood) {
+                const labels = {
+                    high: 'Alta',
+                    medium: 'Média',
+                    low: 'Baixa'
+                };
+                return labels[likelihood] || likelihood;
+            }
+
+            getFrequencyLabel(frequency) {
+                const labels = {
+                    continuous: 'Contínua',
+                    frequent: 'Frequente',
+                    occasional: 'Ocasional',
+                    rare: 'Rara'
+                };
+                return labels[frequency] || frequency;
+            }
+
+            saveData() {
+                try {
+                    localStorage.setItem('epqs_rca', JSON.stringify(this.data));
+                    
+                    // Integration with EPQS system
+                    if (window.EPQS && typeof window.EPQS.saveData === 'function') {
+                        window.EPQS.saveData('root_cause_analysis', this.data);
+                    }
+                } catch (error) {
+                    console.error('Error saving data:', error);
+                }
+            }
+
+            loadData() {
+                try {
+                    // Try to load from EPQS system first
+                    if (window.EPQS && typeof window.EPQS.loadData === 'function') {
+                        const epqsData = window.EPQS.loadData('root_cause_analysis');
+                        if (epqsData) {
+                            this.data = epqsData;
+                            this.renderWhys();
+                            this.renderCauses();
+                            this.renderTimeline();
+                            return;
+                        }
+                    }
+
+                    // Fallback to localStorage
+                    const saved = localStorage.getItem('epqs_rca');
+                    if (saved) {
+                        this.data = JSON.parse(saved);
+                        this.renderWhys();
+                        this.renderCauses();
+                        this.renderTimeline();
+                    }
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                }
+            }
+
+            autoSave() {
+                clearTimeout(this.autoSaveTimeout);
+                this.autoSaveTimeout = setTimeout(() => {
+                    this.saveData();
+                }, 2000);
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.style.display = 'block';
+
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize the system
+        const rcaSystem = new RootCauseAnalysisSystem();
+
+        // Integration with EPQS system
+        if (window.EPQS) {
+            window.EPQS.registerTool('root-cause-analysis', {
+                name: 'Análise de Causa Raiz',
+                version: '1.0.0',
+                description: 'Ferramenta avançada para análise de causa raiz usando 5 Porquês, Ishikawa e Timeline',
+                author: 'EPQS System',
+                category: 'analysis'
+            });
+        }
+    </script>
+</body>
+</html>

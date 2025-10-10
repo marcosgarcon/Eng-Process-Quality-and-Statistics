@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Gerenciador de Relatórios A3</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      textarea{min-height:120px;resize:vertical;}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .a3-section{background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--muted);display:flex;flex-direction:column;gap:10px;}
+      .action-item-block{padding:12px;border:1px solid var(--muted);border-radius:12px;background:var(--card);position:relative;margin-top:10px;}
+      .remove-action-btn{position:absolute;top:5px;right:5px;background:none;border:none;color:#fca5a5;font-size:1.5rem;cursor:pointer;}
+      .attachments-section{margin-top:15px;padding-top:15px;border-top:1px dashed var(--muted);}.attachment-drop-zone{padding:10px;font-size:12px;margin-top:5px;border:2px dashed var(--muted);text-align:center;cursor:pointer;border-radius:8px;}.attachment-preview-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}.attachment-item{width:80px;height:80px;position:relative;}.attachment-item img, .attachment-item .file-icon{width:100%;height:100%;object-fit:cover;border-radius:8px;}.attachment-item .file-icon{background:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:11px;padding:5px;overflow:hidden;word-break:break-all;}.attachment-item .remove-attachment{position:absolute;top:-5px;right:-5px;background:var(--bad);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}main{padding:0} header,aside,.hidden-print,.btn,.remove-action-btn,.remove-attachment{display:none !important;}section,.a3-section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black} .a3-grid{grid-template-columns:1fr!important}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Gerenciador de Relatórios A3</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Relatórios A3: <span id="a3-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Relatórios A3 Salvos</h2><button id="btn-new-a3" class="btn primary">+ Novo Relatório A3</button></div>
+                <table id="a3-list-table">
+                    <thead><tr><th>Título / Problema</th><th>Responsável</th><th>Data</th><th>Status</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <form id="a3-form">
+                <input type="hidden" id="a3-id">
+                <section>
+                    <div class="grid" style="grid-template-columns: repeat(12, 1fr); align-items: end;">
+                       <div class="field" style="grid-column: span 6;"><label for="a3-title">Título do A3 / Problema</label><input type="text" id="a3-title" required></div>
+                       <div class="field" style="grid-column: span 3;"><label for="a3-lead">Responsável</label><input type="text" id="a3-lead"></div>
+                       <div class="field" style="grid-column: span 3;"><label for="a3-date">Data</label><input type="date" id="a3-date"></div>
+                    </div>
+                </section>
+                <div class="grid a3-grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div id="a3-left-column" style="display:flex;flex-direction:column;gap:16px;"></div>
+                    <div id="a3-right-column" style="display:flex;flex-direction:column;gap:16px;"></div>
+                </div>
+                 <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-a3" class="btn primary">Salvar Relatório</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+             <section class="help-content">
+                <h2>Guia de Utilização - Gerenciador de Relatórios A3</h2>
+                <p>Esta ferramenta foi projetada para digitalizar o processo de criação do Relatório A3, transformando-o de um documento estático em um registro vivo, visual e acionável para a solução de problemas.</p>
+                
+                <h3>Dashboard</h3>
+                <p>A tela inicial lista todos os Relatórios A3 que você salvou. Use o botão <code>+ Novo Relatório A3</code> para começar um novo.</p>
+
+                <h3>Estrutura do Formulário A3</h3>
+                <p>O formulário simula o layout de uma folha A3 física, dividido em duas colunas para seguir o fluxo de raciocínio lógico (Problema → Solução).</p>
+                
+                <h4>Coluna da Esquerda (Entendendo o Problema)</h4>
+                <ul>
+                    <li><strong>1. Background:</strong> Qual o contexto e a relevância do problema para o negócio?</li>
+                    <li><strong>2. Condição Atual:</strong> Descreva o problema com o máximo de detalhes. Use a seção de <strong>anexos</strong> para subir gráficos (Pareto, Histograma), fotos do local (Gemba) e planilhas de dados.</li>
+                    <li><strong>3. Meta:</strong> Defina um objetivo claro e mensurável (SMART). O que você espera alcançar?</li>
+                    <li><strong>4. Análise de Causa Raiz:</strong> Documente sua investigação. Anexe aqui suas análises de 5 Porquês, Diagramas de Ishikawa, etc.</li>
+                </ul>
+                
+                <h4>Coluna da Direita (Implementando a Solução)</h4>
+                <ul>
+                    <li><strong>5. Contramedidas:</strong> Descreva as ações que você planeja para atacar a causa raiz. Anexe rascunhos de novos procedimentos ou desenhos.</li>
+                    <li><strong>6. Verificação (Check):</strong> Após implementar as contramedidas, verifique os resultados. A meta foi atingida? Anexe gráficos de "antes e depois" para comprovar a eficácia.</li>
+                    <li><strong>7. Plano de Ação e Follow-up:</strong> Esta seção utiliza o nosso <strong>módulo de Plano de Ação</strong>. Em vez de texto corrido, clique em <code>+ Adicionar Ação</code> para criar uma lista de tarefas para padronizar a solução e garantir que ela seja mantida. Defina responsáveis, prazos e status para cada tarefa de acompanhamento.</li>
+                </ul>
+
+                <h3>A Importância dos Anexos</h3>
+                <p>Um A3 forte é um A3 visual. A principal vantagem desta ferramenta é a capacidade de <strong>anexar arquivos em cada seção</strong>. Use este recurso extensivamente para criar um relatório completo e baseado em evidências.</p>
+
+                 <h3>Funcionalidades Gerais</h3>
+                <p>A ferramenta conta com o mesmo sistema de gerenciamento das outras: <strong>Backup</strong>, <strong>Restauração</strong> e <strong>Exportação para PDF</strong> no cabeçalho.</p>
+                <p><strong>Aviso Importante:</strong> Lembre-se que todos os dados são salvos localmente no seu navegador. Use a função de backup com frequência para não perder seu trabalho.</p>
+            </section>
+        </div>
+    </main>
+
+    <template id="a3-section-template">
+        <div class="a3-section">
+            <h4></h4>
+            <textarea rows="6"></textarea>
+            <div class="attachments-section"></div>
+        </div>
+    </template>
+    <template id="attachment-ui-template"><div class="field"><input type="file" class="attachments-input hidden" multiple><div class="attachment-drop-zone">Arraste ou clique para adicionar arquivos</div><div class="attachment-preview-grid"></div></div></template>
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 12px;">
+            <div class="field" style="grid-column:span 12;"><label>Ação</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column:span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+        </div></div>
+    </template>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE, DBs & CONSTANTS ---
+        let a3Reports = [];
+        const DB_KEY = 'mg_a3_reports_v1';
+        const A3_SECTIONS = [
+            { id: 'background', title: '1. Background (Contexto)' }, { id: 'current', title: '2. Condição Atual' },
+            { id: 'goal', title: '3. Meta / Condição Desejada' }, { id: 'analysis', title: '4. Análise de Causa Raiz' },
+            { id: 'countermeasures', title: '5. Contramedidas' }, { id: 'check', title: '6. Verificação (Check)' },
+            { id: 'followup', title: '7. Plano de Ação e Follow-up' }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const helpContainer = document.getElementById('help-container');
+        const btnNewA3 = document.getElementById('btn-new-a3');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveA3 = document.getElementById('btn-save-a3');
+        const a3ListContainer = document.querySelector('#a3-list-table tbody');
+        const a3CountSpan = document.getElementById('a3-count');
+        const a3LeadField = document.getElementById('a3-lead');
+        const templates = {
+            section: document.getElementById('a3-section-template'),
+            attachment: document.getElementById('attachment-ui-template'),
+            actionPlan: document.getElementById('action-plan-form-template')
+        };
+
+        // --- HELPERS & NAVIGATION ---
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(a3Reports)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { a3Reports = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            if(tabId !== 'form-container') document.getElementById('form-container').classList.add('hidden');
+        };
+        const showForm = () => { document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); formContainer.classList.remove('hidden'); document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); };
+        const showDashboard = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            dashboardContainer.classList.remove('hidden');
+            const dashboardLink = document.querySelector('.menu a[onclick*="dashboard-container"]');
+            if (dashboardLink) { document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); dashboardLink.classList.add('active'); }
+            renderA3List();
+        };
+
+        // --- RENDER FUNCTIONS ---
+        const renderA3List = () => {
+            a3ListContainer.innerHTML = '';
+            if (a3Reports.length === 0) { a3ListContainer.innerHTML = '<tr><td colspan="5">Nenhum relatório salvo.</td></tr>'; }
+            else {
+                a3Reports.sort((a, b) => b.id - a.id).forEach(report => {
+                    const row = a3ListContainer.insertRow();
+                    row.innerHTML = `<td>${report.title || 'N/A'}</td><td>${report.lead || 'N/A'}</td><td>${report.date ? new Date(report.date + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td>${report.status || 'N/A'}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${report.id}">Editar</button><button class="btn ghost btn-delete" data-id="${report.id}">Excluir</button></div></td>`;
+                });
+            }
+            a3CountSpan.textContent = a3Reports.length;
+        };
+
+        const createFormLayout = (reportData = {}) => {
+            const leftCol = document.getElementById('a3-left-column');
+            const rightCol = document.getElementById('a3-right-column');
+            leftCol.innerHTML = ''; rightCol.innerHTML = '';
+
+            A3_SECTIONS.forEach((sectionInfo, index) => {
+                const sectionData = reportData.sections ? (reportData.sections[sectionInfo.id] || {}) : {};
+                
+                if (sectionInfo.id === 'followup') {
+                    const sectionEl = document.createElement('div');
+                    sectionEl.className = 'a3-section';
+                    sectionEl.dataset.id = sectionInfo.id;
+                    sectionEl.innerHTML = `<h4>${sectionInfo.title}</h4><div class="action-plan-container"></div><button type="button" class="btn ghost btn-add-action-plan" style="width:100%">+ Adicionar Ação</button>`;
+                    renderActionPlans(sectionEl.querySelector('.action-plan-container'), reportData.actionPlans);
+                    rightCol.appendChild(sectionEl);
+                } else {
+                    const clone = templates.section.content.cloneNode(true);
+                    const sectionEl = clone.querySelector('.a3-section');
+                    sectionEl.dataset.id = sectionInfo.id;
+                    sectionEl.querySelector('h4').textContent = sectionInfo.title;
+                    sectionEl.querySelector('textarea').value = sectionData.text || '';
+                    
+                    const attachmentsContainer = sectionEl.querySelector('.attachments-section');
+                    attachmentsContainer.appendChild(templates.attachment.content.cloneNode(true));
+                    if (sectionData.attachments) { sectionData.attachments.forEach(att => addAttachmentPreview(attachmentsContainer.querySelector('.attachment-preview-grid'), att)); }
+                    
+                    if (index < 4) { leftCol.appendChild(clone); } 
+                    else { rightCol.appendChild(clone); }
+                }
+            });
+        };
+        
+        // --- ATTACHMENT & ACTION PLAN LOGIC ---
+        const addAttachmentPreview = (grid, data) => { const item = document.createElement('div'); item.className = 'attachment-item'; item.dataset.fileName = data.name; item.dataset.fileData = data.data; item.dataset.fileType = data.type; item.innerHTML = `${data.type.startsWith('image/') ? `<img src="${data.data}" title="${data.name}">` : `<div class="file-icon" title="${data.name}"><span>📄</span>${data.name}</div>`}<button type="button" class="remove-attachment hidden-print">&times;</button>`; grid.appendChild(item); };
+        const handleFiles = (files, container) => { const grid = container.querySelector('.attachment-preview-grid'); for (const file of files) { if (file.size > 5 * 1024 * 1024) { showToast(`Arquivo "${file.name}" > 5MB.`, 'error'); continue; } const reader = new FileReader(); reader.onload = (e) => addAttachmentPreview(grid, { name: file.name, type: file.type, data: e.target.result }); reader.readAsDataURL(file); }};
+        const getAttachmentsFromContainer = (container) => { const atts = []; container.querySelectorAll('.attachment-item').forEach(item => atts.push({ name: item.dataset.fileName, type: item.dataset.fileType, data: item.dataset.fileData })); return atts; };
+        const renderActionPlans = (container, plans = []) => { container.innerHTML = ''; if (!plans) return; plans.forEach(plan => { const clone = templates.actionPlan.content.cloneNode(true); const block = clone.querySelector('.action-item-block'); block.querySelector('.action-input').value = plan.action || ''; block.querySelector('.responsible-input').value = plan.responsible || ''; block.querySelector('.status-input').value = plan.status || 'aberto'; block.querySelector('.start-date-input').value = plan.startDate || ''; block.querySelector('.end-date-input').value = plan.endDate || ''; container.appendChild(clone); }); };
+
+        // --- DATA GATHERING ---
+        const gatherFormData = () => {
+            const reportData = {
+                id: document.getElementById('a3-id').value ? parseInt(document.getElementById('a3-id').value) : Date.now(),
+                title: document.getElementById('a3-title').value,
+                lead: document.getElementById('a3-lead').value,
+                date: document.getElementById('a3-date').value,
+                status: 'Em Andamento',
+                sections: {},
+                actionPlans: []
+            };
+
+            document.querySelectorAll('.a3-section').forEach(sectionEl => {
+                const id = sectionEl.dataset.id;
+                if (id !== 'followup') {
+                    reportData.sections[id] = {
+                        text: sectionEl.querySelector('textarea').value,
+                        attachments: getAttachmentsFromContainer(sectionEl.querySelector('.attachments-section'))
+                    };
+                } else {
+                    sectionEl.querySelectorAll('.action-item-block').forEach(block => {
+                        reportData.actionPlans.push({ action: block.querySelector('.action-input').value, responsible: block.querySelector('.responsible-input').value, status: block.querySelector('.status-input').value, startDate: block.querySelector('.start-date-input').value, endDate: block.querySelector('.end-date-input').value });
+                    });
+                }
+            });
+            return reportData;
+        };
+        
+        // --- EVENT LISTENERS ---
+        btnNewA3.addEventListener('click', () => {
+            document.getElementById('a3-form').reset();
+            document.getElementById('a3-id').value = '';
+            document.getElementById('a3-date').value = new Date().toISOString().slice(0, 10);
+            createFormLayout();
+            showForm();
+        });
+
+        btnSaveA3.addEventListener('click', () => {
+            const reportData = gatherFormData();
+            const index = a3Reports.findIndex(r => r.id == reportData.id);
+            if (index > -1) { a3Reports[index] = reportData; } else { a3Reports.push(reportData); }
+            saveData(); showToast('Relatório A3 salvo com sucesso!', 'success'); showDashboard();
+        });
+
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if (target.classList.contains('btn-edit')) {
+                const report = a3Reports.find(r => r.id == target.dataset.id);
+                if (report) {
+                    document.getElementById('a3-form').reset();
+                    document.getElementById('a3-id').value = report.id;
+                    document.getElementById('a3-title').value = report.title || '';
+                    document.getElementById('a3-lead').value = report.lead || '';
+                    document.getElementById('a3-date').value = report.date || '';
+                    createFormLayout(report);
+                    showForm();
+                }
+            }
+            if (target.classList.contains('btn-delete')){ if(confirm('Tem certeza?')) { a3Reports = a3Reports.filter(r => r.id != target.dataset.id); saveData(); renderA3List(); } }
+            if (target.classList.contains('btn-add-action-plan')) { target.previousElementSibling.appendChild(templates.actionPlan.content.cloneNode(true)); }
+            if (target.classList.contains('remove-action-btn')) { target.closest('.action-item-block').remove(); }
+            if (target.classList.contains('attachment-drop-zone')) { target.previousElementSibling.click(); }
+            if (target.classList.contains('remove-attachment')) { target.closest('.attachment-item').remove(); }
+        });
+        main.addEventListener('change', e => { if (e.target.classList.contains('attachments-input')) { handleFiles(e.target.files, e.target.closest('.field, .attachments-section')); }});
+
+        // --- INITIALIZATION ---
+        const initApp = () => { 
+            loadData();
+            showDashboard();
+        };
+
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra um relatório para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(a3Reports, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`a3_reports_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){a3Reports=d;saveData();renderA3List();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPQS - Teste de Integração</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Inter, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #22d3ee;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #1f2937;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section h2 {
+            color: #a78bfa;
+            margin-top: 0;
+        }
+        
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .tool-item {
+            background: #0b1220;
+            border: 1px solid #243041;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .tool-item:hover {
+            border-color: #22d3ee;
+            transform: translateY(-2px);
+        }
+        
+        .tool-item.success {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .tool-item.error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .status {
+            font-size: 12px;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+        
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .pending { color: #f59e0b; }
+        
+        button {
+            background: linear-gradient(180deg, #0ea5e9, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+        }
+        
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: #0b1220;
+            border: 1px solid #243041;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #22d3ee;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EPQS - Teste de Integração das Ferramentas</h1>
+        
+        <div class="test-section">
+            <h2>Controles de Teste</h2>
+            <button onclick="testAllTools()">Testar Todas as Ferramentas</button>
+            <button onclick="testRandomTool()">Testar Ferramenta Aleatória</button>
+            <button onclick="clearResults()">Limpar Resultados</button>
+            <button onclick="exportResults()">Exportar Resultados</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Estatísticas</h2>
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTools">31</div>
+                    <div class="stat-label">Total de Ferramentas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="testedTools">0</div>
+                    <div class="stat-label">Testadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="successfulTools">0</div>
+                    <div class="stat-label">Sucesso</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="failedTools">0</div>
+                    <div class="stat-label">Falhas</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Ferramentas</h2>
+            <div class="tool-grid" id="toolGrid">
+                <!-- Tools will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Log de Testes</h2>
+            <div class="log" id="testLog"></div>
+        </div>
+    </div>
+
+    <script>
+        const tools = {
+            '5_porques': '5 Porquês',
+            '5s': 'Auditoria 5S',
+            '8d': 'Relatório 8D',
+            'apqp': 'APQP',
+            'cep': 'CEP e Capabilidade',
+            'controle_injecao': 'Controle de Injeção',
+            'cronoanalise': 'Cronoanálise MTM',
+            'DashboarddeIndicadores': 'Dashboard de Indicadores',
+            'diagrama-dispersao': 'Diagrama de Dispersão',
+            'dmaic': 'DMAIC',
+            'estamparia': 'Estamparia',
+            'fmea': 'FMEA',
+            'folha_verificacao': 'Folha de Verificação',
+            'GerenciadordeDashboards': 'Gerenciador de Dashboards',
+            'histograma': 'Histograma',
+            'ishikawa': 'Diagrama Ishikawa',
+            'kaizen': 'Kaizen',
+            'manutencao': 'Manutenção',
+            'mapeamento-de-processos': 'Mapeamento de Processos',
+            'masp': 'MASP',
+            'matriz-esforco-impacto': 'Matriz Esforço x Impacto',
+            'matriz-gut': 'Matriz GUT',
+            'msa': 'MSA',
+            'pareto': 'Diagrama de Pareto',
+            'planejamento': 'Planejamento',
+            'ppap': 'PPAP',
+            'relatorio-a3': 'Relatório A3',
+            'sucata': 'Controle de Sucata',
+            'swot': 'Análise SWOT',
+            'treinamento': 'Treinamento',
+            'vsm': 'VSM'
+        };
+
+        let testResults = {};
+        let testLog = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testLog.push({ timestamp, message, type });
+            
+            const logElement = document.getElementById('testLog');
+            const color = type === 'error' ? '#f00' : type === 'success' ? '#0f0' : '#0ff';
+            logElement.innerHTML += `<div style="color: ${color}">${logEntry}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStats() {
+            const tested = Object.keys(testResults).length;
+            const successful = Object.values(testResults).filter(r => r.success).length;
+            const failed = tested - successful;
+
+            document.getElementById('testedTools').textContent = tested;
+            document.getElementById('successfulTools').textContent = successful;
+            document.getElementById('failedTools').textContent = failed;
+        }
+
+        function populateToolGrid() {
+            const grid = document.getElementById('toolGrid');
+            grid.innerHTML = '';
+
+            Object.entries(tools).forEach(([key, name]) => {
+                const toolItem = document.createElement('div');
+                toolItem.className = 'tool-item';
+                toolItem.id = `tool-${key}`;
+                toolItem.onclick = () => testTool(key);
+                
+                toolItem.innerHTML = `
+                    <div><strong>${name}</strong></div>
+                    <div class="status pending" id="status-${key}">Não testado</div>
+                `;
+                
+                grid.appendChild(toolItem);
+            });
+        }
+
+        async function testTool(toolKey) {
+            log(`Testando ferramenta: ${tools[toolKey]}`);
+            
+            const toolItem = document.getElementById(`tool-${toolKey}`);
+            const statusElement = document.getElementById(`status-${toolKey}`);
+            
+            toolItem.className = 'tool-item';
+            statusElement.className = 'status pending';
+            statusElement.textContent = 'Testando...';
+
+            try {
+                // Test if file exists
+                const response = await fetch(`tools/${toolKey}.html`);
+                
+                if (response.ok) {
+                    // Test if content is valid HTML
+                    const content = await response.text();
+                    
+                    if (content.includes('<html') || content.includes('<HTML')) {
+                        testResults[toolKey] = {
+                            success: true,
+                            timestamp: Date.now(),
+                            size: content.length,
+                            hasScript: content.includes('<script'),
+                            hasStyle: content.includes('<style') || content.includes('.css'),
+                            title: content.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || 'Sem título'
+                        };
+                        
+                        toolItem.className = 'tool-item success';
+                        statusElement.className = 'status success';
+                        statusElement.textContent = 'Sucesso';
+                        
+                        log(`✓ ${tools[toolKey]} - OK (${Math.round(content.length/1024)}KB)`, 'success');
+                    } else {
+                        throw new Error('Conteúdo HTML inválido');
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                testResults[toolKey] = {
+                    success: false,
+                    timestamp: Date.now(),
+                    error: error.message
+                };
+                
+                toolItem.className = 'tool-item error';
+                statusElement.className = 'status error';
+                statusElement.textContent = 'Erro';
+                
+                log(`✗ ${tools[toolKey]} - ERRO: ${error.message}`, 'error');
+            }
+            
+            updateStats();
+        }
+
+        async function testAllTools() {
+            log('Iniciando teste de todas as ferramentas...');
+            
+            for (const toolKey of Object.keys(tools)) {
+                await testTool(toolKey);
+                // Small delay to avoid overwhelming the browser
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            log('Teste de todas as ferramentas concluído!', 'success');
+        }
+
+        function testRandomTool() {
+            const toolKeys = Object.keys(tools);
+            const randomKey = toolKeys[Math.floor(Math.random() * toolKeys.length)];
+            testTool(randomKey);
+        }
+
+        function clearResults() {
+            testResults = {};
+            testLog = [];
+            document.getElementById('testLog').innerHTML = '';
+            updateStats();
+            populateToolGrid();
+            log('Resultados limpos');
+        }
+
+        function exportResults() {
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                tools: tools,
+                results: testResults,
+                log: testLog,
+                stats: {
+                    total: Object.keys(tools).length,
+                    tested: Object.keys(testResults).length,
+                    successful: Object.values(testResults).filter(r => r.success).length,
+                    failed: Object.values(testResults).filter(r => !r.success).length
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+                type: 'application/json' 
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `epqs-integration-test-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log('Resultados exportados!', 'success');
+        }
+
+        // Initialize
+        populateToolGrid();
+        log('Sistema de teste inicializado');
+        log(`Total de ferramentas para testar: ${Object.keys(tools).length}`);
+    </script>
+</body>
+</html>

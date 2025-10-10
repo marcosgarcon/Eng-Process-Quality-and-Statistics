@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Dashboard de Indicadores de Sucata</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .kpi-card{background:var(--card);border-radius:var(--radius);padding:16px;text-align:center;}
+      .kpi-card h3{font-size:12px;color:var(--accent2);margin:0 0 8px 0;font-weight:normal;text-transform:uppercase;}
+      .kpi-card .kpi-value{font-size:2rem;font-weight:bold;color:var(--accent);}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .drop-zone { border: 2px dashed var(--muted); border-radius: var(--radius); padding: 40px; text-align: center; cursor: pointer; transition: .2s; }
+      .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: rgba(34,211,238,.08); }
+      .autocomplete-container { position: relative; }
+      .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 10; background: var(--panel); border: 1px solid var(--muted); border-radius: 10px; max-height: 200px; overflow-y: auto; margin-top: 4px; }
+      .autocomplete-item { padding: 10px 12px; cursor: pointer; font-size: 14px; text-align: left; }
+      .autocomplete-item:hover { background: var(--muted); }
+      .autocomplete-item.is-new { font-style: italic; color: var(--accent); }
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn{display:none!important;}main{padding:0;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label,p{color:black;}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title">
+            <h1>Eng Process & Quality</h1>
+            <p class="subtitle">Dashboard de Indicadores de Sucata</p>
+            <p class="dev-credit">Desenvolvido por Marcos Garçon</p>
+        </div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'data-entry-container')"><i class="ph-bold ph-list-plus"></i> Lançamentos</a>
+                <a class="tab-link" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-chart-bar"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'cadastros-container')"><i class="ph-bold ph-database"></i> Cadastros</a>
+            </div>
+        </div>
+        <div id="record-counter"><p>Total de Registros: <span id="log-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="data-entry-container" class="tab-content active">
+            <section>
+                <h4>Registrar Nova Ocorrência de Sucata</h4>
+                <form id="scrap-log-form" autocomplete="off">
+                    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                        <div class="field"><label for="log-data">Data</label><input type="date" id="log-data" required></div>
+                        <div class="field"><label for="log-turno">Turno</label><select id="log-turno"><option>1º</option><option>2º</option><option>3º</option><option>ADM</option></select></div>
+                        <div class="field autocomplete-container"><label for="log-centro">Centro de Custo</label><input type="text" id="log-centro"></div>
+                        <div class="field autocomplete-container"><label for="log-setor">Setor</label><input type="text" id="log-setor"></div>
+                        <div class="field autocomplete-container"><label for="log-material">Material / Peça</label><input type="text" id="log-material"></div>
+                        <div class="field autocomplete-container"><label for="log-motivo">Motivo do Refugo</label><input type="text" id="log-motivo"></div>
+                        <div class="field"><label for="log-quantidade">Quantidade</label><input type="number" id="log-quantidade" value="1" min="1" required></div>
+                        <div class="field"><label for="log-unidade">Unidade</label><select id="log-unidade"><option>Qtd</option><option>Kg</option><option>ML</option><option>Outro</option></select></div>
+                        <div class="field"><label for="log-valor-unitario">Valor Unitário (R$)</label><input type="number" step="0.01" id="log-valor-unitario" placeholder="Ex: 12.50"></div>
+                    </div>
+                    <div style="margin-top: 16px; display:flex; gap:10px; flex-wrap: wrap;">
+                        <button type="submit" class="btn primary">Adicionar Registro</button>
+                    </div>
+                </form>
+            </section>
+             <section>
+                <h4>Importar Dados em Massa</h4>
+                <div id="dropZone" class="drop-zone">
+                    <p>Arraste e solte o arquivo .xlsx ou .csv aqui ou clique para selecionar.</p>
+                    <input type="file" id="input-file" accept=".xlsx, .xls, .csv" class="hidden">
+                </div>
+                <div style="display:flex; justify-content: center; margin-top: 10px;">
+                    <button type="button" id="btn-download-template" class="btn ghost">Baixar Modelo de Importação</button>
+                </div>
+            </section>
+            <section>
+                <h4>Registros Recentes</h4>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table id="log-table">
+                        <thead><tr><th>Data</th><th>Turno</th><th>Setor</th><th>Material</th><th>Motivo</th><th>Qtd</th><th>Valor Total</th><th class="hidden-print">Ação</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div id="dashboard-container" class="tab-content hidden">
+            <section>
+                <h4>Filtros do Dashboard</h4>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                    <div class="field"><label for="filter-start">De</label><input type="date" id="filter-start"></div>
+                    <div class="field"><label for="filter-end">Até</label><input type="date" id="filter-end"></div>
+                    <div class="field"><label for="filter-sector">Setor</label><select id="filter-sector"></select></div>
+                    <div class="field"><label for="filter-shift">Turno</label><select id="filter-shift"><option value="">Todos</option><option>1º</option><option>2º</option><option>3º</option><option>ADM</option></select></div>
+                    <div class="field"><label for="filter-centro">Centro de Custo</label><select id="filter-centro"></select></div>
+                    <div class="field" style="justify-content: flex-end;">
+                        <button type="button" class="btn primary" id="btn-apply-filters">Aplicar</button>
+                        <button type="button" class="btn ghost" id="btn-clear-filters">Limpar</button>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <h4>Indicadores do Período</h4>
+                <div class="grid" id="kpi-container" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></div>
+            </section>
+            <section>
+                <h4>Gráfico de Pareto - Principais Motivos de Refugo (por Valor)</h4>
+                <div style="position:relative; min-height:400px; width:100%;">
+                    <canvas id="pareto-chart"></canvas>
+                </div>
+            </section>
+        </div>
+        
+        <div id="cadastros-container" class="tab-content hidden">
+            <section><h4>Cadastro de Setores</h4><table class="db-table" id="sector-db-table"><thead><tr><th>Nome do Setor</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-sector" placeholder="Nome do novo setor" style="flex-grow:1;"><button class="btn ghost" data-type="sector">Adicionar</button></div></section>
+            <section><h4>Cadastro de Centros de Custo</h4><table class="db-table" id="centro-db-table"><thead><tr><th>Nome do Centro de Custo</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-centro" placeholder="Nome do novo centro de custo" style="flex-grow:1;"><button class="btn ghost" data-type="centro">Adicionar</button></div></section>
+            <section><h4>Cadastro de Materiais/Peças</h4><table class="db-table" id="material-db-table"><thead><tr><th>Nome do Material/Peça</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-material" placeholder="Nome do novo material" style="flex-grow:1;"><button class="btn ghost" data-type="material">Adicionar</button></div></section>
+            <section><h4>Cadastro de Motivos de Refugo</h4><table class="db-table" id="motivo-db-table"><thead><tr><th>Nome do Motivo</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-motivo" placeholder="Nome do novo motivo" style="flex-grow:1;"><button class="btn ghost" data-type="motivo">Adicionar</button></div></section>
+        </div>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let scrapLog = [];
+        let sectorDatabase = [], centroDatabase = [], materialDatabase = [], motivoDatabase = [];
+        const DB_KEY = 'mg_scrap_dashboard_unified_v3';
+        let paretoChart = null;
+
+        const showToast = (message, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 4000);
+        };
+
+        const saveData = () => {
+            try {
+                const allData = { scrapLog, sectorDatabase, centroDatabase, materialDatabase, motivoDatabase };
+                localStorage.setItem(DB_KEY, JSON.stringify(allData));
+            } catch (e) {
+                showToast('Erro ao salvar.', 'error');
+            }
+        };
+
+        const loadData = () => {
+            const data = JSON.parse(localStorage.getItem(DB_KEY));
+            scrapLog = data?.scrapLog || [];
+            sectorDatabase = data?.sectorDatabase || ["Montagem", "Usinagem", "Pintura"];
+            centroDatabase = data?.centroDatabase || ["CC-1010", "CC-2050", "CC-3000"];
+            materialDatabase = data?.materialDatabase || ["PN-001 - Componente A", "PN-002 - Suporte B"];
+            motivoDatabase = data?.motivoDatabase || ["Risco", "Quebrado", "Fora de especificação"];
+        };
+
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            if (tabId === 'dashboard-container') {
+                populateFilterDropdowns();
+                applyFilters();
+            }
+        };
+
+        const excelDateToJSDate = (serial) => {
+            if (typeof serial !== 'number') return null;
+            const utc_days = Math.floor(serial - 25569);
+            const utc_value = utc_days * 86400;
+            const date_info = new Date(utc_value * 1000);
+            return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate() + 1);
+        };
+
+        const renderLogTable = (dataList = scrapLog) => {
+            const tbody = document.querySelector("#log-table tbody");
+            tbody.innerHTML = "";
+            [...dataList].sort((a,b) => b.id - a.id).slice(0, 100).forEach(d => {
+                const tr = document.createElement('tr');
+                const totalValue = (d.quantidade || 0) * (d.valorUnitario || 0);
+                tr.innerHTML = `
+                    <td>${new Date(d.data + 'T00:00:00').toLocaleDateString()}</td><td>${d.turno}</td><td>${d.setor}</td>
+                    <td>${d.material}</td><td>${d.motivo}</td><td>${d.quantidade} ${d.unidade}</td>
+                    <td>R$ ${totalValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="hidden-print"><button class="btn ghost btn-delete" data-id="${d.id}" style="padding:4px 8px;">Excluir</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('log-count').textContent = scrapLog.length;
+        };
+
+        const calculateAndRenderDashboard = (dataList) => {
+            const kpiContainer = document.getElementById('kpi-container');
+            kpiContainer.innerHTML = '';
+            
+            const totalQuantidade = dataList.reduce((acc, d) => acc + d.quantidade, 0);
+            const totalValor = dataList.reduce((acc, d) => acc + (d.quantidade * d.valorUnitario), 0);
+            
+            const topMotivoData = dataList.reduce((acc, d) => { acc[d.motivo] = (acc[d.motivo] || 0) + (d.quantidade * d.valorUnitario); return acc; }, {});
+            const topMotivo = Object.keys(topMotivoData).length > 0 ? Object.entries(topMotivoData).sort((a,b) => b[1] - a[1])[0][0] : '-';
+            
+            const topTurnoData = dataList.reduce((acc, d) => { acc[d.turno] = (acc[d.turno] || 0) + (d.quantidade * d.valorUnitario); return acc; }, {});
+            const topTurno = Object.keys(topTurnoData).length > 0 ? Object.entries(topTurnoData).sort((a,b) => b[1] - a[1])[0][0] + 'º Turno' : '-';
+
+            kpiContainer.innerHTML = `
+                <div class="kpi-card"><h3>Total Sucata (${dataList.reduce((acc,d) => d.unidade, 'Qtd')})</h3><p class="kpi-value">${totalQuantidade.toLocaleString('pt-BR')}</p></div>
+                <div class="kpi-card"><h3>Valor Total (R$)</h3><p class="kpi-value">R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p></div>
+                <div class="kpi-card"><h3>Principal Motivo</h3><p class="kpi-value" style="font-size: 1.5rem;">${topMotivo}</p></div>
+                <div class="kpi-card"><h3>Turno Mais Crítico</h3><p class="kpi-value">${topTurno}</p></div>
+            `;
+            
+            updateParetoChart(topMotivoData);
+        };
+        
+        const updateParetoChart = (motivoData) => {
+            const ctx = document.getElementById("pareto-chart").getContext('2d');
+            if (paretoChart) paretoChart.destroy();
+            
+            const sortedData = Object.entries(motivoData).sort((a,b) => b[1] - a[1]);
+            const totalValue = sortedData.reduce((sum, item) => sum + item[1], 0);
+            if (totalValue === 0) { ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height); return; }
+
+            let cumulativePercentage = 0;
+            const cumulativeValues = sortedData.map(item => {
+                cumulativePercentage += (item[1] / totalValue) * 100;
+                return cumulativePercentage;
+            });
+            
+            paretoChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedData.map(item => item[0]),
+                    datasets: [
+                        { label: 'Valor do Refugo (R$)', data: sortedData.map(item => item[1]), backgroundColor: 'rgba(34, 211, 238, 0.6)', yAxisID: 'y' },
+                        { type: 'line', label: '% Acumulado', data: cumulativeValues, borderColor: 'rgba(245, 158, 11, 1)', yAxisID: 'y1' }
+                    ]
+                },
+                options: { scales: { y: { position: 'left', title: {display: true, text: 'Valor (R$)'}, ticks: {color: 'var(--text)'} }, y1: { position: 'right', min: 0, max: 100, title: {display: true, text: '% Acumulado'}, grid: {drawOnChartArea: false}, ticks: {color: 'var(--text)'} }, x: { ticks: { color: 'var(--text)' } } }, plugins: { legend: { labels: { color: 'var(--text)' } } } }
+            });
+        };
+
+        const applyFilters = () => {
+            const startDate = document.getElementById("filter-start").value;
+            const endDate = document.getElementById("filter-end").value;
+            const sector = document.getElementById("filter-sector").value;
+            const shift = document.getElementById("filter-shift").value;
+            const centro = document.getElementById("filter-centro").value;
+
+            const filtered = scrapLog.filter(d => {
+                const date = new Date(d.data + 'T00:00:00');
+                return (!startDate || date >= new Date(startDate + 'T00:00:00')) &&
+                       (!endDate || date <= new Date(endDate + 'T23:59:59')) &&
+                       (!sector || d.setor === sector) &&
+                       (!shift || d.turno === shift) &&
+                       (!centro || d.centro === centro);
+            });
+            calculateAndRenderDashboard(filtered);
+        };
+        
+        const populateFilterDropdowns = () => {
+            const uniqueSectors = ["", ...new Set(scrapLog.map(item => item.setor))];
+            const uniqueCentros = ["", ...new Set(scrapLog.map(item => item.centro))];
+            const sectorSelect = document.getElementById('filter-sector');
+            const centroSelect = document.getElementById('filter-centro');
+            sectorSelect.innerHTML = uniqueSectors.map(s => `<option value="${s}">${s || 'Todos'}</option>`).join('');
+            centroSelect.innerHTML = uniqueCentros.map(c => `<option value="${c}">${c || 'Todos'}</option>`).join('');
+        };
+
+        const addEntry = () => {
+            const data = document.getElementById("log-data").value;
+            const quantidade = parseInt(document.getElementById("log-quantidade").value);
+            if (!data || isNaN(quantidade)) {
+                showToast("Data e Quantidade são obrigatórios.", "error");
+                return;
+            }
+            scrapLog.push({ 
+                id: Date.now(), data, 
+                turno: document.getElementById("log-turno").value,
+                centro: document.getElementById("log-centro").value.trim(),
+                setor: document.getElementById("log-setor").value.trim(),
+                material: document.getElementById("log-material").value.trim(),
+                motivo: document.getElementById("log-motivo").value.trim(),
+                quantidade: quantidade,
+                unidade: document.getElementById("log-unidade").value,
+                valorUnitario: parseFloat(document.getElementById("log-valor-unitario").value) || 0,
+            });
+            saveData();
+            renderLogTable(scrapLog);
+            document.getElementById('scrap-log-form').reset();
+            document.getElementById("log-data").valueAsDate = new Date();
+            showToast("Registro adicionado com sucesso!", "success");
+        };
+
+        const createAutocomplete = (inputId, dataArray) => {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const container = input.parentElement;
+            let list = container.querySelector('.autocomplete-list');
+            if (!list) { list = document.createElement('div'); list.className = 'autocomplete-list hidden'; container.appendChild(list); }
+            const renderList = (filter = '') => {
+                list.innerHTML = '';
+                const filterLower = filter.toLowerCase();
+                if (!filter) { list.classList.add('hidden'); return; }
+                const matches = dataArray.filter(item => item.toLowerCase().includes(filterLower));
+                matches.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'autocomplete-item';
+                    itemEl.textContent = item;
+                    itemEl.addEventListener('mousedown', () => { input.value = item; list.classList.add('hidden'); });
+                    list.appendChild(itemEl);
+                });
+                 if (!dataArray.some(item => item.toLowerCase() === filterLower)) {
+                    const newItemEl = document.createElement('div');
+                    newItemEl.className = 'autocomplete-item is-new';
+                    newItemEl.textContent = `+ Adicionar "${filter}"...`;
+                    newItemEl.addEventListener('mousedown', () => {
+                        dataArray.push(filter);
+                        input.value = filter;
+                        saveData();
+                        renderAllDbTables();
+                        list.classList.add('hidden');
+                    });
+                    list.appendChild(newItemEl);
+                }
+                list.classList.toggle('hidden', matches.length === 0 && !filter);
+            };
+            input.addEventListener('input', () => renderList(input.value));
+            input.addEventListener('focus', () => renderList(input.value));
+            input.addEventListener('blur', () => setTimeout(() => list.classList.add('hidden'), 200));
+        };
+        
+        const setupDbManagement = (dbArray, tableId, addBtn, inputId) => {
+            const tableBody = document.querySelector(`#${tableId} tbody`);
+            const render = () => {
+                if(!tableBody) return;
+                tableBody.innerHTML = '';
+                dbArray.forEach((item, index) => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `<td><input type="text" value="${item}" data-index="${index}"></td><td class="hidden-print"><button class="btn ghost btn-delete-db" data-index="${index}" style="padding:4px 8px;">Excluir</button></td>`;
+                });
+            };
+            if(tableBody){
+                tableBody.addEventListener('change', e => {
+                    if (e.target.tagName === 'INPUT') { dbArray[e.target.dataset.index] = e.target.value; saveData(); }
+                });
+                tableBody.addEventListener('click', e => {
+                    if (e.target.classList.contains('btn-delete-db')) { dbArray.splice(e.target.dataset.index, 1); saveData(); render(); }
+                });
+            }
+            document.querySelector(`button[data-type="${inputId}"]`).addEventListener('click', () => {
+                const input = document.getElementById(`new-${inputId}`);
+                if (input.value.trim()) { dbArray.push(input.value.trim()); saveData(); render(); input.value = ''; }
+            });
+            return render;
+        };
+
+        const handleFile = (file) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    const requiredCols = ['Data', 'Turno', 'Setor', 'Centro_Custo', 'Material', 'Motivo_Refugo', 'Quantidade', 'Unidade', 'Valor_Unitario'];
+                    if (json.length > 0 && !requiredCols.every(c => c in json[0])) { throw new Error(`Colunas ausentes! A planilha deve conter: ${requiredCols.join(', ')}`); }
+
+                    const newEntries = json.map(row => ({
+                        id: Date.now() + Math.random(),
+                        data: (row.Data instanceof Date ? row.Data : excelDateToJSDate(row.Data)).toISOString().slice(0,10),
+                        turno: String(row.Turno), setor: row.Setor, centro: row.Centro_Custo, material: row.Material,
+                        motivo: row.Motivo_Refugo, quantidade: parseInt(row.Quantidade) || 0,
+                        unidade: row.Unidade, valorUnitario: parseFloat(row.Valor_Unitario) || 0,
+                    }));
+                    scrapLog.push(...newEntries);
+                    saveData(); renderLogTable(); populateFilterDropdowns();
+                    showToast(`${newEntries.length} registros importados!`, 'success');
+                } catch (err) { showToast(err.message || 'Erro ao processar a planilha.', 'error'); }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // --- BINDING EVENTS ---
+        document.getElementById('scrap-log-form').addEventListener('submit', (e) => { e.preventDefault(); addEntry(); });
+        document.getElementById('log-table').addEventListener('click', (e) => { if (e.target.closest('.btn-delete')) { const idToDelete = parseInt(e.target.closest('.btn-delete').dataset.id); if (confirm('Tem certeza?')) { scrapLog = scrapLog.filter(d => d.id !== idToDelete); saveData(); renderLogTable(scrapLog); } } });
+        document.getElementById('btn-apply-filters').addEventListener('click', applyFilters);
+        document.getElementById('btn-clear-filters').addEventListener('click', () => { document.getElementById("filter-start").value = ""; document.getElementById("filter-end").value = ""; document.getElementById("filter-sector").value = ""; document.getElementById("filter-shift").value = ""; document.getElementById("filter-centro").value = ""; applyFilters(); });
+        const dropZone = document.getElementById('dropZone'); const inputFile = document.getElementById('input-file');
+        dropZone.addEventListener('click', () => inputFile.click()); inputFile.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        ['dragover', 'drop'].forEach(eventName => { dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); if (eventName === 'dragover') dropZone.classList.add('dragover'); if (eventName === 'drop') { dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); } }); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover')); });
+        document.getElementById('btn-download-template').addEventListener('click', () => { const headers = "Data,Turno,Setor,Centro_Custo,Material,Motivo_Refugo,Quantidade,Unidade,Valor_Unitario"; const exampleRow = "45625,1,Montagem,CC-1020,PN-123,Risco,5,Qtd,12.50"; const csv = "data:text/csv;charset=utf-8," + [headers, exampleRow].join('\n'); const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "modelo_importacao_sucata.csv"; link.click(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify({ scrapLog, sectorDatabase, centroDatabase, materialDatabase, motivoDatabase }, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`sucata_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);scrapLog=d.scrapLog||[];sectorDatabase=d.sectorDatabase||[];centroDatabase=d.centroDatabase||[];materialDatabase=d.materialDatabase||[];motivoDatabase=d.motivoDatabase||[];saveData();init();}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if(confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 1500); } });
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { openTab({currentTarget: document.querySelector('.menu a[onclick*="dashboard-container"]')}, 'dashboard-container'); setTimeout(() => window.print(), 200); });
+        
+        // --- INITIALIZATION ---
+        const init = () => {
+            loadData();
+            document.getElementById("log-data").valueAsDate = new Date();
+            renderLogTable(scrapLog);
+            populateFilterDropdowns();
+            applyFilters();
+            
+            const renderSectors = setupDbManagement(sectorDatabase, document.querySelector('#sector-db-table tbody'), document.querySelector('button[data-type="sector"]'), 'sector');
+            const renderCentros = setupDbManagement(centroDatabase, document.querySelector('#centro-db-table tbody'), document.querySelector('button[data-type="centro"]'), 'centro');
+            const renderMaterials = setupDbManagement(materialDatabase, document.querySelector('#material-db-table tbody'), document.querySelector('button[data-type="material"]'), 'material');
+            const renderMotivos = setupDbManagement(motivoDatabase, document.querySelector('#motivo-db-table tbody'), document.querySelector('button[data-type="motivo"]'), 'motivo');
+
+            window.renderAllDbTables = () => { renderSectors(); renderCentros(); renderMaterials(); renderMotivos(); };
+            renderAllDbTables();
+
+            createAutocomplete('log-setor', sectorDatabase);
+            createAutocomplete('log-centro', centroDatabase);
+            createAutocomplete('log-material', materialDatabase);
+            createAutocomplete('log-motivo', motivoDatabase);
+        };
+        init();
+    });
+    </script>
+</body>
+</html>

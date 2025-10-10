@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Matriz de Priorização GUT</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      table{width:100%;border-collapse:collapse;} th, td{padding:8px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;} td input, td select{padding:6px 8px;font-size:13px; min-height: auto; width:100%;}
+      .form-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap;}.form-tab{flex:1;padding:10px;background:var(--muted);border:1px solid #243041;border-radius:8px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;}.form-tab.active{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent;}
+      .form-tab-content{padding-top:15px;border-top:1px solid var(--muted);}
+      .action-item-block{padding:12px;border:1px solid var(--muted);border-radius:12px;background:var(--card);position:relative;margin-top:10px;}
+      .remove-action-btn, .remove-problem-btn{background:none;border:none;color:#fca5a5;font-size:1.5rem;cursor:pointer; padding:0; box-shadow:none;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}main{padding:0;} header,aside,.hidden-print,.btn,.form-tabs,.remove-action-btn,.remove-problem-btn{display:none !important;} section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black}}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Matriz de Priorização GUT</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Matrizes GUT: <span id="gut-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Matrizes GUT Salvas</h2><button id="btn-new-gut" class="btn primary">+ Nova Matriz</button></div>
+                <table id="gut-list-table">
+                    <thead><tr><th>Título da Análise</th><th>Responsável</th><th>Data</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <form id="gut-form">
+                <input type="hidden" id="gut-id">
+                <section>
+                    <h4>Informações da Análise</h4>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                       <div class="field"><label for="gut-title">Título da Análise</label><input type="text" id="gut-title" required placeholder="Ex: Prioridades de Melhoria - Linha 5"></div>
+                       <div class="field"><label for="gut-lead">Responsável</label><input type="text" id="gut-lead"></div>
+                       <div class="field"><label for="gut-date">Data</label><input type="date" id="gut-date"></div>
+                    </div>
+                </section>
+                <nav class="form-tabs">
+                    <div class="form-tab active" data-tab="gut-matrix">1. Matriz GUT</div>
+                    <div class="form-tab" data-tab="gut-chart">2. Gráfico de Prioridades</div>
+                    <div class="form-tab" data-tab="action-plan">3. Plano de Ação</div>
+                </nav>
+                <div id="gut-matrix" class="form-tab-content">
+                    <section>
+                        <table id="gut-table">
+                            <thead><tr><th>Problema a ser Analisado</th><th>Gravidade</th><th>Urgência</th><th>Tendência</th><th>Score</th><th class="hidden-print"></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" id="btn-add-problem" class="btn ghost">+ Adicionar Problema</button>
+                            <button type="button" id="btn-sort-problems" class="btn ghost" style="margin-left:auto">Ordenar por Prioridade</button>
+                        </div>
+                    </section>
+                </div>
+                <div id="gut-chart" class="form-tab-content hidden">
+                    <section><canvas id="priority-chart"></canvas></section>
+                </div>
+                <div id="action-plan" class="form-tab-content hidden">
+                    <section>
+                        <div id="action-plan-container"></div>
+                        <button type="button" class="btn ghost btn-add-action-plan" style="width:100%">+ Adicionar Ação</button>
+                    </section>
+                </div>
+                 <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-gut" class="btn primary">Salvar Matriz</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Matriz de Priorização GUT</h2>
+                <p>Esta ferramenta transforma a Matriz GUT de uma simples tabela de classificação em um sistema completo de priorização e ação estratégica.</p>
+                <h3>Fluxo de Trabalho</h3>
+                <p>A ferramenta é dividida em 3 etapas claras, acessíveis pelas abas no topo do formulário:</p>
+                <ol>
+                    <li><strong>Matriz GUT:</strong> Liste e pontue os problemas.</li>
+                    <li><strong>Gráfico de Prioridades:</strong> Visualize os resultados para identificar o que é mais crítico.</li>
+                    <li><strong>Plano de Ação:</strong> Crie tarefas para resolver os problemas priorizados.</li>
+                </ol>
+                <h3>1. Aba "Matriz GUT"</h3>
+                <ul>
+                    <li>Use o botão <code>+ Adicionar Problema</code> para criar novas linhas na tabela.</li>
+                    <li><strong>Problema:</strong> Descreva de forma clara e concisa cada item a ser analisado.</li>
+                    <li><strong>G, U, T:</strong> Para cada problema, selecione uma nota de 1 a 5 para Gravidade, Urgência e Tendência. Use a seguinte referência:
+                        <ul>
+                            <li><strong>5:</strong> Extremamente Grave / Urgente / Piora Rapidamente</li>
+                            <li><strong>4:</strong> Muito Grave / Urgente / Piora em Curto Prazo</li>
+                            <li><strong>3:</strong> Grave / Urgente / Piora</li>
+                            <li><strong>2:</strong> Pouco Grave / Urgente / Piora em Longo Prazo</li>
+                            <li><strong>1:</strong> Sem Gravidade / Pode Esperar / Não Piora</li>
+                        </ul>
+                    </li>
+                    <li>O <strong>Score</strong> é calculado automaticamente (G x U x T).</li>
+                    <li>Clique em <code>Ordenar por Prioridade</code> para reorganizar a tabela, colocando os problemas com maior score no topo.</li>
+                </ul>
+                <h3>2. Aba "Gráfico de Prioridades"</h3>
+                <p>Esta aba mostra um gráfico de barras com os problemas já ordenados por prioridade. É uma forma visual e rápida de entender e apresentar quais itens exigem atenção imediata.</p>
+                <h3>3. Aba "Plano de Ação"</h3>
+                <p>Após identificar os problemas mais críticos, esta aba permite que você crie um plano de ação para resolvê-los. Use o botão <code>+ Adicionar Ação</code> para criar tarefas, definir responsáveis, prazos e acompanhar o status de cada uma.</p>
+                <h3>Funcionalidades Gerais</h3>
+                <p>A ferramenta conta com um <strong>Dashboard</strong> para gerenciar todas as suas matrizes, e as funções de <strong>Backup</strong>, <strong>Restauração</strong> e <strong>Exportação para PDF</strong> no cabeçalho.</p>
+            </section>
+        </div>
+    </main>
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 12px;">
+            <div class="field" style="grid-column:span 12;"><label>Ação</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column:span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+        </div></div>
+    </template>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE & DB ---
+        let gutMatrices = [];
+        const DB_KEY = 'mg_gut_matrices_v1';
+        let priorityChart = null;
+
+        // --- DOM ELEMENTS ---
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const btnNewGut = document.getElementById('btn-new-gut');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveGut = document.getElementById('btn-save-gut');
+        const gutListContainer = document.querySelector('#gut-list-table tbody');
+        const gutCountSpan = document.getElementById('gut-count');
+        const actionPlanFormTemplate = document.getElementById('action-plan-form-template');
+        const gutTableBody = document.querySelector('#gut-table tbody');
+
+        // --- HELPERS & NAVIGATION ---
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(gutMatrices)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { gutMatrices = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            if (tabId !== 'form-container') document.getElementById('form-container').classList.add('hidden');
+        };
+        const showForm = () => { document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); formContainer.classList.remove('hidden'); document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); };
+        const showDashboard = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            dashboardContainer.classList.remove('hidden');
+            const dashboardLink = document.querySelector('.menu a[onclick*="dashboard-container"]');
+            if (dashboardLink) { document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); dashboardLink.classList.add('active'); }
+            renderGutList();
+        };
+
+        // --- RENDER & UI FUNCTIONS ---
+        const renderGutList = () => {
+            gutListContainer.innerHTML = '';
+            if (gutMatrices.length === 0) { gutListContainer.innerHTML = '<tr><td colspan="4">Nenhuma matriz salva.</td></tr>';}
+            else {
+                gutMatrices.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(matrix => {
+                    const row = gutListContainer.insertRow();
+                    row.innerHTML = `<td>${matrix.title || 'N/A'}</td><td>${matrix.lead || 'N/A'}</td><td>${matrix.date ? new Date(matrix.date + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${matrix.id}">Editar</button><button class="btn ghost btn-delete" data-id="${matrix.id}">Excluir</button></div></td>`;
+                });
+            }
+            gutCountSpan.textContent = gutMatrices.length;
+        };
+        
+        const createProblemRow = (problem = {}) => {
+            const row = document.createElement('tr');
+            row.dataset.id = problem.id || `p${Date.now()}${Math.random()}`;
+            const selectHTML = (name, value = 1) => {
+                let options = '';
+                const labels = ["1 - Sem Gravidade/Pode Esperar", "2 - Pouco Grave/Urgente", "3 - Grave/Urgente", "4 - Muito Grave/Urgente", "5 - Extremamente Grave/Urgente"];
+                for(let i = 1; i <= 5; i++) {
+                    options += `<option value="${i}" ${value == i ? 'selected' : ''}>${labels[i-1]}</option>`;
+                }
+                return `<select class="gut-value" data-type="${name}">${options}</select>`;
+            };
+            row.innerHTML = `
+                <td><input type="text" class="problem-text" placeholder="Descreva o problema..." value="${problem.text || ''}"></td>
+                <td>${selectHTML('g', problem.g)}</td><td>${selectHTML('u', problem.u)}</td><td>${selectHTML('t', problem.t)}</td>
+                <td class="score" style="font-weight:bold; text-align:center;">${problem.score || 1}</td>
+                <td class="hidden-print" style="text-align:center;"><button type="button" class="remove-problem-btn">&times;</button></td>
+            `;
+            return row;
+        };
+
+        const updateScore = (row) => {
+            const g = parseInt(row.querySelector('[data-type="g"]').value);
+            const u = parseInt(row.querySelector('[data-type="u"]').value);
+            const t = parseInt(row.querySelector('[data-type="t"]').value);
+            row.querySelector('.score').textContent = g * u * t;
+        };
+
+        const updateChart = () => {
+            if (priorityChart) { priorityChart.destroy(); }
+            const problems = Array.from(gutTableBody.querySelectorAll('tr')).map(row => ({
+                text: row.querySelector('.problem-text').value || 'Problema não descrito',
+                score: parseInt(row.querySelector('.score').textContent)
+            })).sort((a, b) => b.score - a.score);
+
+            const ctx = document.getElementById('priority-chart').getContext('2d');
+            priorityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: problems.map(p => p.text),
+                    datasets: [{
+                        label: 'Score GUT',
+                        data: problems.map(p => p.score),
+                        backgroundColor: 'rgba(167, 139, 250, 0.6)',
+                        borderColor: 'rgba(167, 139, 250, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { title: { display: true, text: 'Gráfico de Prioridades (Score GUT)', color: 'var(--text)' }, legend: { display: false } },
+                    scales: { x: { ticks: { color: 'var(--text)' } }, y: { ticks: { color: 'var(--text)' } } }
+                }
+            });
+        };
+        
+        const populateForm = (matrix = {}) => {
+            document.getElementById('gut-id').value = matrix.id || '';
+            document.getElementById('gut-title').value = matrix.title || '';
+            document.getElementById('gut-date').value = matrix.date || new Date().toISOString().slice(0, 10);
+            document.getElementById('gut-lead').value = matrix.lead || '';
+            
+            gutTableBody.innerHTML = '';
+            (matrix.problems || [{}]).forEach(p => gutTableBody.appendChild(createProblemRow(p)));
+            
+            renderActionPlans(matrix.actionPlans);
+            updateChart();
+        };
+
+        const renderActionPlans = (plans = []) => {
+            const container = document.getElementById('action-plan-container');
+            container.innerHTML = '';
+            if (!plans) return;
+            plans.forEach(plan => {
+                const clone = actionPlanFormTemplate.content.cloneNode(true);
+                const block = clone.querySelector('.action-item-block');
+                block.querySelector('.action-input').value = plan.action || '';
+                block.querySelector('.responsible-input').value = plan.responsible || '';
+                block.querySelector('.status-input').value = plan.status || 'aberto';
+                block.querySelector('.start-date-input').value = plan.startDate || '';
+                block.querySelector('.end-date-input').value = plan.endDate || '';
+                container.appendChild(clone);
+            });
+        };
+
+        // --- DATA GATHERING ---
+        const gatherFormData = () => {
+            const matrixData = {
+                id: document.getElementById('gut-id').value ? parseInt(document.getElementById('gut-id').value) : Date.now(),
+                title: document.getElementById('gut-title').value,
+                date: document.getElementById('gut-date').value,
+                lead: document.getElementById('gut-lead').value,
+                problems: [],
+                actionPlans: []
+            };
+            gutTableBody.querySelectorAll('tr').forEach(row => {
+                matrixData.problems.push({
+                    id: row.dataset.id,
+                    text: row.querySelector('.problem-text').value,
+                    g: parseInt(row.querySelector('[data-type="g"]').value),
+                    u: parseInt(row.querySelector('[data-type="u"]').value),
+                    t: parseInt(row.querySelector('[data-type="t"]').value),
+                    score: parseInt(row.querySelector('.score').textContent)
+                });
+            });
+            document.querySelectorAll('#action-plan-container .action-item-block').forEach(block => {
+                 matrixData.actionPlans.push({
+                    action: block.querySelector('.action-input').value,
+                    responsible: block.querySelector('.responsible-input').value,
+                    status: block.querySelector('.status-input').value,
+                    startDate: block.querySelector('.start-date-input').value,
+                    endDate: block.querySelector('.end-date-input').value,
+                });
+            });
+            return matrixData;
+        };
+        
+        // --- EVENT LISTENERS ---
+        btnNewGut.addEventListener('click', () => {
+            document.getElementById('gut-form').reset();
+            document.getElementById('gut-id').value = '';
+            populateForm({});
+            showForm();
+        });
+
+        btnSaveGut.addEventListener('click', () => {
+            const matrixData = gatherFormData();
+            const index = gutMatrices.findIndex(m => m.id == matrixData.id);
+            if (index > -1) { gutMatrices[index] = matrixData; } else { gutMatrices.push(matrixData); }
+            saveData(); showToast('Matriz salva com sucesso!', 'success'); showDashboard();
+        });
+
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if (target.closest('.form-tab')) {
+                const tabButton = target.closest('.form-tab');
+                const tabId = tabButton.dataset.tab;
+                document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+                tabButton.classList.add('active');
+                document.querySelectorAll('.form-tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById(tabId).classList.remove('hidden');
+                if (tabId === 'gut-chart') updateChart();
+            }
+            if (target.id === 'btn-add-problem') {
+                gutTableBody.appendChild(createProblemRow());
+            }
+            if (target.id === 'btn-sort-problems') {
+                const rows = Array.from(gutTableBody.querySelectorAll('tr'));
+                rows.sort((a, b) => parseInt(b.querySelector('.score').textContent) - parseInt(a.querySelector('.score').textContent));
+                rows.forEach(row => gutTableBody.appendChild(row));
+                updateChart();
+            }
+            if (target.classList.contains('remove-problem-btn')) {
+                target.closest('tr').remove();
+                updateChart();
+            }
+            if (target.classList.contains('btn-add-action-plan')) {
+                 document.getElementById('action-plan-container').appendChild(actionPlanFormTemplate.content.cloneNode(true));
+            }
+            if (target.classList.contains('remove-action-btn')) {
+                 target.closest('.action-item-block').remove();
+            }
+            if (target.classList.contains('btn-edit')) {
+                const matrix = gutMatrices.find(m => m.id == target.dataset.id);
+                if (matrix) { populateForm(matrix); showForm(); }
+            }
+            if (target.classList.contains('btn-delete')){ 
+                if(confirm('Tem certeza que deseja excluir esta matriz?')) { 
+                    gutMatrices = gutMatrices.filter(m => m.id != target.dataset.id); 
+                    saveData(); renderGutList(); 
+                }
+            }
+        });
+
+        gutTableBody.addEventListener('change', e => {
+            if (e.target.classList.contains('gut-value')) {
+                updateScore(e.target.closest('tr'));
+            }
+        });
+        
+        // --- INITIALIZATION ---
+        const initApp = () => {
+            loadData();
+            showDashboard();
+        };
+        
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra uma matriz para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(gutMatrices, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`gut_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){gutMatrices=d;saveData();renderGutList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "eng-process-quality-system",
+  "version": "1.0.0",
+  "description": "**Sistema Integrado de Ferramentas de Qualidade e Estatística**   *Desenvolvido por Marcos Garçon*",
+  "main": "app-backup.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "jsdom"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0"
+  }
+}

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Gerenciador de Projetos DMAIC</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      textarea{min-height:100px;resize:vertical}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;} td input, td textarea{width:100%;font-size:13px;}
+      .dmaic-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap;}.dmaic-tab{flex:1;padding:10px;background:var(--muted);border:1px solid #243041;border-radius:8px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;}.dmaic-tab.active{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent;}
+      .dmaic-tab-content{padding-top:15px;border-top:1px solid var(--muted);}
+      .action-item-block{padding:12px;border:1px solid var(--muted);border-radius:12px;background:var(--card);position:relative;margin-top:10px;}
+      .remove-action-btn{position:absolute;top:5px;right:5px;background:none;border:none;color:#fca5a5;font-size:1.5rem;cursor:pointer;}
+      .attachments-section{margin-top:15px;padding-top:15px;border-top:1px dashed var(--muted);}.attachment-drop-zone{padding:10px;font-size:12px;margin-top:5px;border:2px dashed var(--muted);text-align:center;cursor:pointer;border-radius:8px;}.attachment-preview-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}.attachment-item{width:80px;height:80px;position:relative;}.attachment-item img, .attachment-item .file-icon{width:100%;height:100%;object-fit:cover;border-radius:8px;}.attachment-item .file-icon{background:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:11px;padding:5px;overflow:hidden;word-break:break-all;}.attachment-item .remove-attachment{position:absolute;top:-5px;right:-5px;background:var(--bad);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn,.dmaic-tabs,.remove-action-btn,.remove-attachment{display:none !important;}.dmaic-tab-content{display:block !important;border-top:none;padding-top:0;}main{padding:0;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Gerenciador de Projetos DMAIC</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Projetos DMAIC: <span id="dmaic-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Projetos de Melhoria (DMAIC)</h2><button id="btn-new-dmaic" class="btn primary">+ Novo Projeto</button></div>
+                <table id="dmaic-list-table">
+                    <thead><tr><th>Título do Projeto</th><th>Líder</th><th>Métrica</th><th>Baseline</th><th>Meta</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <section>
+                <form id="dmaic-form">
+                    <input type="hidden" id="dmaic-id">
+                    <section>
+                        <h4>Project Charter</h4>
+                        <div class="grid">
+                           <div class="field" style="grid-column:span 12;"><label for="project-title">Título do Projeto</label><input type="text" id="project-title" required></div>
+                           <div class="field" style="grid-column:span 6;"><label for="project-champion">Champion / Sponsor</label><input type="text" id="project-champion"></div>
+                           <div class="field" style="grid-column:span 6;"><label for="project-lead">Black Belt / Líder do Projeto</label><input type="text" id="project-lead"></div>
+                           <div class="field" style="grid-column:span 12;"><label for="project-team">Equipe (nomes separados por vírgula)</label><input type="text" id="project-team"></div>
+                        </div>
+                    </section>
+                    <nav class="dmaic-tabs"></nav>
+                    <div id="dmaic-steps-container"></div>
+                    <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                        <button type="button" id="btn-save-dmaic" class="btn primary">Salvar Projeto</button>
+                        <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Gerenciador de Projetos DMAIC</h2>
+                <p>Esta ferramenta é um gerenciador completo para seus projetos de melhoria contínua e Seis Sigma, estruturada na metodologia DMAIC.</p>
+                <h3>Tela Principal (Dashboard)</h3>
+                <p>Aqui você tem uma visão geral de todos os projetos em andamento ou concluídos.</p>
+                <ul>
+                    <li>Clique em <code>+ Novo Projeto</code> para iniciar um novo DMAIC.</li>
+                    <li>A tabela mostra informações chave como a métrica principal do projeto, seu valor inicial (Baseline) e a meta.</li>
+                    <li>Use os botões <code>Editar</code> ou <code>Excluir</code> para gerenciar projetos existentes.</li>
+                </ul>
+                <h3>Gerenciando um Projeto DMAIC</h3>
+                <p>Ao criar ou editar um projeto, você acessa a tela de gerenciamento detalhado.</p>
+                <h4>Project Charter</h4>
+                <p>A primeira seção é o Contrato do Projeto. Preencha as informações essenciais que definem e autorizam seu projeto.</p>
+                <h4>Navegando pelas Fases (Abas)</h4>
+                <p>As 5 fases do DMAIC são organizadas em abas para facilitar a navegação. Clique em cada uma para acessar seu conteúdo.</p>
+                <ul>
+                    <li><strong>D (Define):</strong> Detalhe o problema, o impacto (Business Case) e a meta (SMART). Preencha a seção <strong>Métrica Primária</strong> para definir como o sucesso será medido. A tabela <strong>SIPOC</strong> ajuda a mapear o escopo do processo.</li>
+                    <li><strong>M (Measure):</strong> Descreva seu plano de coleta de dados e anexe evidências como estudos de MSA, histogramas e análises de capabilidade.</li>
+                    <li><strong>A (Analyze):</strong> Documente sua análise de causa raiz e anexe ferramentas como Diagramas de Ishikawa, 5 Porquês ou testes de hipóteses.</li>
+                    <li><strong>I (Improve):</strong> Esta fase contém o <strong>Plano de Ação</strong>. Clique em <code>+ Adicionar Ação</code> para listar cada solução proposta, definir responsáveis, prazos e acompanhar o status.</li>
+                    <li><strong>C (Control):</strong> Descreva o plano para sustentar as melhorias. Anexe procedimentos atualizados, planos de controle (CEP) e documente os <strong>Ganhos Financeiros</strong> e as <strong>Lições Aprendidas</strong>.</li>
+                </ul>
+                <h4>Anexos</h4>
+                <p>Em todas as 5 fases, você encontrará uma seção de anexos. Use-a para carregar e armazenar todos os documentos e evidências relevantes para aquela etapa, mantendo seu projeto 100% documentado e centralizado.</p>
+                <h3>Funcionalidades Gerais</h3>
+                <ul>
+                    <li><strong>Salvar Projeto:</strong> Suas alterações são salvas ao clicar neste botão.</li>
+                    <li><strong>Backup e Restauração:</strong> Use os botões no cabeçalho para baixar um arquivo <code>.json</code> com todos os seus projetos ou restaurar a partir de um backup.</li>
+                    <li><strong>Exportar PDF:</strong> Com um projeto aberto, use este botão para gerar uma versão para impressão ou para salvar como PDF.</li>
+                </ul>
+                <p><strong>Aviso Importante:</strong> Lembre-se que todos os dados, incluindo os anexos, são salvos localmente no seu navegador. Limpar o cache pode apagar seus projetos. Use a função de backup com frequência.</p>
+            </section>
+        </div>
+    </main>
+    <template id="d-template">
+        <div class="field"><label for="d-problem">Declaração do Problema</label><textarea id="d-problem"></textarea></div>
+        <div class="field"><label for="d-business-case">Business Case (Impacto no Negócio)</label><textarea id="d-business-case"></textarea></div>
+        <div class="field"><label for="d-goal">Meta do Projeto (SMART)</label><textarea id="d-goal"></textarea></div>
+        <h4>Métrica Primária</h4>
+        <div class="grid">
+            <div class="field" style="grid-column:span 12"><label for="m-primary-metric">Descrição da Métrica (Ex: Peças defeituosas por turno)</label><input id="m-primary-metric"></div>
+            <div class="field" style="grid-column:span 4"><label for="m-baseline">Baseline (Valor Inicial)</label><input id="m-baseline" type="number" step="any"></div>
+            <div class="field" style="grid-column:span 4"><label for="m-target">Meta</label><input id="m-target" type="number" step="any"></div>
+            <div class="field" style="grid-column:span 4"><label for="m-after">Resultado Final</label><input id="m-after" type="number" step="any"></div>
+        </div>
+        <h4>SIPOC</h4>
+        <table><thead><tr><th>Suppliers (Fornecedores)</th><th>Inputs (Entradas)</th><th>Process (Processo)</th><th>Outputs (Saídas)</th><th>Customers (Clientes)</th></tr></thead>
+        <tbody><tr><td><textarea rows="3"></textarea></td><td><textarea rows="3"></textarea></td><td><textarea rows="3"></textarea></td><td><textarea rows="3"></textarea></td><td><textarea rows="3"></textarea></td></tr></tbody></table>
+    </template>
+    <template id="c-template">
+        <div class="field"><label for="c-control-plan">Plano de Controle e Padronização (CEP, Poka-Yoke, Procedimentos)</label><textarea id="c-control-plan"></textarea></div>
+        <div class="field"><label for="c-financial-gains">Ganhos Financeiros Realizados</label><textarea id="c-financial-gains" rows="3"></textarea></div>
+        <div class="field"><label for="c-lessons-learned">Lições Aprendidas</label><textarea id="c-lessons-learned" rows="3"></textarea></div>
+    </template>
+    <template id="generic-template"><div class="field"><label></label><textarea></textarea></div></template>
+    <template id="attachment-ui-template"><div class="field"><input type="file" class="attachments-input hidden" multiple><div class="attachment-drop-zone">Arraste ou clique para adicionar arquivos</div><div class="attachment-preview-grid"></div></div></template>
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid">
+            <div class="field" style="grid-column: span 12;"><label>Ação / Solução</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column: span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column: span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column: span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column: span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+        </div></div>
+    </template>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let dmaicProjects = [];
+        const DB_KEY = 'mg_dmaic_projects_v1';
+        const DMAIC_PHASES = ["Define", "Measure", "Analyze", "Improve", "Control"];
+
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const form = document.getElementById('dmaic-form');
+        const btnNewDmaic = document.getElementById('btn-new-dmaic');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveDmaic = document.getElementById('btn-save-dmaic');
+        const dmaicListContainer = document.querySelector('#dmaic-list-table tbody');
+        const dmaicCountSpan = document.getElementById('dmaic-count');
+        const dmaicTabsContainer = document.querySelector('.dmaic-tabs');
+        const dmaicStepsContainer = document.getElementById('dmaic-steps-container');
+        const templates = {d: document.getElementById('d-template'), c: document.getElementById('c-template'), generic: document.getElementById('generic-template'), attachment: document.getElementById('attachment-ui-template'), actionPlan: document.getElementById('action-plan-form-template')};
+
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(dmaicProjects)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { dmaicProjects = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        const showForm = () => { dashboardContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); };
+        const showDashboard = () => { form.reset(); formContainer.classList.add('hidden'); dashboardContainer.classList.remove('hidden'); renderDmaicList(); };
+        
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+        };
+
+        const renderDmaicList = () => {
+            dmaicListContainer.innerHTML = '';
+            if (dmaicProjects.length === 0) { dmaicListContainer.innerHTML = '<tr><td colspan="6">Nenhum projeto salvo.</td></tr>'; }
+            else {
+                dmaicProjects.sort((a, b) => b.id - a.id).forEach(proj => {
+                    const row = dmaicListContainer.insertRow();
+                    row.innerHTML = `<td>${proj.projectTitle || 'N/A'}</td><td>${proj.projectLead || 'N/A'}</td><td>${proj.metrics?.primaryMetric || 'N/A'}</td><td>${proj.metrics?.baseline || 'N/A'}</td><td>${proj.metrics?.target || 'N/A'}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${proj.id}">Editar</button><button class="btn ghost btn-delete" data-id="${proj.id}">Excluir</button></div></td>`;
+                });
+            }
+            dmaicCountSpan.textContent = dmaicProjects.length;
+        };
+
+        const createFormTabsAndSteps = (projectData = {}) => {
+            dmaicTabsContainer.innerHTML = ''; dmaicStepsContainer.innerHTML = '';
+            DMAIC_PHASES.forEach((name, index) => {
+                const tab = document.createElement('div'); tab.className = 'dmaic-tab'; tab.textContent = name; tab.dataset.index = index;
+                if (index === 0) tab.classList.add('active');
+                dmaicTabsContainer.appendChild(tab);
+                const contentDiv = document.createElement('div'); contentDiv.className = 'dmaic-tab-content'; contentDiv.dataset.index = index;
+                if (index !== 0) contentDiv.classList.add('hidden');
+                const phaseKey = name.toLowerCase();
+                const phaseData = projectData.phases ? (projectData.phases[phaseKey] || {}) : {};
+
+                if (name === "Define") {
+                    contentDiv.appendChild(templates.d.content.cloneNode(true));
+                    contentDiv.querySelector('#d-problem').value = phaseData.problem || '';
+                    contentDiv.querySelector('#d-business-case').value = phaseData.businessCase || '';
+                    contentDiv.querySelector('#d-goal').value = phaseData.goal || '';
+                    contentDiv.querySelector('#m-primary-metric').value = projectData.metrics?.primaryMetric || '';
+                    contentDiv.querySelector('#m-baseline').value = projectData.metrics?.baseline || '';
+                    contentDiv.querySelector('#m-target').value = projectData.metrics?.target || '';
+                    contentDiv.querySelector('#m-after').value = projectData.metrics?.after || '';
+                    const sipocTds = contentDiv.querySelectorAll('tbody td');
+                    (phaseData.sipoc || []).forEach((val, i) => { if(sipocTds[i]) sipocTds[i].querySelector('textarea').value = val; });
+                } else if (name === "Improve") {
+                    const actionPlanContainer = document.createElement('div'); actionPlanContainer.className = 'action-plan-container';
+                    renderActionPlans(actionPlanContainer, phaseData.actionPlans);
+                    contentDiv.appendChild(actionPlanContainer);
+                    const addActionButton = document.createElement('button');
+                    addActionButton.type = 'button'; addActionButton.className = 'btn ghost btn-add-action-plan'; addActionButton.textContent = '+ Adicionar Ação'; addActionButton.style.width = '100%';
+                    contentDiv.appendChild(addActionButton);
+                } else if (name === "Control") {
+                    contentDiv.appendChild(templates.c.content.cloneNode(true));
+                    contentDiv.querySelector('#c-control-plan').value = phaseData.controlPlan || '';
+                    contentDiv.querySelector('#c-financial-gains').value = phaseData.financialGains || '';
+                    contentDiv.querySelector('#c-lessons-learned').value = phaseData.lessonsLearned || '';
+                } else {
+                    const clone = templates.generic.content.cloneNode(true);
+                    clone.querySelector('label').textContent = `Detalhes e Ferramentas da Fase "${name}"`;
+                    clone.querySelector('textarea').value = phaseData.details || '';
+                    contentDiv.appendChild(clone);
+                }
+                const attachmentsContainer = document.createElement('div'); attachmentsContainer.className = 'attachments-section';
+                attachmentsContainer.appendChild(templates.attachment.content.cloneNode(true));
+                if (phaseData.attachments) { phaseData.attachments.forEach(att => addAttachmentPreview(attachmentsContainer.querySelector('.attachment-preview-grid'), att)); }
+                contentDiv.appendChild(attachmentsContainer);
+                dmaicStepsContainer.appendChild(contentDiv);
+            });
+        };
+        
+        const addAttachmentPreview = (grid, data) => { const item = document.createElement('div'); item.className = 'attachment-item'; item.dataset.fileName = data.name; item.dataset.fileData = data.data; item.dataset.fileType = data.type; item.innerHTML = `${data.type.startsWith('image/') ? `<img src="${data.data}" title="${data.name}">` : `<div class="file-icon" title="${data.name}"><span>📄</span>${data.name}</div>`}<button type="button" class="remove-attachment hidden-print">&times;</button>`; grid.appendChild(item); };
+        const handleFiles = (files, container) => { const grid = container.querySelector('.attachment-preview-grid'); for (const file of files) { if (file.size > 5 * 1024 * 1024) { showToast(`Arquivo "${file.name}" > 5MB.`, 'error'); continue; } const reader = new FileReader(); reader.onload = (e) => addAttachmentPreview(grid, { name: file.name, type: file.type, data: e.target.result }); reader.readAsDataURL(file); }};
+        const getAttachmentsFromContainer = (container) => { const atts = []; container.querySelectorAll('.attachment-item').forEach(item => atts.push({ name: item.dataset.fileName, type: item.dataset.fileType, data: item.dataset.fileData })); return atts; };
+        const renderActionPlans = (container, plans = []) => { container.innerHTML = ''; if (!plans) return; plans.forEach(plan => { const clone = templates.actionPlan.content.cloneNode(true); const block = clone.querySelector('.action-item-block'); block.querySelector('.action-input').value = plan.action || ''; block.querySelector('.responsible-input').value = plan.responsible || ''; block.querySelector('.status-input').value = plan.status || 'aberto'; block.querySelector('.start-date-input').value = plan.startDate || ''; block.querySelector('.end-date-input').value = plan.endDate || ''; container.appendChild(clone); }); };
+
+        const gatherFormData = () => {
+            const project = { id: document.getElementById('dmaic-id').value ? parseInt(document.getElementById('dmaic-id').value) : Date.now(), projectTitle: document.getElementById('project-title').value, projectChampion: document.getElementById('project-champion').value, projectLead: document.getElementById('project-lead').value, projectTeam: document.getElementById('project-team').value, phases: {} };
+            dmaicStepsContainer.querySelectorAll('.dmaic-tab-content').forEach((contentDiv, index) => {
+                const phaseName = DMAIC_PHASES[index].toLowerCase();
+                const phaseData = { attachments: getAttachmentsFromContainer(contentDiv.querySelector('.attachments-section')) };
+                if (phaseName === 'define') {
+                    project.metrics = { primaryMetric: contentDiv.querySelector('#m-primary-metric').value, baseline: contentDiv.querySelector('#m-baseline').value, target: contentDiv.querySelector('#m-target').value, after: contentDiv.querySelector('#m-after').value, };
+                    phaseData.problem = contentDiv.querySelector('#d-problem').value; phaseData.businessCase = contentDiv.querySelector('#d-business-case').value; phaseData.goal = contentDiv.querySelector('#d-goal').value;
+                    phaseData.sipoc = Array.from(contentDiv.querySelectorAll('tbody td textarea')).map(td => td.value);
+                } else if (phaseName === 'improve') {
+                    phaseData.actionPlans = [];
+                    contentDiv.querySelectorAll('.action-item-block').forEach(block => { phaseData.actionPlans.push({ action: block.querySelector('.action-input').value, responsible: block.querySelector('.responsible-input').value, status: block.querySelector('.status-input').value, startDate: block.querySelector('.start-date-input').value, endDate: block.querySelector('.end-date-input').value }); });
+                } else if (phaseName === 'control') {
+                    phaseData.controlPlan = contentDiv.querySelector('#c-control-plan').value; phaseData.financialGains = contentDiv.querySelector('#c-financial-gains').value; phaseData.lessonsLearned = contentDiv.querySelector('#c-lessons-learned').value;
+                } else { phaseData.details = contentDiv.querySelector('textarea').value; }
+                project.phases[phaseName] = phaseData;
+            });
+            return project;
+        };
+        
+        btnNewDmaic.addEventListener('click', () => { form.reset(); document.getElementById('dmaic-id').value = ''; createFormTabsAndSteps(); showForm(); });
+        btnSaveDmaic.addEventListener('click', () => { const projectData = gatherFormData(); const index = dmaicProjects.findIndex(p => p.id == projectData.id); if (index > -1) { dmaicProjects[index] = projectData; } else { dmaicProjects.push(projectData); } saveData(); showToast('Projeto salvo com sucesso!', 'success'); showDashboard(); });
+        dmaicTabsContainer.addEventListener('click', e => { if (e.target.classList.contains('dmaic-tab')) { const index = e.target.dataset.index; dmaicTabsContainer.querySelectorAll('.dmaic-tab').forEach(t => t.classList.remove('active')); dmaicStepsContainer.querySelectorAll('.dmaic-tab-content').forEach(c => c.classList.add('hidden')); e.target.classList.add('active'); dmaicStepsContainer.querySelector(`.dmaic-tab-content[data-index="${index}"]`).classList.remove('hidden'); } });
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if (target.classList.contains('btn-edit')) {
+                const project = dmaicProjects.find(p => p.id == target.dataset.id);
+                if (project) {
+                    document.getElementById('dmaic-form').reset(); document.getElementById('dmaic-id').value = project.id; document.getElementById('project-title').value = project.projectTitle || ''; document.getElementById('project-champion').value = project.projectChampion || ''; document.getElementById('project-lead').value = project.projectLead || ''; document.getElementById('project-team').value = project.projectTeam || '';
+                    createFormTabsAndSteps(project); showForm();
+                }
+            }
+            if (target.classList.contains('btn-delete')){ if(confirm('Tem certeza?')) { dmaicProjects = dmaicProjects.filter(p => p.id != target.dataset.id); saveData(); renderDmaicList(); } }
+            if (target.classList.contains('btn-add-action-plan')) { target.previousElementSibling.appendChild(templates.actionPlan.content.cloneNode(true)); }
+            if (target.classList.contains('remove-action-btn')) { target.closest('.action-item-block').remove(); }
+            if (target.classList.contains('attachment-drop-zone')) { target.previousElementSibling.click(); }
+            if (target.classList.contains('remove-attachment')) { target.closest('.attachment-item').remove(); }
+        });
+        main.addEventListener('change', e => { if (e.target.classList.contains('attachments-input')) { handleFiles(e.target.files, e.target.closest('.field, .attachments-section')); }});
+
+        const initApp = () => { loadData(); showDashboard(); };
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra um projeto para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(dmaicProjects, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`dmaic_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){dmaicProjects=d;saveData();renderDmaicList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

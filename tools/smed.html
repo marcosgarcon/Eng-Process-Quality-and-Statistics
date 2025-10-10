@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMED - Troca Rápida de Ferramentas - EPQS</title>
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* EPQS Standard Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Inter, Arial, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #22d3ee, #3b82f6);
+            border-radius: 16px;
+            color: #0f172a;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .header .description {
+            font-size: 0.95rem;
+            opacity: 0.7;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #334155;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22d3ee;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: #374151;
+            border: 1px solid #4b5563;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            background: #4b5563;
+        }
+
+        .tab.active {
+            background: #22d3ee;
+            color: #0f172a;
+            border-color: #22d3ee;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            padding: 12px;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            background: #374151;
+            color: #e5e7eb;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            min-height: 44px;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #22d3ee;
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            min-height: 44px;
+        }
+
+        .btn-primary {
+            background: #22d3ee;
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            background: #06b6d4;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #374151;
+            color: #e5e7eb;
+            border: 1px solid #4b5563;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            border-color: #6b7280;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: #0f172a;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+            min-height: 36px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+            font-size: 14px;
+        }
+
+        .table th {
+            background: #374151;
+            font-weight: 600;
+            color: #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .table tbody tr:hover {
+            background: #374151;
+        }
+
+        .step-row {
+            background: #374151;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #4b5563;
+            display: grid;
+            grid-template-columns: 60px 1fr 120px 120px 80px;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .step-number {
+            background: #22d3ee;
+            color: #0f172a;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .step-type-internal {
+            background: #ef4444;
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .step-type-external {
+            background: #10b981;
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: #374151;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #4b5563;
+        }
+
+        .kpi-card h3 {
+            font-size: 0.9rem;
+            color: #a78bfa;
+            margin-bottom: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #22d3ee;
+            margin-bottom: 8px;
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .timer-container {
+            background: #374151;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid #4b5563;
+            margin-bottom: 24px;
+        }
+
+        .timer-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #22d3ee;
+            margin-bottom: 16px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-container {
+            background: #374151;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #4b5563;
+            margin-bottom: 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 600;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            min-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #10b981;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        .notification.info {
+            background: #3b82f6;
+        }
+
+        .notification.warning {
+            background: #f59e0b;
+        }
+
+        .progress-bar {
+            background: #374151;
+            border-radius: 8px;
+            height: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #22d3ee, #3b82f6);
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .improvement-suggestions {
+            background: #1e293b;
+            border-left: 4px solid #22d3ee;
+            padding: 16px;
+            margin-top: 20px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .improvement-suggestions h4 {
+            color: #22d3ee;
+            margin-bottom: 12px;
+        }
+
+        .improvement-suggestions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .improvement-suggestions li {
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .improvement-suggestions li:last-child {
+            border-bottom: none;
+        }
+
+        .improvement-suggestions li i {
+            color: #10b981;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .step-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .timer-display {
+                font-size: 2rem;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="ph ph-timer"></i>
+                SMED - Troca Rápida de Ferramentas
+            </h1>
+            <p class="subtitle">Single-Minute Exchange of Die</p>
+            <p class="description">
+                Metodologia para redução de tempos de setup através da conversão de atividades internas em externas e otimização de processos de troca de ferramentas.
+            </p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="analysis">
+                <i class="ph ph-chart-line"></i>
+                Análise SMED
+            </div>
+            <div class="tab" data-tab="timer">
+                <i class="ph ph-timer"></i>
+                Cronômetro
+            </div>
+            <div class="tab" data-tab="comparison">
+                <i class="ph ph-chart-bar"></i>
+                Comparação
+            </div>
+            <div class="tab" data-tab="report">
+                <i class="ph ph-file-text"></i>
+                Relatório
+            </div>
+        </div>
+
+        <!-- Analysis Tab -->
+        <div id="tab-analysis" class="tab-content active">
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="ph ph-list-checks"></i>
+                    Configuração da Análise SMED
+                </h2>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="machine-name">Máquina/Equipamento</label>
+                        <input type="text" class="form-input" id="machine-name" placeholder="Nome da máquina ou equipamento">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="product-from">Produto Anterior</label>
+                        <input type="text" class="form-input" id="product-from" placeholder="Produto que estava sendo produzido">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="product-to">Produto Novo</label>
+                        <input type="text" class="form-input" id="product-to" placeholder="Produto que será produzido">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="analyst-name">Analista</label>
+                        <input type="text" class="form-input" id="analyst-name" placeholder="Nome do responsável pela análise">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                    <button class="btn btn-primary" onclick="smedSystem.addStep()">
+                        <i class="ph ph-plus"></i> Adicionar Passo
+                    </button>
+                    <button class="btn btn-secondary" onclick="smedSystem.loadTemplate()">
+                        <i class="ph ph-file"></i> Carregar Template
+                    </button>
+                    <button class="btn btn-success" onclick="smedSystem.calculateSummary()">
+                        <i class="ph ph-calculator"></i> Calcular Resumo
+                    </button>
+                </div>
+
+                <div id="steps-container">
+                    <!-- Steps will be added here dynamically -->
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <h3>Tempo Total</h3>
+                        <div class="kpi-value" id="total-time">0</div>
+                        <div class="kpi-label">minutos</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Tempo Interno</h3>
+                        <div class="kpi-value" id="internal-time">0</div>
+                        <div class="kpi-label">minutos (máquina parada)</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Tempo Externo</h3>
+                        <div class="kpi-value" id="external-time">0</div>
+                        <div class="kpi-label">minutos (máquina rodando)</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Potencial de Redução</h3>
+                        <div class="kpi-value" id="reduction-potential">0%</div>
+                        <div class="kpi-label">conversão I → E</div>
+                    </div>
+                </div>
+
+                <div class="improvement-suggestions">
+                    <h4><i class="ph ph-lightbulb"></i> Sugestões de Melhoria</h4>
+                    <ul id="improvement-list">
+                        <li><i class="ph ph-check-circle"></i> Prepare ferramentas e materiais antes da parada (conversão I → E)</li>
+                        <li><i class="ph ph-check-circle"></i> Padronize procedimentos e crie check-lists</li>
+                        <li><i class="ph ph-check-circle"></i> Implemente sistemas de fixação rápida</li>
+                        <li><i class="ph ph-check-circle"></i> Treine operadores em procedimentos otimizados</li>
+                        <li><i class="ph ph-check-circle"></i> Organize ferramentas em kits pré-montados</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer Tab -->
+        <div id="tab-timer" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="ph ph-timer"></i>
+                    Cronômetro para Medição de Tempos
+                </h2>
+
+                <div class="timer-container">
+                    <div class="timer-display" id="timer-display">00:00:00</div>
+                    <div class="timer-controls">
+                        <button class="btn btn-success" id="start-timer">
+                            <i class="ph ph-play"></i> Iniciar
+                        </button>
+                        <button class="btn btn-warning" id="pause-timer">
+                            <i class="ph ph-pause"></i> Pausar
+                        </button>
+                        <button class="btn btn-danger" id="stop-timer">
+                            <i class="ph ph-stop"></i> Parar
+                        </button>
+                        <button class="btn btn-secondary" id="lap-timer">
+                            <i class="ph ph-flag"></i> Volta
+                        </button>
+                        <button class="btn btn-secondary" id="reset-timer">
+                            <i class="ph ph-arrow-clockwise"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-subtitle">
+                        <i class="ph ph-list"></i>
+                        Tempos Registrados
+                    </h3>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Passo</th>
+                                    <th>Descrição</th>
+                                    <th>Tempo</th>
+                                    <th>Tipo</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timer-records">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Tab -->
+        <div id="tab-comparison" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="ph ph-chart-bar"></i>
+                    Comparação Antes vs Depois
+                </h2>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <h3>Redução de Tempo</h3>
+                        <div class="kpi-value" id="time-reduction">0%</div>
+                        <div class="kpi-label">melhoria alcançada</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Tempo Economizado</h3>
+                        <div class="kpi-value" id="time-saved">0</div>
+                        <div class="kpi-label">minutos por setup</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Produtividade</h3>
+                        <div class="kpi-value" id="productivity-gain">0%</div>
+                        <div class="kpi-label">ganho de produtividade</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>ROI Estimado</h3>
+                        <div class="kpi-value" id="roi-estimate">0%</div>
+                        <div class="kpi-label">retorno do investimento</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="section-subtitle">
+                        <i class="ph ph-chart-line"></i>
+                        Gráfico de Comparação
+                    </h3>
+                    <canvas id="comparison-chart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Tab -->
+        <div id="tab-report" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="ph ph-file-text"></i>
+                    Relatório SMED
+                </h2>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                    <button class="btn btn-primary" onclick="smedSystem.generateReport()">
+                        <i class="ph ph-file-text"></i> Gerar Relatório
+                    </button>
+                    <button class="btn btn-secondary" onclick="smedSystem.exportData()">
+                        <i class="ph ph-download"></i> Exportar Dados
+                    </button>
+                    <button class="btn btn-success" onclick="smedSystem.saveAnalysis()">
+                        <i class="ph ph-floppy-disk"></i> Salvar Análise
+                    </button>
+                </div>
+
+                <div id="report-content" class="section">
+                    <h3 class="section-subtitle">Relatório será gerado aqui</h3>
+                    <p>Clique em "Gerar Relatório" para criar um relatório completo da análise SMED.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SMEDSystem {
+            constructor() {
+                this.steps = [];
+                this.stepCounter = 0;
+                this.timer = {
+                    startTime: 0,
+                    elapsedTime: 0,
+                    isRunning: false,
+                    interval: null
+                };
+                this.timerRecords = [];
+                this.currentStepDescription = '';
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.setupEventListeners();
+                this.loadTemplate();
+                this.calculateSummary();
+            }
+
+            // Data Management
+            saveData() {
+                const data = {
+                    machineName: document.getElementById('machine-name').value,
+                    productFrom: document.getElementById('product-from').value,
+                    productTo: document.getElementById('product-to').value,
+                    analystName: document.getElementById('analyst-name').value,
+                    steps: this.steps,
+                    timerRecords: this.timerRecords,
+                    lastModified: new Date().toISOString()
+                };
+
+                localStorage.setItem('smed_analysis', JSON.stringify(data));
+                
+                if (window.EPQS && typeof window.EPQS.saveData === 'function') {
+                    window.EPQS.saveData('smed_analysis', data);
+                }
+            }
+
+            loadData() {
+                try {
+                    const saved = localStorage.getItem('smed_analysis');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        document.getElementById('machine-name').value = data.machineName || '';
+                        document.getElementById('product-from').value = data.productFrom || '';
+                        document.getElementById('product-to').value = data.productTo || '';
+                        document.getElementById('analyst-name').value = data.analystName || '';
+                        this.steps = data.steps || [];
+                        this.timerRecords = data.timerRecords || [];
+                        this.renderSteps();
+                        this.renderTimerRecords();
+                    }
+
+                    if (window.EPQS && typeof window.EPQS.loadData === 'function') {
+                        window.EPQS.loadData('smed_analysis', (data, error) => {
+                            if (data && !error) {
+                                document.getElementById('machine-name').value = data.machineName || '';
+                                document.getElementById('product-from').value = data.productFrom || '';
+                                document.getElementById('product-to').value = data.productTo || '';
+                                document.getElementById('analyst-name').value = data.analystName || '';
+                                this.steps = data.steps || [];
+                                this.timerRecords = data.timerRecords || [];
+                                this.renderSteps();
+                                this.renderTimerRecords();
+                                this.calculateSummary();
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading SMED data:', e);
+                }
+            }
+
+            // UI Management
+            showTab(tabName) {
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+
+                document.getElementById(`tab-${tabName}`).classList.add('active');
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+                if (tabName === 'comparison') {
+                    this.renderComparisonChart();
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 4000);
+            }
+
+            // Step Management
+            addStep(description = '', time = 0, type = 'I') {
+                this.stepCounter++;
+                const step = {
+                    id: this.stepCounter,
+                    description: description,
+                    time: time,
+                    type: type
+                };
+                this.steps.push(step);
+                this.renderSteps();
+                this.calculateSummary();
+                this.saveData();
+            }
+
+            removeStep(id) {
+                this.steps = this.steps.filter(step => step.id !== id);
+                this.renderSteps();
+                this.calculateSummary();
+                this.saveData();
+            }
+
+            updateStep(id, field, value) {
+                const step = this.steps.find(s => s.id === id);
+                if (step) {
+                    step[field] = value;
+                    this.calculateSummary();
+                    this.saveData();
+                }
+            }
+
+            renderSteps() {
+                const container = document.getElementById('steps-container');
+                container.innerHTML = '';
+
+                this.steps.forEach(step => {
+                    const stepElement = document.createElement('div');
+                    stepElement.className = 'step-row';
+                    stepElement.innerHTML = `
+                        <div class="step-number">${step.id}</div>
+                        <div>
+                            <input type="text" class="form-input" value="${step.description}" 
+                                   placeholder="Descrição do passo" 
+                                   onchange="smedSystem.updateStep(${step.id}, 'description', this.value)">
+                        </div>
+                        <div>
+                            <input type="number" class="form-input" value="${step.time}" 
+                                   min="0" step="0.1" placeholder="Tempo (min)"
+                                   onchange="smedSystem.updateStep(${step.id}, 'time', parseFloat(this.value) || 0)">
+                        </div>
+                        <div>
+                            <select class="form-select" onchange="smedSystem.updateStep(${step.id}, 'type', this.value)">
+                                <option value="I" ${step.type === 'I' ? 'selected' : ''}>Interno (I)</option>
+                                <option value="E" ${step.type === 'E' ? 'selected' : ''}>Externo (E)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button class="btn btn-small btn-danger" onclick="smedSystem.removeStep(${step.id})">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(stepElement);
+                });
+            }
+
+            loadTemplate() {
+                if (this.steps.length === 0) {
+                    this.addStep('Parar máquina e remover peça atual', 5.0, 'I');
+                    this.addStep('Buscar ferramentas no almoxarifado', 15.0, 'E');
+                    this.addStep('Limpar área de trabalho', 8.0, 'E');
+                    this.addStep('Remover ferramenta antiga', 12.0, 'I');
+                    this.addStep('Instalar nova ferramenta', 18.0, 'I');
+                    this.addStep('Ajustar e calibrar', 10.0, 'I');
+                    this.addStep('Primeiro teste de produção', 5.0, 'I');
+                    this.addStep('Guardar ferramentas antigas', 8.0, 'E');
+                }
+            }
+
+            calculateSummary() {
+                let totalTime = 0;
+                let internalTime = 0;
+                let externalTime = 0;
+
+                this.steps.forEach(step => {
+                    const time = parseFloat(step.time) || 0;
+                    totalTime += time;
+                    if (step.type === 'I') {
+                        internalTime += time;
+                    } else {
+                        externalTime += time;
+                    }
+                });
+
+                const reductionPotential = totalTime > 0 ? ((internalTime / totalTime) * 100) : 0;
+
+                document.getElementById('total-time').textContent = totalTime.toFixed(1);
+                document.getElementById('internal-time').textContent = internalTime.toFixed(1);
+                document.getElementById('external-time').textContent = externalTime.toFixed(1);
+                document.getElementById('reduction-potential').textContent = `${reductionPotential.toFixed(1)}%`;
+
+                this.updateImprovementSuggestions(internalTime, externalTime);
+            }
+
+            updateImprovementSuggestions(internalTime, externalTime) {
+                const suggestions = [];
+                
+                if (internalTime > externalTime) {
+                    suggestions.push('Foque na conversão de atividades internas em externas');
+                    suggestions.push('Prepare materiais e ferramentas antes da parada');
+                }
+                
+                if (internalTime > 20) {
+                    suggestions.push('Considere sistemas de fixação rápida');
+                    suggestions.push('Implemente procedimentos padronizados');
+                }
+                
+                if (this.steps.length > 8) {
+                    suggestions.push('Combine atividades similares para reduzir passos');
+                }
+                
+                suggestions.push('Treine operadores em técnicas SMED');
+                suggestions.push('Organize ferramentas em kits pré-montados');
+
+                const list = document.getElementById('improvement-list');
+                list.innerHTML = suggestions.map(suggestion => 
+                    `<li><i class="ph ph-check-circle"></i> ${suggestion}</li>`
+                ).join('');
+            }
+
+            // Timer Management
+            setupEventListeners() {
+                // Tab navigation
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabName = tab.getAttribute('data-tab');
+                        this.showTab(tabName);
+                    });
+                });
+
+                // Timer controls
+                document.getElementById('start-timer').addEventListener('click', () => this.startTimer());
+                document.getElementById('pause-timer').addEventListener('click', () => this.pauseTimer());
+                document.getElementById('stop-timer').addEventListener('click', () => this.stopTimer());
+                document.getElementById('lap-timer').addEventListener('click', () => this.lapTimer());
+                document.getElementById('reset-timer').addEventListener('click', () => this.resetTimer());
+
+                // Form inputs
+                ['machine-name', 'product-from', 'product-to', 'analyst-name'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => this.saveData());
+                });
+            }
+
+            startTimer() {
+                if (!this.timer.isRunning) {
+                    this.timer.startTime = Date.now() - this.timer.elapsedTime;
+                    this.timer.isRunning = true;
+                    this.timer.interval = setInterval(() => this.updateTimerDisplay(), 10);
+                    
+                    document.getElementById('start-timer').disabled = true;
+                    document.getElementById('pause-timer').disabled = false;
+                    document.getElementById('stop-timer').disabled = false;
+                    document.getElementById('lap-timer').disabled = false;
+                }
+            }
+
+            pauseTimer() {
+                if (this.timer.isRunning) {
+                    this.timer.isRunning = false;
+                    clearInterval(this.timer.interval);
+                    
+                    document.getElementById('start-timer').disabled = false;
+                    document.getElementById('pause-timer').disabled = true;
+                }
+            }
+
+            stopTimer() {
+                this.timer.isRunning = false;
+                clearInterval(this.timer.interval);
+                
+                if (this.timer.elapsedTime > 0) {
+                    const description = prompt('Descrição do passo:') || 'Passo sem descrição';
+                    const type = confirm('É uma atividade interna (máquina parada)?\nOK = Interno, Cancelar = Externo') ? 'I' : 'E';
+                    
+                    this.timerRecords.push({
+                        id: Date.now(),
+                        description: description,
+                        time: (this.timer.elapsedTime / 60000).toFixed(2), // Convert to minutes
+                        type: type,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    
+                    this.renderTimerRecords();
+                    this.saveData();
+                }
+                
+                this.resetTimer();
+            }
+
+            lapTimer() {
+                if (this.timer.isRunning) {
+                    const description = prompt('Descrição do passo:') || `Passo ${this.timerRecords.length + 1}`;
+                    const type = confirm('É uma atividade interna (máquina parada)?\nOK = Interno, Cancelar = Externo') ? 'I' : 'E';
+                    
+                    this.timerRecords.push({
+                        id: Date.now(),
+                        description: description,
+                        time: (this.timer.elapsedTime / 60000).toFixed(2),
+                        type: type,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    
+                    this.renderTimerRecords();
+                    this.saveData();
+                }
+            }
+
+            resetTimer() {
+                this.timer.elapsedTime = 0;
+                this.timer.isRunning = false;
+                clearInterval(this.timer.interval);
+                this.updateTimerDisplay();
+                
+                document.getElementById('start-timer').disabled = false;
+                document.getElementById('pause-timer').disabled = true;
+                document.getElementById('stop-timer').disabled = true;
+                document.getElementById('lap-timer').disabled = true;
+            }
+
+            updateTimerDisplay() {
+                if (this.timer.isRunning) {
+                    this.timer.elapsedTime = Date.now() - this.timer.startTime;
+                }
+                
+                const totalSeconds = Math.floor(this.timer.elapsedTime / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                
+                const display = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('timer-display').textContent = display;
+            }
+
+            renderTimerRecords() {
+                const tbody = document.getElementById('timer-records');
+                tbody.innerHTML = '';
+                
+                this.timerRecords.forEach((record, index) => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${record.description}</td>
+                        <td>${record.time} min</td>
+                        <td><span class="step-type-${record.type === 'I' ? 'internal' : 'external'}">${record.type === 'I' ? 'Interno' : 'Externo'}</span></td>
+                        <td>
+                            <button class="btn btn-small btn-primary" onclick="smedSystem.addStepFromTimer(${record.id})">
+                                <i class="ph ph-plus"></i> Adicionar
+                            </button>
+                            <button class="btn btn-small btn-danger" onclick="smedSystem.removeTimerRecord(${record.id})">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                });
+            }
+
+            addStepFromTimer(recordId) {
+                const record = this.timerRecords.find(r => r.id === recordId);
+                if (record) {
+                    this.addStep(record.description, parseFloat(record.time), record.type);
+                    this.showTab('analysis');
+                    this.showNotification('Passo adicionado à análise SMED!', 'success');
+                }
+            }
+
+            removeTimerRecord(recordId) {
+                this.timerRecords = this.timerRecords.filter(r => r.id !== recordId);
+                this.renderTimerRecords();
+                this.saveData();
+            }
+
+            // Comparison and Charts
+            renderComparisonChart() {
+                const ctx = document.getElementById('comparison-chart');
+                if (!ctx) return;
+
+                const internalTime = this.steps.filter(s => s.type === 'I').reduce((sum, s) => sum + (parseFloat(s.time) || 0), 0);
+                const externalTime = this.steps.filter(s => s.type === 'E').reduce((sum, s) => sum + (parseFloat(s.time) || 0), 0);
+                
+                // Simulate improved times (assuming 50% reduction in internal time)
+                const improvedInternal = internalTime * 0.5;
+                const improvedExternal = externalTime * 0.8; // Some external optimization too
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Situação Atual', 'Situação Melhorada'],
+                        datasets: [
+                            {
+                                label: 'Tempo Interno (min)',
+                                data: [internalTime, improvedInternal],
+                                backgroundColor: '#ef4444'
+                            },
+                            {
+                                label: 'Tempo Externo (min)',
+                                data: [externalTime, improvedExternal],
+                                backgroundColor: '#10b981'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e5e7eb' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#374151' }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#374151' }
+                            }
+                        }
+                    }
+                });
+
+                // Update comparison KPIs
+                const totalCurrent = internalTime + externalTime;
+                const totalImproved = improvedInternal + improvedExternal;
+                const reduction = totalCurrent > 0 ? ((totalCurrent - totalImproved) / totalCurrent * 100) : 0;
+                const timeSaved = totalCurrent - totalImproved;
+                const productivityGain = totalCurrent > 0 ? (timeSaved / totalCurrent * 100) : 0;
+
+                document.getElementById('time-reduction').textContent = `${reduction.toFixed(1)}%`;
+                document.getElementById('time-saved').textContent = timeSaved.toFixed(1);
+                document.getElementById('productivity-gain').textContent = `${productivityGain.toFixed(1)}%`;
+                document.getElementById('roi-estimate').textContent = `${(productivityGain * 2).toFixed(1)}%`;
+            }
+
+            // Report Generation
+            generateReport() {
+                const reportContent = document.getElementById('report-content');
+                const machineName = document.getElementById('machine-name').value || 'Não informado';
+                const productFrom = document.getElementById('product-from').value || 'Não informado';
+                const productTo = document.getElementById('product-to').value || 'Não informado';
+                const analystName = document.getElementById('analyst-name').value || 'Não informado';
+                
+                const totalTime = this.steps.reduce((sum, s) => sum + (parseFloat(s.time) || 0), 0);
+                const internalTime = this.steps.filter(s => s.type === 'I').reduce((sum, s) => sum + (parseFloat(s.time) || 0), 0);
+                const externalTime = this.steps.filter(s => s.type === 'E').reduce((sum, s) => sum + (parseFloat(s.time) || 0), 0);
+                
+                const report = `
+                    <h3 class="section-subtitle">Relatório de Análise SMED</h3>
+                    <p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                    <p><strong>Analista:</strong> ${analystName}</p>
+                    <p><strong>Máquina/Equipamento:</strong> ${machineName}</p>
+                    <p><strong>Troca:</strong> ${productFrom} → ${productTo}</p>
+                    
+                    <h4 style="margin-top: 24px; color: #22d3ee;">Resumo da Análise</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Tempo Total de Setup:</strong> ${totalTime.toFixed(1)} minutos</li>
+                        <li><strong>Tempo Interno (máquina parada):</strong> ${internalTime.toFixed(1)} minutos (${((internalTime/totalTime)*100).toFixed(1)}%)</li>
+                        <li><strong>Tempo Externo (máquina rodando):</strong> ${externalTime.toFixed(1)} minutos (${((externalTime/totalTime)*100).toFixed(1)}%)</li>
+                        <li><strong>Potencial de Redução:</strong> ${((internalTime/totalTime)*100).toFixed(1)}%</li>
+                    </ul>
+                    
+                    <h4 style="margin-top: 24px; color: #22d3ee;">Detalhamento dos Passos</h4>
+                    <table class="table" style="margin-top: 12px;">
+                        <thead>
+                            <tr>
+                                <th>Passo</th>
+                                <th>Descrição</th>
+                                <th>Tempo (min)</th>
+                                <th>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${this.steps.map(step => `
+                                <tr>
+                                    <td>${step.id}</td>
+                                    <td>${step.description}</td>
+                                    <td>${step.time}</td>
+                                    <td><span class="step-type-${step.type === 'I' ? 'internal' : 'external'}">${step.type === 'I' ? 'Interno' : 'Externo'}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <h4 style="margin-top: 24px; color: #22d3ee;">Recomendações</h4>
+                    <ol style="margin-left: 20px;">
+                        <li>Converter atividades internas em externas sempre que possível</li>
+                        <li>Padronizar procedimentos e criar check-lists</li>
+                        <li>Implementar sistemas de fixação rápida</li>
+                        <li>Treinar operadores em técnicas SMED</li>
+                        <li>Organizar ferramentas em kits pré-montados</li>
+                        <li>Estabelecer metas de redução de tempo de setup</li>
+                    </ol>
+                `;
+                
+                reportContent.innerHTML = report;
+                this.showNotification('Relatório gerado com sucesso!', 'success');
+            }
+
+            exportData() {
+                const data = {
+                    machineName: document.getElementById('machine-name').value,
+                    productFrom: document.getElementById('product-from').value,
+                    productTo: document.getElementById('product-to').value,
+                    analystName: document.getElementById('analyst-name').value,
+                    steps: this.steps,
+                    timerRecords: this.timerRecords,
+                    exportDate: new Date().toISOString()
+                };
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `smed-analysis-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                this.showNotification('Dados exportados com sucesso!', 'success');
+            }
+
+            saveAnalysis() {
+                this.saveData();
+                this.showNotification('Análise salva com sucesso!', 'success');
+            }
+        }
+
+        // Initialize the SMED system
+        let smedSystem;
+        document.addEventListener('DOMContentLoaded', () => {
+            smedSystem = new SMEDSystem();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Gestão de Kaizen</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      textarea{min-height:100px;resize:vertical;}
+      table{width:100%;border-collapse:collapse;} th, td{padding:8px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;} td input{padding:6px 8px;font-size:13px; min-height: auto;}
+      .form-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap;}.form-tab{flex:1;padding:10px;background:var(--muted);border:1px solid #243041;border-radius:8px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;}.form-tab.active{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent;}
+      .form-tab-content{padding-top:15px;border-top:1px solid var(--muted);}
+      .action-item-block{padding:12px;border:1px solid var(--muted);border-radius:12px;background:var(--card);position:relative;margin-top:10px;}
+      .remove-action-btn, .remove-metric-btn{position:absolute;top:5px;right:5px;background:none;border:none;color:#fca5a5;font-size:1.5rem;cursor:pointer;}
+      .remove-metric-btn{position:relative;top:auto;right:auto;font-size:1.2rem;padding:5px;}
+      .attachments-section{margin-top:10px;padding-top:10px;border-top:1px dashed var(--muted);}.attachment-drop-zone{padding:10px;font-size:12px;margin-top:5px;border:2px dashed var(--muted);text-align:center;cursor:pointer;border-radius:8px;}.attachment-preview-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}.attachment-item{width:80px;height:80px;position:relative;}.attachment-item img, .attachment-item .file-icon{width:100%;height:100%;object-fit:cover;border-radius:8px;}.attachment-item .file-icon{background:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:11px;padding:5px;overflow:hidden;word-break:break-all;}.attachment-item .remove-attachment{position:absolute;top:-5px;right:-5px;background:var(--bad);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}main{padding:0;} header,aside,.hidden-print,.btn,.form-tabs,.remove-action-btn,.remove-attachment{display:none !important;} section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black}}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Gestão de Kaizen e Melhoria Contínua</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Kaizens: <span id="kaizen-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Kaizens Registrados</h2><button id="btn-new-kaizen" class="btn primary">+ Novo Kaizen</button></div>
+                <table id="kaizen-list-table">
+                    <thead><tr><th>Título da Melhoria</th><th>Proponente</th><th>Área/Setor</th><th>Data</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <form id="kaizen-form">
+                <input type="hidden" id="kaizen-id">
+                <section>
+                    <h4>Informações Gerais</h4>
+                    <div class="grid">
+                       <div class="field" style="grid-column:span 12;"><label for="kaizen-title">Título da Melhoria</label><input type="text" id="kaizen-title" required></div>
+                       <div class="field" style="grid-column:span 3;"><label for="kaizen-proponent">Proponente</label><input type="text" id="kaizen-proponent"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="kaizen-leader">Líder da Implementação</label><input type="text" id="kaizen-leader"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="kaizen-area">Área/Setor</label><input type="text" id="kaizen-area"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="kaizen-date">Data da Sugestão</label><input type="date" id="kaizen-date"></div>
+                    </div>
+                </section>
+                <nav class="form-tabs">
+                    <div class="form-tab active" data-tab="proposal">1. Proposta</div>
+                    <div class="form-tab" data-tab="action-plan">2. Plano de Ação</div>
+                    <div class="form-tab" data-tab="results">3. Resultados e Verificação</div>
+                </nav>
+                <div id="proposal" class="form-tab-content">
+                    <section>
+                        <h4>Análise "Antes e Depois"</h4>
+                        <div class="grid" style="grid-template-columns:1fr 1fr;">
+                            <div><h4>Situação ATUAL (Antes)</h4><textarea data-field="before_text"></textarea><div class="attachments-section" data-field="before_attachments"></div></div>
+                            <div><h4>Situação PROPOSTA (Depois)</h4><textarea data-field="after_proposal_text"></textarea><div class="attachments-section" data-field="after_proposal_attachments"></div></div>
+                        </div>
+                    </section>
+                    <section>
+                        <h4>Métricas Chave</h4>
+                        <table id="metrics-table">
+                            <thead><tr><th>Métrica</th><th>Valor (Antes)</th><th>Valor (Depois - Esperado)</th><th class="hidden-print"></th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                        <button type="button" id="btn-add-metric" class="btn ghost" style="width:100%">+ Adicionar Métrica</button>
+                    </section>
+                    <section>
+                         <h4>Benefícios e Recursos</h4>
+                         <div class="grid" style="grid-template-columns:1fr 1fr;">
+                            <div class="field"><label>Benefícios Esperados (Qualidade, Custo, Segurança, etc.)</label><textarea data-field="benefits_text"></textarea></div>
+                            <div class="field"><label>Recursos Necessários (Materiais, Pessoas, Custo Estimado)</label><textarea data-field="resources_text"></textarea></div>
+                         </div>
+                    </section>
+                </div>
+                <div id="action-plan" class="form-tab-content hidden">
+                    <section>
+                        <h4>Plano de Ação para Implementação</h4>
+                        <div id="action-plan-container"></div>
+                        <button type="button" class="btn ghost btn-add-action-plan" style="width:100%">+ Adicionar Ação</button>
+                    </section>
+                </div>
+                <div id="results" class="form-tab-content hidden">
+                     <section>
+                        <h4>Resultados Reais</h4>
+                        <div class="field"><label>Descrição dos Resultados e Implementação</label><textarea data-field="results_text"></textarea></div>
+                        <div class="attachments-section" data-field="results_attachments"></div>
+                     </section>
+                     <section>
+                         <h4>Validação de Métricas</h4>
+                         <table id="results-metrics-table">
+                            <thead><tr><th>Métrica</th><th>Valor (Antes)</th><th>Valor (Depois - Esperado)</th><th>Valor (Depois - REALIZADO)</th></tr></thead>
+                            <tbody></tbody>
+                         </table>
+                     </section>
+                      <section>
+                         <h4>Verificação e Ganhos</h4>
+                         <div class="grid" style="grid-template-columns:1fr 1fr;">
+                            <div class="field"><label>Verificação da Sustentabilidade (Follow-up)</label><textarea data-field="verification_text"></textarea></div>
+                            <div class="field"><label>Ganhos Realizados (Financeiro, Operacional, etc.)</label><textarea data-field="gains_text"></textarea></div>
+                         </div>
+                    </section>
+                </div>
+                 <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-kaizen" class="btn primary">Salvar Kaizen</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+             <section class="help-content">
+                <h2>Guia de Utilização - Gestão de Kaizen</h2>
+                <p>Esta ferramenta foi criada para gerenciar o ciclo de vida completo de uma melhoria Kaizen, desde a sugestão inicial até a verificação dos resultados.</p>
+                <h3>Fluxo de Trabalho do Kaizen</h3>
+                <p>A ferramenta é dividida em 3 etapas principais, acessíveis pelas abas no topo do formulário:</p>
+                <ol>
+                    <li><strong>Proposta:</strong> Descreva a ideia, o cenário "antes e depois" e as métricas.</li>
+                    <li><strong>Plano de Ação:</strong> Detalhe as tarefas para implementar a melhoria.</li>
+                    <li><strong>Resultados e Verificação:</strong> Meça os resultados reais e documente os ganhos.</li>
+                </ol>
+                <h3>1. Aba "Proposta"</h3>
+                <ul>
+                    <li><strong>Análise "Antes e Depois":</strong> Use os campos de texto para descrever a situação atual e a proposta. A principal funcionalidade aqui é a seção de <strong>anexos</strong> em cada lado: use para subir fotos, vídeos curtos ou diagramas que ilustrem o "antes" e o "depois".</li>
+                    <li><strong>Métricas Chave:</strong> Clique em <code>+ Adicionar Métrica</code> para quantificar sua melhoria. Defina a métrica (ex: "Tempo de Setup"), o valor atual e o valor esperado. Isso é crucial para medir o sucesso.</li>
+                </ul>
+                <h3>2. Aba "Plano de Ação"</h3>
+                <p>Aqui você transforma a proposta em realidade. Use o botão <code>+ Adicionar Ação</code> para criar uma lista de tarefas. Para cada tarefa, defina o responsável, o status e os prazos.</p>
+                <h3>3. Aba "Resultados e Verificação"</h3>
+                <p>Após a implementação, esta aba é usada para fechar o ciclo do Kaizen.</p>
+                <ul>
+                    <li><strong>Descrição dos Resultados:</strong> Resuma como foi a implementação.</li>
+                    <li><strong>Validação de Métricas:</strong> A tabela de métricas que você criou na primeira aba aparecerá aqui. Preencha a coluna <strong>"Valor (Depois - REALIZADO)"</strong> com os dados medidos após a melhoria.</li>
+                    <li><strong>Anexos Finais:</strong> Use esta seção para anexar evidências da melhoria implementada, como fotos do resultado final, dados de validação ou procedimentos atualizados (SOPs).</li>
+                     <li><strong>Verificação e Ganhos:</strong> Documente como a melhoria será mantida (follow-up) e quais foram os ganhos reais (financeiros, de segurança, etc.).</li>
+                </ul>
+                <h3>Funcionalidades Gerais</h3>
+                <p>A ferramenta conta com um <strong>Dashboard</strong> para visualizar todos os Kaizens, e as funções de <strong>Backup</strong>, <strong>Restauração</strong> e <strong>Exportação para PDF</strong> no cabeçalho.</p>
+                <p><strong>Aviso Importante:</strong> Lembre-se que todos os dados, incluindo anexos, são salvos localmente no seu navegador. Use a função de backup com frequência.</p>
+            </section>
+        </div>
+    </main>
+    <template id="attachment-ui-template"><div class="field" style="margin-top:10px;"><input type="file" class="attachments-input hidden" multiple><div class="attachment-drop-zone">Arraste ou clique para adicionar anexos</div><div class="attachment-preview-grid"></div></div></template>
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 12px;">
+            <div class="field" style="grid-column:span 12;"><label>Ação</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column:span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+        </div></div>
+    </template>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let kaizens = [];
+        const DB_KEY = 'mg_kaizens_v1';
+
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const btnNewKaizen = document.getElementById('btn-new-kaizen');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveKaizen = document.getElementById('btn-save-kaizen');
+        const kaizenListContainer = document.querySelector('#kaizen-list-table tbody');
+        const kaizenCountSpan = document.getElementById('kaizen-count');
+        const templates = {
+            attachment: document.getElementById('attachment-ui-template'),
+            actionPlan: document.getElementById('action-plan-form-template')
+        };
+
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(kaizens)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { kaizens = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            if (tabId !== 'form-container') document.getElementById('form-container').classList.add('hidden');
+        };
+        const showForm = () => { document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); formContainer.classList.remove('hidden'); document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); };
+        const showDashboard = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            dashboardContainer.classList.remove('hidden');
+            const dashboardLink = document.querySelector('.menu a[onclick*="dashboard-container"]');
+            if (dashboardLink) { document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); dashboardLink.classList.add('active'); }
+            renderKaizenList();
+        };
+
+        const renderKaizenList = () => {
+            kaizenListContainer.innerHTML = '';
+            if (kaizens.length === 0) { kaizenListContainer.innerHTML = '<tr><td colspan="5">Nenhum Kaizen salvo.</td></tr>'; }
+            else {
+                kaizens.sort((a, b) => new Date(b.header.date) - new Date(a.header.date)).forEach(k => {
+                    const row = kaizenListContainer.insertRow();
+                    row.innerHTML = `<td>${k.header.title || 'N/A'}</td><td>${k.header.proponent || 'N/A'}</td><td>${k.header.area || 'N/A'}</td><td>${k.header.date ? new Date(k.header.date + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${k.id}">Editar</button><button class="btn ghost btn-delete" data-id="${k.id}">Excluir</button></div></td>`;
+                });
+            }
+            kaizenCountSpan.textContent = kaizens.length;
+        };
+
+        const createMetricRow = (metric={}) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="metric-name" placeholder="Ex: Tempo de Setup" value="${metric.name || ''}"></td>
+                <td><input type="text" class="metric-before" placeholder="Ex: 15 min" value="${metric.before || ''}"></td>
+                <td><input type="text" class="metric-expected" placeholder="Ex: 5 min" value="${metric.expected || ''}"></td>
+                <td class="hidden-print"><button type="button" class="btn ghost remove-metric-btn">&times;</button></td>
+            `;
+            return row;
+        };
+
+        const populateForm = (kaizen = {}) => {
+            const getEl = (selector) => document.querySelector(selector);
+            getEl('#kaizen-id').value = kaizen.id || '';
+            getEl('#kaizen-title').value = kaizen.header?.title || '';
+            getEl('#kaizen-proponent').value = kaizen.header?.proponent || '';
+            getEl('#kaizen-leader').value = kaizen.header?.leader || '';
+            getEl('#kaizen-area').value = kaizen.header?.area || '';
+            getEl('#kaizen-date').value = kaizen.header?.date || new Date().toISOString().slice(0, 10);
+
+            getEl('[data-field="before_text"]').value = kaizen.proposal?.before_text || '';
+            getEl('[data-field="after_proposal_text"]').value = kaizen.proposal?.after_proposal_text || '';
+            getEl('[data-field="benefits_text"]').value = kaizen.proposal?.benefits_text || '';
+            getEl('[data-field="resources_text"]').value = kaizen.proposal?.resources_text || '';
+            
+            const metricsTbody = getEl('#metrics-table tbody');
+            metricsTbody.innerHTML = '';
+            (kaizen.proposal?.metrics || []).forEach(metric => metricsTbody.appendChild(createMetricRow(metric)));
+
+            getEl('[data-field="results_text"]').value = kaizen.results?.results_text || '';
+            getEl('[data-field="verification_text"]').value = kaizen.results?.verification_text || '';
+            getEl('[data-field="gains_text"]').value = kaizen.results?.gains_text || '';
+            
+            const resultsMetricsTbody = getEl('#results-metrics-table tbody');
+            resultsMetricsTbody.innerHTML = '';
+            (kaizen.proposal?.metrics || []).forEach(metric => {
+                const row = resultsMetricsTbody.insertRow();
+                row.innerHTML = `
+                    <td>${metric.name || ''}</td>
+                    <td>${metric.before || ''}</td>
+                    <td>${metric.expected || ''}</td>
+                    <td><input type="text" class="metric-actual" data-metric-name="${metric.name}" value="${metric.actual || ''}"></td>
+                `;
+            });
+
+            ['before_attachments', 'after_proposal_attachments', 'results_attachments'].forEach(field => {
+                const container = getEl(`[data-field="${field}"]`);
+                container.innerHTML = '';
+                container.appendChild(templates.attachment.content.cloneNode(true));
+                const data = field.includes('results') ? kaizen.results?.[field] : kaizen.proposal?.[field];
+                if (data) data.forEach(att => addAttachmentPreview(container.querySelector('.attachment-preview-grid'), att));
+            });
+            renderActionPlans(kaizen.actionPlans);
+        };
+        
+        const gatherFormData = () => {
+            const getEl = (selector) => document.querySelector(selector);
+            const getAttachments = (field) => getAttachmentsFromContainer(getEl(`[data-field="${field}"]`));
+            
+            const kaizenData = {
+                id: getEl('#kaizen-id').value ? parseInt(getEl('#kaizen-id').value) : Date.now(),
+                header: {
+                    title: getEl('#kaizen-title').value,
+                    proponent: getEl('#kaizen-proponent').value,
+                    leader: getEl('#kaizen-leader').value,
+                    area: getEl('#kaizen-area').value,
+                    date: getEl('#kaizen-date').value
+                },
+                proposal: {
+                    before_text: getEl('[data-field="before_text"]').value,
+                    before_attachments: getAttachments('before_attachments'),
+                    after_proposal_text: getEl('[data-field="after_proposal_text"]').value,
+                    after_proposal_attachments: getAttachments('after_proposal_attachments'),
+                    benefits_text: getEl('[data-field="benefits_text"]').value,
+                    resources_text: getEl('[data-field="resources_text"]').value,
+                    metrics: Array.from(document.querySelectorAll('#metrics-table tbody tr')).map(row => ({
+                        name: row.querySelector('.metric-name').value,
+                        before: row.querySelector('.metric-before').value,
+                        expected: row.querySelector('.metric-expected').value,
+                        actual: document.querySelector(`#results-metrics-table .metric-actual[data-metric-name="${row.querySelector('.metric-name').value}"]`)?.value || ''
+                    }))
+                },
+                actionPlans: Array.from(document.querySelectorAll('#action-plan-container .action-item-block')).map(block => ({
+                    action: block.querySelector('.action-input').value,
+                    responsible: block.querySelector('.responsible-input').value,
+                    status: block.querySelector('.status-input').value,
+                    startDate: block.querySelector('.start-date-input').value,
+                    endDate: block.querySelector('.end-date-input').value
+                })),
+                results: {
+                    results_text: getEl('[data-field="results_text"]').value,
+                    results_attachments: getAttachments('results_attachments'),
+                    verification_text: getEl('[data-field="verification_text"]').value,
+                    gains_text: getEl('[data-field="gains_text"]').value
+                }
+            };
+            return kaizenData;
+        };
+        
+        const renderActionPlans = (plans = []) => {
+            const container = document.getElementById('action-plan-container');
+            container.innerHTML = '';
+            if (!plans) return;
+            plans.forEach(plan => {
+                const clone = templates.actionPlan.content.cloneNode(true);
+                const block = clone.querySelector('.action-item-block');
+                block.querySelector('.action-input').value = plan.action || '';
+                block.querySelector('.responsible-input').value = plan.responsible || '';
+                block.querySelector('.status-input').value = plan.status || 'aberto';
+                block.querySelector('.start-date-input').value = plan.startDate || '';
+                block.querySelector('.end-date-input').value = plan.endDate || '';
+                container.appendChild(clone);
+            });
+        };
+        const addAttachmentPreview = (grid, data) => { const item = document.createElement('div'); item.className = 'attachment-item'; item.dataset.fileName = data.name; item.dataset.fileData = data.data; item.dataset.fileType = data.type; item.innerHTML = `${data.type.startsWith('image/') ? `<img src="${data.data}" title="${data.name}">` : `<div class="file-icon" title="${data.name}"><span>📄</span>${data.name}</div>`}<button type="button" class="remove-attachment hidden-print">&times;</button>`; grid.appendChild(item); };
+        const handleFiles = (files, container) => { const grid = container.querySelector('.attachment-preview-grid'); for (const file of files) { if (file.size > 5 * 1024 * 1024) { showToast(`Arquivo "${file.name}" > 5MB.`, 'error'); continue; } const reader = new FileReader(); reader.onload = (e) => addAttachmentPreview(grid, { name: file.name, type: file.type, data: e.target.result }); reader.readAsDataURL(file); }};
+        const getAttachmentsFromContainer = (container) => { const atts = []; container.querySelectorAll('.attachment-item').forEach(item => atts.push({ name: item.dataset.fileName, type: item.dataset.fileType, data: item.dataset.fileData })); return atts; };
+
+        const initApp = () => {
+            loadData();
+            showDashboard();
+        };
+
+        btnNewKaizen.addEventListener('click', () => {
+            document.getElementById('kaizen-form').reset();
+            document.getElementById('kaizen-id').value = '';
+            populateForm({});
+            showForm();
+        });
+        
+        btnSaveKaizen.addEventListener('click', () => {
+            const kaizenData = gatherFormData();
+            const index = kaizens.findIndex(k => k.id === kaizenData.id);
+            if (index > -1) { kaizens[index] = kaizenData; } else { kaizens.push(kaizenData); }
+            saveData();
+            showToast('Kaizen salvo com sucesso!', 'success');
+            showDashboard();
+        });
+
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if (target.closest('.form-tab')) {
+                const tabButton = target.closest('.form-tab');
+                const tabId = tabButton.dataset.tab;
+                document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+                tabButton.classList.add('active');
+                document.querySelectorAll('.form-tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById(tabId).classList.remove('hidden');
+            }
+            if(target.id === 'btn-add-metric'){
+                document.getElementById('metrics-table').querySelector('tbody').appendChild(createMetricRow());
+            }
+            if (target.classList.contains('remove-metric-btn')) {
+                target.closest('tr').remove();
+            }
+            if (target.classList.contains('btn-add-action-plan')) { document.getElementById('action-plan-container').appendChild(templates.actionPlan.content.cloneNode(true)); }
+            if (target.classList.contains('remove-action-btn')) { target.closest('.action-item-block').remove(); }
+            if (target.classList.contains('attachment-drop-zone')) { target.previousElementSibling.click(); }
+            if (target.classList.contains('remove-attachment')) { target.closest('.attachment-item').remove(); }
+            if (target.classList.contains('btn-edit')) { const kaizen = kaizens.find(k => k.id == target.dataset.id); if (kaizen) { populateForm(kaizen); showForm(); } }
+            if (target.classList.contains('btn-delete')){ if(confirm('Tem certeza?')) { kaizens = kaizens.filter(k => k.id != target.dataset.id); saveData(); renderKaizenList(); } }
+        });
+        
+        main.addEventListener('change', e => {
+            if (e.target.classList.contains('attachments-input')) {
+                handleFiles(e.target.files, e.target.closest('.field, .attachments-section'));
+            }
+        });
+
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra um Kaizen para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(kaizens, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`kaizen_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){kaizens=d;saveData();renderKaizenList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

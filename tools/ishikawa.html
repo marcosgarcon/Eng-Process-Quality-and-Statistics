@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Diagrama de Ishikawa (6M)</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;gap:16px;}
+      .grid-3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));}
+      .grid-6m{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      textarea{min-height:120px;resize:vertical;}
+      table{width:100%;border-collapse:collapse;white-space:nowrap;}
+      th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:13px;vertical-align:top;}
+      th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;white-space:nowrap;}
+      td input,td textarea,td select{width:100%;font-size:13px;min-width:120px;}
+      td textarea{min-height:60px;white-space:normal;}
+      .root-cause-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:10px;}
+      .root-cause-item{display:flex;align-items:center;gap:8px;background:var(--card);padding:8px;border-radius:8px;}
+      .action-plan-block{padding:16px;border:1px solid var(--muted);border-radius:var(--radius);background:var(--card);margin-top:16px;position:relative;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p,.help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn{display:none!important;}main{padding:0;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label,p{color:black;}textarea{background:#f9f9f9;color:#000;border-color:#ccc;}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Ishikawa (Causa e Efeito / 6M)</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary hidden-print" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><p>Análises Salvas: <span id="analysis-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h2>Análises de Causa e Efeito (Ishikawa)</h2>
+                    <button id="btn-new-analysis" class="btn primary"><i class="ph-bold ph-plus-circle"></i> Nova Análise</button>
+                </div>
+                <table id="analysis-list-table">
+                    <thead><tr><th>Problema (Efeito)</th><th>Líder</th><th>Data</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+
+        <div id="form-container" class="tab-content hidden">
+            <form id="ishikawa-form">
+                <input type="hidden" id="analysis-id">
+                <section>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <h2 id="form-title">Nova Análise Ishikawa</h2>
+                        <button type="button" id="btn-back-dashboard" class="btn ghost"><i class="ph-bold ph-arrow-left"></i> Voltar</button>
+                    </div>
+                    <div class="grid grid-3">
+                        <div class="field" style="grid-column: span 3;"><label for="analysis-effect">Problema / Efeito a ser Analisado</label><input type="text" id="analysis-effect" placeholder="Ex: Alto índice de refugo no produto X"></div>
+                        <div class="field"><label for="analysis-title">Título da Análise</label><input type="text" id="analysis-title" placeholder="Ex: Análise de Refugo Linha 5"></div>
+                        <div class="field"><label for="analysis-lead">Líder da Análise</label><input type="text" id="analysis-lead"></div>
+                        <div class="field"><label for="analysis-date">Data</label><input type="date" id="analysis-date"></div>
+                    </div>
+                </section>
+                <section>
+                    <h2>Brainstorming de Causas (6M)</h2>
+                    <p style="font-size:13px;color:#cbd5e1;margin-top:-8px;margin-bottom:16px;">Liste as possíveis causas para o problema em cada categoria. Uma causa por linha.</p>
+                    <div class="grid grid-6m">
+                        <div class="field"><h4>Máquina</h4><textarea data-m="machine"></textarea></div>
+                        <div class="field"><h4>Método</h4><textarea data-m="method"></textarea></div>
+                        <div class="field"><h4>Mão de Obra</h4><textarea data-m="manpower"></textarea></div>
+                        <div class="field"><h4>Material</h4><textarea data-m="material"></textarea></div>
+                        <div class="field"><h4>Medição</h4><textarea data-m="measurement"></textarea></div>
+                        <div class="field"><h4>Meio Ambiente</h4><textarea data-m="environment"></textarea></div>
+                    </div>
+                </section>
+                <section>
+                    <h2>Análise de Causa Raiz</h2>
+                    <p style="font-size:13px;color:#cbd5e1;margin-top:-8px;margin-bottom:16px;">Após o brainstorming, selecione abaixo as causas mais prováveis (causas raiz) para serem tratadas.</p>
+                    <div id="root-cause-container" class="root-cause-list">
+                        <p>Salve a análise para selecionar as causas raiz.</p>
+                    </div>
+                </section>
+                <section>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <h2>Planos de Ação</h2>
+                        <button type="button" id="btn-add-plan" class="btn ghost"><i class="ph-bold ph-plus"></i> Novo Plano de Ação</button>
+                    </div>
+                    <div id="multi-plan-container"></div>
+                </section>
+                <div class="hidden-print" style="display:flex;justify-content:flex-end;">
+                    <button type="button" id="btn-save-analysis" class="btn primary"><i class="ph-bold ph-check-circle"></i> Salvar Análise</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Diagrama de Ishikawa (6M)</h2>
+                <p>Esta ferramenta guia você através do processo de análise de causa e efeito, desde o brainstorming até a criação de planos de ação para resolver os problemas.</p>
+                <h3>Fluxo de Trabalho</h3>
+                <ol>
+                    <li><strong>Crie uma Nova Análise:</strong> No Dashboard, clique em <code>+ Nova Análise</code>.</li>
+                    <li><strong>Defina o Problema:</strong> Preencha o campo "Problema / Efeito" e outras informações gerais. Este é o ponto de partida da sua análise.</li>
+                    <li><strong>Brainstorming (6M):</strong> Para cada uma das 6 categorias (Máquina, Método, etc.), liste todas as possíveis causas do problema. Coloque uma causa por linha.</li>
+                    <li><strong>Salve a Análise:</strong> Clique no botão <code>Salvar Análise</code> no final da página. Isso é importante para habilitar o próximo passo.</li>
+                    <li><strong>Selecione as Causas Raiz:</strong> Após salvar, a seção "Análise de Causa Raiz" será preenchida com todas as causas que você listou. Marque as caixas de seleção correspondentes às causas que sua equipe identificou como as mais prováveis ou impactantes. Salve novamente para registrar sua seleção.</li>
+                    <li><strong>Crie Planos de Ação:</strong> Na última seção, clique em <code>+ Novo Plano de Ação</code>. Você pode criar um plano para cada causa raiz identificada. Dê um título ao plano (ex: "Resolver problema da Máquina X") e detalhe as ações usando a tabela 5W2H.</li>
+                </ol>
+            </section>
+        </div>
+    </main>
+
+    <template id="action-plan-block-template">
+        <div class="action-plan-block">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid var(--muted);padding-bottom:8px;">
+                <input type="text" class="plan-title-input" placeholder="Título do Plano de Ação (Ex: Corrigir Causa Raiz X)" style="flex-grow:1;background:transparent;border:none;font-size:16px;color:var(--accent2);padding:0;">
+                <button type="button" class="btn ghost btn-remove-plan" style="padding:4px 8px;">Remover Plano</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="action-table">
+                    <thead><tr><th>What?</th><th>Why?</th><th>Who?</th><th>When?</th><th>Where?</th><th>How?</th><th>How Much (R$)?</th><th>Status</th><th class="hidden-print"></th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button type="button" class="btn ghost btn-add-action" style="margin-top:10px;"><i class="ph-bold ph-plus"></i> Adicionar Ação a este Plano</button>
+        </div>
+    </template>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let analyses = [];
+        const DB_KEY = 'mg_ishikawa_analyses_v1';
+        const MSix = ['machine', 'method', 'manpower', 'material', 'measurement', 'environment'];
+
+        // --- DOM ELEMENTS ---
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const helpContainer = document.getElementById('help-container');
+        const analysisListBody = document.querySelector('#analysis-list-table tbody');
+        const analysisCountSpan = document.getElementById('analysis-count');
+        const multiPlanContainer = document.getElementById('multi-plan-container');
+
+        // --- HELPERS & NAVIGATION ---
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(analyses)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { analyses = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        window.openTab = (evt, tabId) => { document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.getElementById(tabId).classList.remove('hidden'); document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); evt.currentTarget.classList.add('active'); };
+        const showForm = () => openTab({currentTarget: document.querySelector('.menu a')}, 'form-container');
+        const showDashboard = () => { openTab({currentTarget: document.querySelector('.menu a[onclick*="dashboard-container"]')}, 'dashboard-container'); renderAnalysisList(); };
+
+        // --- RENDER FUNCTIONS ---
+        const renderAnalysisList = () => {
+            analysisListBody.innerHTML = '';
+            if (analyses.length === 0) {
+                analysisListBody.innerHTML = '<tr><td colspan="4">Nenhuma análise salva.</td></tr>';
+            } else {
+                analyses.sort((a,b) => b.id - a.id).forEach(analysis => {
+                    const row = analysisListBody.insertRow();
+                    const analysisDate = analysis.date ? new Date(analysis.date + 'T00:00:00').toLocaleDateString() : 'N/A';
+                    row.innerHTML = `
+                        <td>${analysis.effect || 'N/A'}</td><td>${analysis.lead || 'N/A'}</td><td>${analysisDate}</td>
+                        <td class="hidden-print">
+                            <button class="btn ghost btn-edit" data-id="${analysis.id}" style="padding:5px 10px">Editar</button>
+                            <button class="btn ghost btn-delete" data-id="${analysis.id}" style="padding:5px 10px">Excluir</button>
+                        </td>
+                    `;
+                });
+            }
+            analysisCountSpan.textContent = analyses.length;
+        };
+
+        const renderRootCauseSelector = (causes = {}, selectedCauses = []) => {
+            const container = document.getElementById('root-cause-container');
+            container.innerHTML = '';
+            let hasCauses = false;
+            for (const m of MSix) {
+                const categoryName = m.charAt(0).toUpperCase() + m.slice(1);
+                const causeList = causes[m]?.split('\n').filter(c => c.trim() !== '') || [];
+                if (causeList.length > 0) hasCauses = true;
+                causeList.forEach(causeText => {
+                    const fullCauseId = `${categoryName}: ${causeText}`;
+                    const item = document.createElement('div');
+                    item.className = 'root-cause-item';
+                    item.innerHTML = `
+                        <input type="checkbox" id="${fullCauseId}" value="${fullCauseId}" ${selectedCauses.includes(fullCauseId) ? 'checked' : ''}>
+                        <label for="${fullCauseId}">${fullCauseId}</label>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+            if (!hasCauses) {
+                container.innerHTML = '<p>Preencha e salve a seção de brainstorming para selecionar as causas raiz.</p>';
+            }
+        };
+
+        const addActionRowToTable = (tableBody, action = {}) => {
+            const row = tableBody.insertRow();
+            row.innerHTML = `
+                <td><textarea rows="2">${action.what || ''}</textarea></td><td><textarea rows="2">${action.why || ''}</textarea></td>
+                <td><input type="text" value="${action.who || ''}"></td><td><input type="date" value="${action.when || ''}"></td>
+                <td><input type="text" value="${action.where || ''}"></td><td><textarea rows="2">${action.how || ''}</textarea></td>
+                <td><input type="number" step="0.01" value="${action.howMuch || ''}"></td><td><select><option>A Fazer</option><option>Em Andamento</option><option>Concluído</option></select></td>
+                <td class="hidden-print"><button type="button" class="btn ghost btn-remove-row" style="padding:4px">&times;</button></td>
+            `;
+            if (action.status) row.querySelector('select').value = action.status;
+        };
+        
+        const renderActionPlanBlock = (plan = {title: '', actions: []}) => {
+            const template = document.getElementById('action-plan-block-template');
+            const clone = template.content.cloneNode(true);
+            const block = clone.querySelector('.action-plan-block');
+            block.querySelector('.plan-title-input').value = plan.title || '';
+            const tableBody = block.querySelector('.action-table tbody');
+            if(plan.actions && plan.actions.length > 0) {
+                plan.actions.forEach(action => addActionRowToTable(tableBody, action));
+            } else {
+                addActionRowToTable(tableBody);
+            }
+            multiPlanContainer.appendChild(clone);
+        };
+        
+        const populateForm = (analysis = {}) => {
+            document.getElementById('ishikawa-form').reset();
+            document.getElementById('analysis-id').value = analysis.id || '';
+            document.getElementById('analysis-title').value = analysis.title || '';
+            document.getElementById('analysis-effect').value = analysis.effect || '';
+            document.getElementById('analysis-lead').value = analysis.lead || '';
+            document.getElementById('analysis-date').value = analysis.date || new Date().toISOString().slice(0, 10);
+            document.getElementById('form-title').textContent = analysis.id ? 'Editar Análise Ishikawa' : 'Nova Análise Ishikawa';
+
+            MSix.forEach(m => {
+                const textarea = document.querySelector(`textarea[data-m="${m}"]`);
+                if(textarea) textarea.value = analysis.causes?.[m] || '';
+            });
+            
+            renderRootCauseSelector(analysis.causes, analysis.rootCauses);
+
+            multiPlanContainer.innerHTML = '';
+            if (analysis.actionPlans && analysis.actionPlans.length > 0) {
+                analysis.actionPlans.forEach(plan => renderActionPlanBlock(plan));
+            }
+
+            showForm();
+        };
+
+        const gatherFormData = () => {
+            const analysis = {
+                id: document.getElementById('analysis-id').value || `ishikawa_${Date.now()}`,
+                title: document.getElementById('analysis-title').value,
+                effect: document.getElementById('analysis-effect').value,
+                lead: document.getElementById('analysis-lead').value,
+                date: document.getElementById('analysis-date').value,
+                causes: {},
+                rootCauses: [],
+                actionPlans: []
+            };
+            MSix.forEach(m => { analysis.causes[m] = document.querySelector(`textarea[data-m="${m}"]`).value; });
+            document.querySelectorAll('#root-cause-container input:checked').forEach(cb => analysis.rootCauses.push(cb.value));
+
+            document.querySelectorAll('.action-plan-block').forEach(block => {
+                const plan = { title: block.querySelector('.plan-title-input').value, actions: [] };
+                block.querySelectorAll('.action-table tbody tr').forEach(row => {
+                    plan.actions.push({
+                        what: row.cells[0].querySelector('textarea').value, why: row.cells[1].querySelector('textarea').value,
+                        who: row.cells[2].querySelector('input').value, when: row.cells[3].querySelector('input').value,
+                        where: row.cells[4].querySelector('input').value, how: row.cells[5].querySelector('textarea').value,
+                        howMuch: row.cells[6].querySelector('input').value, status: row.cells[7].querySelector('select').value
+                    });
+                });
+                analysis.actionPlans.push(plan);
+            });
+            
+            return analysis;
+        };
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('btn-new-analysis').addEventListener('click', () => populateForm());
+        document.getElementById('btn-back-dashboard').addEventListener('click', showDashboard);
+        document.getElementById('btn-add-plan').addEventListener('click', () => renderActionPlanBlock());
+
+        document.getElementById('btn-save-analysis').addEventListener('click', () => {
+            const analysisData = gatherFormData();
+            const index = analyses.findIndex(a => a.id == analysisData.id);
+            if (index > -1) { analyses[index] = analysisData; } 
+            else { analyses.push(analysisData); }
+            saveData();
+            showToast('Análise salva com sucesso!', 'success');
+            renderRootCauseSelector(analysisData.causes, analysisData.rootCauses); // Re-render root causes after save
+            renderAnalysisList();
+        });
+
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if(formContainer.classList.contains('hidden')) { showToast('Abra uma análise para exportar.', 'info'); return; } window.print(); });
+
+        main.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.btn-edit');
+            const deleteBtn = e.target.closest('.btn-delete');
+            const addActionBtn = e.target.closest('.btn-add-action');
+            const removeRowBtn = e.target.closest('.btn-remove-row');
+            const removePlanBtn = e.target.closest('.btn-remove-plan');
+            
+            if (editBtn) { const analysis = analyses.find(a => a.id == editBtn.dataset.id); if(analysis) populateForm(analysis); }
+            if (deleteBtn) { if (confirm('Tem certeza?')) { analyses = analyses.filter(a => a.id != deleteBtn.dataset.id); saveData(); renderAnalysisList(); showToast('Análise excluída.', 'info'); } }
+            if (addActionBtn) { addActionRowToTable(addActionBtn.closest('.action-plan-block').querySelector('.action-table tbody')); }
+            if (removeRowBtn) { removeRowBtn.closest('tr').remove(); }
+            if (removePlanBtn) { if (confirm('Remover este plano de ação?')) { removePlanBtn.closest('.action-plan-block').remove(); } }
+        });
+
+        // --- BACKUP & RESTORE ---
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(analyses, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`ishikawa_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){analyses=d;saveData();renderAnalysisList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 1500); } });
+
+        // --- INITIALIZATION ---
+        const initApp = () => {
+            loadData();
+            showDashboard();
+        };
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

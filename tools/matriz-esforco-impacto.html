@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Matriz Esforço x Impacto</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .field{display:flex;flex-direction:column;gap:6px}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      table{width:100%;border-collapse:collapse;} th, td{padding:8px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;} td input{padding:6px 8px;font-size:13px; min-height: auto; width:100%;}
+      .form-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap;}.form-tab{flex:1;padding:10px;background:var(--muted);border:1px solid #243041;border-radius:8px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;}.form-tab.active{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent;}
+      .form-tab-content{padding-top:15px;border-top:1px solid var(--muted);}
+      .action-item-block{padding:12px;border:1px solid var(--muted);border-radius:12px;background:var(--card);position:relative;margin-top:10px;}
+      .remove-action-btn, .remove-item-btn{background:none;border:none;color:#fca5a5;font-size:1.5rem;cursor:pointer; padding:0; box-shadow:none;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      .chart-container { position: relative; height: 360px; width: 100%; }
+      #effort-impact-chart { display: block; width: 100%; height: 100%; }
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}main{padding:0;} header,aside,.hidden-print,.btn,.form-tabs,.remove-action-btn,.remove-item-btn{display:none !important;} section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black}}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Matriz Esforço x Impacto</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Matrizes Salvas: <span id="matrix-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Matrizes Esforço x Impacto Salvas</h2><button id="btn-new-matrix" class="btn primary">+ Nova Matriz</button></div>
+                <table id="matrix-list-table">
+                    <thead><tr><th>Título da Análise</th><th>Responsável</th><th>Data</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <form id="matrix-form">
+                <input type="hidden" id="matrix-id">
+                <section>
+                    <h4>Informações da Análise</h4>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                       <div class="field"><label for="matrix-title">Título da Análise</label><input type="text" id="matrix-title" required placeholder="Ex: Iniciativas de Melhoria Q3"></div>
+                       <div class="field"><label for="matrix-lead">Responsável</label><input type="text" id="matrix-lead"></div>
+                       <div class="field"><label for="matrix-date">Data</label><input type="date" id="matrix-date"></div>
+                    </div>
+                </section>
+                <nav class="form-tabs">
+                    <div class="form-tab active" data-tab="matrix-input">1. Dados e Matriz</div>
+                    <div class="form-tab" data-tab="action-plan">2. Plano de Ação</div>
+                </nav>
+                <div id="matrix-input" class="form-tab-content">
+                    <div class="grid" style="grid-template-columns: 1fr 1.5fr; gap:16px;">
+                        <section>
+                            <h4>Iniciativas</h4>
+                            <table id="initiatives-table">
+                                <thead><tr><th>Iniciativa / Ação</th><th>Esforço (1-10)</th><th>Impacto (1-10)</th><th class="hidden-print"></th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                            <button type="button" id="btn-add-initiative" class="btn ghost" style="width:100%;margin-top:10px;">+ Adicionar Iniciativa</button>
+                        </section>
+                        <section>
+                            <h4>Matriz Visual</h4>
+                            <div class="chart-container">
+                                <canvas id="effort-impact-chart"></canvas>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+                <div id="action-plan" class="form-tab-content hidden">
+                    <section>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4>Plano de Ação</h4>
+                            <button type="button" id="btn-populate-actions" class="btn ghost">Criar Ações para 'Quick Wins'</button>
+                        </div>
+                        <div id="action-plan-container"></div>
+                        <button type="button" class="btn ghost btn-add-action-plan" style="width:100%; margin-top:10px;">+ Adicionar Ação Manualmente</button>
+                    </section>
+                </div>
+                 <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-matrix" class="btn primary">Salvar Matriz</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Matriz Esforço x Impacto</h2>
+                <p>Esta ferramenta é um sistema completo para priorizar iniciativas de forma visual e transformá-las em um plano de ação concreto.</p>
+                <h3>Fluxo de Trabalho</h3>
+                <p>A ferramenta é dividida em 2 etapas principais, acessíveis pelas abas no topo do formulário:</p>
+                <ol>
+                    <li><strong>Dados e Matriz:</strong> Liste e pontue suas iniciativas para visualizá-las na matriz.</li>
+                    <li><strong>Plano de Ação:</strong> Crie tarefas para executar as iniciativas priorizadas.</li>
+                </ol>
+                <h3>1. Aba "Dados e Matriz"</h3>
+                <ul>
+                    <li>Use o botão <code>+ Adicionar Iniciativa</code> para criar novas linhas na tabela.</li>
+                    <li><strong>Iniciativa/Ação:</strong> Descreva de forma clara cada ideia ou projeto.</li>
+                    <li><strong>Esforço e Impacto:</strong> Atribua uma nota de 1 (baixo) a 10 (alto) para o esforço necessário e o impacto esperado.</li>
+                    <li><strong>Matriz Visual:</strong> O gráfico à direita é atualizado <strong>em tempo real</strong>. Ele classifica automaticamente suas iniciativas em 4 quadrantes:
+                        <ul>
+                            <li><code style="color:var(--ok)">Fazer Agora (Quick Wins)</code>: Alto impacto, baixo esforço. Suas maiores prioridades!</li>
+                            <li><code style="color:var(--accent)">Grandes Projetos</code>: Alto impacto, alto esforço. Planeje com cuidado.</li>
+                            <li><code style="color:var(--warn)">Tarefas de Preenchimento</code>: Baixo impacto, baixo esforço. Faça se tiver tempo.</li>
+                            <li><code style="color:var(--bad)">Tarefas Ingratas</code>: Baixo impacto, alto esforço. Evite ou reavalie.</li>
+                        </ul>
+                    </li>
+                </ul>
+                <h3>2. Aba "Plano de Ação"</h3>
+                <p>Após identificar suas prioridades (especialmente os Quick Wins), esta aba ajuda a colocá-las em prática.</p>
+                <ul>
+                    <li><strong>Botão Mágico:</strong> Clique em <code>Criar Ações para 'Quick Wins'</code>. A ferramenta irá automaticamente pegar todas as iniciativas do quadrante "Fazer Agora" e criará um item de plano de ação para cada uma, economizando seu tempo.</li>
+                    <li>Você também pode adicionar ações manualmente para qualquer outra iniciativa.</li>
+                </ul>
+                <h3>Funcionalidades Gerais</h3>
+                <p>A ferramenta conta com um <strong>Dashboard</strong> para gerenciar todas as suas matrizes, e as funções de <strong>Backup</strong>, <strong>Restauração</strong> e <strong>Exportação para PDF</strong> no cabeçalho.</p>
+            </section>
+        </div>
+    </main>
+
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid" style="grid-template-columns: repeat(12, 1fr); gap: 12px;">
+            <div class="field" style="grid-column:span 12;"><label>Ação</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column:span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+        </div></div>
+    </template>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            if (window.chartjsPluginAnnotation) { Chart.register(window.chartjsPluginAnnotation); }
+        } catch (err) { console.warn('Plugin de anotação do Chart.js já pode estar registrado:', err); }
+
+        let effortImpactMatrices = [];
+        const DB_KEY = 'mg_ei_matrices_v1';
+        let effortImpactChart = null;
+
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const btnNewMatrix = document.getElementById('btn-new-matrix');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveMatrix = document.getElementById('btn-save-matrix');
+        const matrixListContainer = document.querySelector('#matrix-list-table tbody');
+        const matrixCountSpan = document.getElementById('matrix-count');
+        const initiativesTableBody = document.querySelector('#initiatives-table tbody');
+        const actionPlanFormTemplate = document.getElementById('action-plan-form-template');
+        const toastContainer = document.getElementById('toast-container');
+
+        const showToast = (message, type = 'info') => {
+            if(!toastContainer) return;
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.textContent = message;
+            toastContainer.appendChild(t);
+            setTimeout(()=> t.classList.add('show'), 10);
+            setTimeout(()=> {
+                t.classList.remove('show');
+                t.addEventListener('transitionend', ()=> t.remove());
+            }, 3600);
+        };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(effortImpactMatrices)); } catch (e) { showToast('Erro ao salvar.', 'error'); console.error(e); } };
+        const loadData = () => { effortImpactMatrices = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId)?.classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt?.currentTarget.classList.add('active');
+            if (tabId !== 'form-container') document.getElementById('form-container').classList.add('hidden');
+        };
+        const showForm = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            formContainer.classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+        };
+        const showDashboard = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            dashboardContainer.classList.remove('hidden');
+            const dashboardLink = Array.from(document.querySelectorAll('.menu a')).find(a => a.getAttribute('onclick')?.includes('dashboard-container'));
+            if (dashboardLink) { document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); dashboardLink.classList.add('active'); }
+            renderMatrixList();
+        };
+
+        const renderMatrixList = () => {
+            matrixListContainer.innerHTML = '';
+            matrixCountSpan.textContent = effortImpactMatrices.length;
+            if (effortImpactMatrices.length === 0) { matrixListContainer.innerHTML = '<tr><td colspan="4">Nenhuma matriz salva.</td></tr>'; return;}
+            effortImpactMatrices.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(matrix => {
+                const row = matrixListContainer.insertRow();
+                row.innerHTML = `<td>${matrix.title || 'N/A'}</td><td>${matrix.lead || 'N/A'}</td><td>${matrix.date ? new Date(matrix.date + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${matrix.id}">Editar</button><button class="btn ghost btn-delete" data-id="${matrix.id}">Excluir</button></div></td>`;
+            });
+        };
+        const createInitiativeRow = (item = {}) => {
+            const row = document.createElement('tr');
+            row.dataset.id = item.id || `i${Date.now()}${Math.random().toString(36).slice(2)}`;
+            row.innerHTML = `
+                <td><input type="text" class="item-text" placeholder="Descreva a iniciativa..." value="${(item.text||'').replace(/"/g,'&quot;')}"></td>
+                <td><input type="number" class="item-effort" min="1" max="10" value="${item.effort || 5}"></td>
+                <td><input type="number" class="item-impact" min="1" max="10" value="${item.impact || 5}"></td>
+                <td class="hidden-print" style="text-align:center;"><button type="button" class="remove-item-btn">&times;</button></td>
+            `;
+            return row;
+        };
+        
+        const updateChart = (fullRedraw = false) => {
+            const data = Array.from(initiativesTableBody.querySelectorAll('tr')).map(row => ({
+                label: row.querySelector('.item-text').value,
+                x: parseFloat(row.querySelector('.item-effort').value) || 0,
+                y: parseFloat(row.querySelector('.item-impact').value) || 0
+            }));
+
+            if (fullRedraw || !effortImpactChart) {
+                if (effortImpactChart) {
+                    effortImpactChart.destroy();
+                }
+                const ctx = document.getElementById('effort-impact-chart').getContext('2d');
+                effortImpactChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: { datasets: [{ label: 'Iniciativas', data, backgroundColor: 'rgba(34,211,238,0.9)', pointRadius: 6, pointHoverRadius: 8 }] },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { min: 0, max: 10.5, title: { display: true, text: 'Esforço' }, ticks:{color:'#e5e7eb'}, grid: { color: 'rgba(255,255,255,0.1)'} },
+                            y: { min: 0, max: 10.5, title: { display: true, text: 'Impacto' }, ticks:{color:'#e5e7eb'}, grid: { color: 'rgba(255,255,255,0.1)'} }
+                        },
+                        plugins: {
+                            tooltip: { callbacks: { label: (context) => context.raw.label || 'Iniciativa' } },
+                            legend: { display: false },
+                            annotation: {
+                                annotations: {
+                                    hLine: { type: 'line', yMin: 5.5, yMax: 5.5, borderColor: 'rgba(148,163,184,0.6)', borderWidth: 2 },
+                                    vLine: { type: 'line', xMin: 5.5, xMax: 5.5, borderColor: 'rgba(148,163,184,0.6)', borderWidth: 2 },
+                                    quickWinsBox: { type: 'box', xMin: 0, xMax: 5.5, yMin: 5.5, yMax: 11, backgroundColor: 'rgba(34, 197, 94, 0.08)', borderWidth:0 },
+                                    majorProjectsBox: { type: 'box', xMin: 5.5, xMax: 11, yMin: 5.5, yMax: 11, backgroundColor: 'rgba(34, 211, 238, 0.06)', borderWidth:0 },
+                                    fillInsBox: { type: 'box', xMin: 0, xMax: 5.5, yMin: 0, yMax: 5.5, backgroundColor: 'rgba(245, 158, 11, 0.06)', borderWidth:0 },
+                                    thanklessTasksBox: { type: 'box', xMin: 5.5, xMax: 11, yMin: 0, yMax: 5.5, backgroundColor: 'rgba(239, 68, 68, 0.06)', borderWidth:0 },
+                                    quickWinsLabel: { type: 'label', xValue: 2.75, yValue: 8.25, content: "Fazer Agora", color: '#16a34a', font: { size: 14, weight: 'bold' } },
+                                    majorProjectsLabel: { type: 'label', xValue: 8.25, yValue: 8.25, content: "Grandes Projetos", color: '#22d3ee', font: { size: 14, weight: 'bold' } },
+                                    fillInsLabel: { type: 'label', xValue: 2.75, yValue: 2.75, content: "Preenchimento", color: '#f59e0b', font: { size: 14, weight: 'bold' } },
+                                    thanklessTasksLabel: { type: 'label', xValue: 8.25, yValue: 2.75, content: "Tarefas Ingratas", color: '#ef4444', font: { size: 14, weight: 'bold' } }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                effortImpactChart.data.datasets[0].data = data;
+                effortImpactChart.update();
+            }
+        };
+
+        const populateForm = (matrix = {}) => {
+            document.getElementById('matrix-form').reset();
+            document.getElementById('matrix-id').value = matrix.id || '';
+            document.getElementById('matrix-title').value = matrix.title || '';
+            document.getElementById('matrix-date').value = matrix.date || new Date().toISOString().slice(0, 10);
+            document.getElementById('matrix-lead').value = matrix.lead || '';
+            initiativesTableBody.innerHTML = '';
+            
+            (matrix.initiatives || []).forEach(item => initiativesTableBody.appendChild(createInitiativeRow(item)));
+            
+            renderActionPlans(matrix.actionPlans);
+            setTimeout(() => updateChart(true), 80);
+        };
+
+        const renderActionPlans = (plans = []) => {
+            const container = document.getElementById('action-plan-container');
+            container.innerHTML = '';
+            if (!plans) return;
+            plans.forEach(plan => {
+                const clone = actionPlanFormTemplate.content.cloneNode(true);
+                const block = clone.querySelector('.action-item-block');
+                if(block) {
+                  block.querySelector('.action-input').value = plan.action || '';
+                  block.querySelector('.responsible-input').value = plan.responsible || '';
+                  block.querySelector('.status-input').value = plan.status || 'aberto';
+                  block.querySelector('.start-date-input').value = plan.startDate || '';
+                  block.querySelector('.end-date-input').value = plan.endDate || '';
+                  container.appendChild(clone);
+                }
+            });
+        };
+        const gatherFormData = () => {
+            const idValue = document.getElementById('matrix-id').value;
+            const matrixData = {
+                id: idValue || String(Date.now()),
+                title: document.getElementById('matrix-title').value,
+                date: document.getElementById('matrix-date').value,
+                lead: document.getElementById('matrix-lead').value,
+                initiatives: Array.from(initiativesTableBody.querySelectorAll('tr')).map(row => ({
+                    id: row.dataset.id,
+                    text: row.querySelector('.item-text').value,
+                    effort: parseInt(row.querySelector('.item-effort').value) || 5,
+                    impact: parseInt(row.querySelector('.item-impact').value) || 5,
+                })),
+                actionPlans: Array.from(document.querySelectorAll('#action-plan-container .action-item-block')).map(block => ({
+                     action: block.querySelector('.action-input').value,
+                     responsible: block.querySelector('.responsible-input').value,
+                     status: block.querySelector('.status-input').value,
+                     startDate: block.querySelector('.start-date-input').value,
+                     endDate: block.querySelector('.end-date-input').value,
+                }))
+            };
+            return matrixData;
+        };
+
+        btnNewMatrix.addEventListener('click', () => {
+            populateForm({});
+            showForm();
+        });
+        btnSaveMatrix.addEventListener('click', () => {
+            const matrixData = gatherFormData();
+            const index = effortImpactMatrices.findIndex(m => m.id === matrixData.id);
+            if (index > -1) { effortImpactMatrices[index] = matrixData; } else { effortImpactMatrices.push(matrixData); }
+            saveData(); 
+            showToast('Matriz salva com sucesso!', 'success'); 
+            showDashboard();
+        });
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if (target.closest('.form-tab')) {
+                const tabButton = target.closest('.form-tab');
+                const tabId = tabButton.dataset.tab;
+                document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+                tabButton.classList.add('active');
+                document.querySelectorAll('.form-tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById(tabId)?.classList.remove('hidden');
+                return;
+            }
+            if (target.closest('#btn-add-initiative')) {
+                initiativesTableBody.appendChild(createInitiativeRow());
+                return;
+            }
+            if (target.closest('.remove-item-btn')) {
+                target.closest('tr')?.remove();
+                updateChart();
+                return;
+            }
+            if (target.closest('.btn-add-action-plan')) {
+                 document.getElementById('action-plan-container').appendChild(actionPlanFormTemplate.content.cloneNode(true));
+                 return;
+            }
+            if (target.closest('#btn-populate-actions')) {
+                const container = document.getElementById('action-plan-container');
+                const quickWins = Array.from(initiativesTableBody.querySelectorAll('tr'))
+                    .map(row => ({ text: row.querySelector('.item-text').value, effort: parseInt(row.querySelector('.item-effort').value), impact: parseInt(row.querySelector('.item-impact').value) }))
+                    .filter(item => item.effort <= 5 && item.impact > 5 && item.text);
+
+                quickWins.forEach(item => {
+                    const clone = actionPlanFormTemplate.content.cloneNode(true);
+                    clone.querySelector('.action-input').value = item.text;
+                    container.appendChild(clone);
+                });
+                showToast(`${quickWins.length} ações criadas a partir dos Quick Wins!`, 'success');
+                return;
+            }
+            if (target.closest('.remove-action-btn')) {
+                 target.closest('.action-item-block')?.remove();
+                 return;
+            }
+            if (target.closest('.btn-edit')) {
+                const matrix = effortImpactMatrices.find(m => m.id === target.closest('.btn-edit').dataset.id);
+                if (matrix) { populateForm(matrix); showForm(); }
+                return;
+            }
+            if (target.closest('.btn-delete')){
+                if (confirm('Tem certeza?')) {
+                    effortImpactMatrices = effortImpactMatrices.filter(m => m.id !== target.closest('.btn-delete').dataset.id);
+                    saveData();
+                    renderMatrixList();
+                }
+                return;
+            }
+        });
+
+        initiativesTableBody.addEventListener('input', (e) => {
+            if (e.target.classList.contains('item-effort') || e.target.classList.contains('item-impact')) {
+                updateChart();
+            }
+        });
+
+        document.getElementById('btn-export-pdf').addEventListener('click', () => {
+            if (formContainer.classList.contains('hidden')) { showToast('Abra uma matriz para exportar.', 'info'); return; }
+            window.print();
+        });
+        document.getElementById('btn-download-backup').addEventListener('click', () => {
+            const blob = new Blob([JSON.stringify(effortImpactMatrices, null, 2)],{type:'application/json'});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `matrix_ei_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            showToast("Backup baixado!","success");
+        });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => {
+            const input = document.createElement('input'); input.type='file'; input.accept='.json';
+            input.onchange = e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?')) return;
+                    try{
+                        const data = JSON.parse(ev.target.result);
+                        if(Array.isArray(data)){
+                            effortImpactMatrices = data;
+                            saveData();
+                            renderMatrixList();
+                            showToast('Backup restaurado!');
+                        } else { throw new Error('Formato inválido.'); }
+                    }catch(err){ console.error(err); showToast('Erro: Arquivo de backup inválido.','error');}
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => {
+            if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) {
+                document.getElementById('btn-download-backup').click();
+                localStorage.removeItem(DB_KEY);
+                showToast("Dados arquivados e limpos.", "info");
+                setTimeout(() => window.location.reload(), 1000);
+            }
+        });
+        btnCancel.addEventListener('click', showDashboard);
+
+        const initApp = () => {
+            loadData();
+            showDashboard();
+        };
+
+        initApp();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folha de Verificação de Ocorrências</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+      :root{
+        --bg:#0f172a; --panel:#111827; --muted:#1f2937; --card:#0b1220; --text:#e5e7eb; --accent:#22d3ee; --accent2:#a78bfa; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+        --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial; background:linear-gradient(120deg,#0b1020,#0a1328); color:var(--text); display:grid; grid-template-columns:280px 1fr; grid-template-rows:auto 1fr; gap:0; }
+      header{grid-column:1/3; display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:linear-gradient(90deg,#0b1020,#0a1a35); border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:5}
+      .header-title h1 { margin: 0; font-size: 20px; letter-spacing: .4px; color: var(--text); }
+      .header-title .subtitle { margin: 4px 0 0 0; font-size: 14px; font-weight: normal; color: var(--accent); }
+      .header-title .dev-credit { margin: 4px 0 0 0; font-size: 11px; font-weight: normal; color: #64748b; }
+      header .actions{display:flex; flex-wrap: wrap; gap:8px}
+      button, .btn{background:var(--muted); color:var(--text); border:1px solid #243041; border-radius:12px; padding:10px 14px; cursor:pointer; box-shadow:var(--shadow); transition:.2s; font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px); border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb); border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent; border-color:#334155}
+      aside{border-right:1px solid #1f2937; background:linear-gradient(180deg,#0b1020,#0a1328); padding:16px; display:flex; flex-direction:column; gap:24px; justify-content: space-between;}
+      .menu{display:flex; flex-direction:column; gap:8px}
+      .menu .tab-link{display:flex; gap:10px; align-items:center; text-decoration:none; color:#cbd5e1; padding:10px 12px; border:1px solid #1e293b; border-radius:12px; background:rgba(255,255,255,.02); cursor:pointer;}
+      .menu .tab-link.active,.menu .tab-link:hover{border-color:#334155; background:rgba(34,211,238,.08); color:#e2e8f0}
+      main{padding:18px; overflow:auto}
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      section{background:rgba(255,255,255,.03); border:1px solid #1f2937; border-radius:var(--radius); padding:16px; margin-bottom:18px; box-shadow:var(--shadow)}
+      h2, h3{margin:0 0 12px 0; font-size:18px; color: var(--accent);}
+      h4{margin:0 0 12px 0; font-size:16px; color: var(--accent2);}
+      .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px}
+      .field{display:flex; flex-direction:column; gap:6px}
+      label{font-size:12px; color:#93c5fd}
+      input, select, textarea{background:#0b1220; border:1px solid #243041; color:var(--text); padding:10px 12px; border-radius:10px; outline:none; font-family:inherit; font-size:14px;}
+      .hidden { display: none !important; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 8px 12px; border: 1px solid var(--muted); text-align: left; font-size: 13px; vertical-align: middle; }
+      th { background: rgba(255,255,255,.05); }
+      .kpi-card { background: var(--card); border-radius: var(--radius); padding: 16px; text-align: center; }
+      .kpi-card .kpi-value { font-size: 2.5rem; font-weight: bold; transition: color .3s; }
+      .kpi-card .kpi-label { font-size: 0.9rem; color: #94a3b8; }
+      .kpi-card .kpi-meta { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+      .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: flex; justify-content: center; align-items: center; }
+      .modal-content { background: var(--bg); padding: 24px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid var(--muted); text-align: center; }
+      .autocomplete-container { position: relative; }
+      .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 10; background: var(--panel); border: 1px solid var(--muted); border-radius: 10px; max-height: 200px; overflow-y: auto; margin-top: 4px; }
+      .autocomplete-item { padding: 10px 12px; cursor: pointer; font-size: 14px; text-align: left; }
+      .autocomplete-item:hover { background: var(--muted); }
+      .autocomplete-item.is-new { font-style: italic; color: var(--accent); }
+      #toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+      .toast { padding: 12px 18px; border-radius: 12px; color: white; font-weight: 600; font-size: 14px; box-shadow: var(--shadow); opacity: 0; transform: translateX(100%); transition: all 0.4s ease; }
+      .toast.show { opacity: 1; transform: translateX(0); }
+      .toast.success { background: linear-gradient(90deg, #22c55e, #16a34a); }
+      .toast.error { background: linear-gradient(90deg, #ef4444, #dc2626); }
+      .toast.info { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+      .print-header { display: none; }
+      @media print {
+        body { display: block; background: white; color: black; }
+        header, aside, .menu, #Log, #Cadastros, #Ajuda, section h4, .actions, #btn-apply-filters, #btn-set-targets, .hidden-print { display: none !important; }
+        main, section { box-shadow: none; border: none; padding: 0; margin: 0 0 20px 0; }
+        section canvas { page-break-inside: avoid; margin-bottom: 20px; }
+        .print-header { display: block; text-align: center; margin-bottom: 20px; }
+        .print-header h1 { font-size: 24px; color: black; margin: 0;}
+        .print-header p { font-size: 14px; color: #333; margin: 5px 0 0 0;}
+        #Reports { display: block !important; }
+      }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title">
+            <h1>Eng Process & Quality</h1>
+            <p class="subtitle">Folha de Verificação</p>
+            <p class="dev-credit">Desenvolvido por Marcos Garçon</p>
+        </div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup (.json)</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar Relatórios (PDF)</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                 <a class="tab-link active" onclick="openTab(event, 'Log')">Registro</a>
+                 <a class="tab-link" onclick="openTab(event, 'Reports')">Relatórios</a>
+                 <a class="tab-link" onclick="openTab(event, 'Cadastros')">Cadastros</a>
+                 <a class="tab-link" onclick="openTab(event, 'Ajuda')">Ajuda</a>
+            </div>
+        </div>
+    </aside>
+    <main>
+        <div id="Log" class="tab-content active">
+             <section>
+                <h4>Registrar Nova Ocorrência</h4>
+                <form id="log-form" autocomplete="off">
+                    <input type="hidden" id="log-id">
+                    <div class="grid">
+                        <div class="field"><label>Data / Hora</label><input type="text" id="log-timestamp" readonly></div>
+                        <div class="field"><label>Turno</label><select id="log-shift"><option value="1">Turno 1</option><option value="2">Turno 2</option><option value="3">Turno 3</option></select></div>
+                        <div class="field autocomplete-container"><label>Setor</label><input type="text" id="log-sector" required></div>
+                        <div class="field autocomplete-container"><label>Linha</label><input type="text" id="log-line" required></div>
+                        <div class="field autocomplete-container"><label>Cód. Peça</label><input type="text" id="log-part-number" required></div>
+                        <div class="field autocomplete-container"><label>Tipo de Defeito</label><input type="text" id="log-defect" required></div>
+                        <div class="field"><label>Quantidade</label><input type="number" id="log-quantity" value="1" min="1" required></div>
+                        <div class="field"><label>Analista</label><input type="text" id="log-analyst" required></div>
+                        <div class="field autocomplete-container"><label>Ação Realizada</label><input type="text" id="log-action-taken" required></div>
+                        <div class="field"><label>Detalhe da Ação</label><input type="text" id="log-action-detail" placeholder="Ex: Sensor XYZ, calibre 123"></div>
+                        <div class="field"><label>Qtd. Sucata</label><input type="number" id="log-scrap-qty" value="0" min="0"></div>
+                        <div class="field"><label>Evidência (Opcional)</label><input type="file" id="log-image" accept="image/*"></div>
+                    </div>
+                    <div style="margin-top: 16px; display:flex; gap:10px;">
+                        <button type="submit" class="btn primary">Salvar Registro</button>
+                        <button type="button" id="btn-clear-form" class="btn ghost">Limpar</button>
+                    </div>
+                </form>
+            </section>
+            <section>
+                <h4>Registros Recentes</h4>
+                <div style="overflow-x: auto;">
+                    <table id="log-table">
+                        <thead><tr><th>Data/Hora</th><th>Setor</th><th>Linha</th><th>Peça</th><th>Defeito</th><th>Ação</th><th>Qtd</th><th>Analista</th><th class="hidden-print">Opções</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+        <div id="Reports" class="tab-content">
+            <div class="print-header">
+                <h1>Relatório de Ocorrências</h1>
+                <p>Período: <span id="print-period"></span></p>
+            </div>
+            <section>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4>Filtros de Análise</h4>
+                    <button id="btn-set-targets" class="btn ghost">Definir Metas</button>
+                </div>
+                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                    <div class="field"><label>Período</label><select id="filter-period"><option value="today">Hoje</option><option value="week">Esta Semana</option><option value="month">Este Mês</option><option value="year">Este Ano</option><option value="all">Tudo</option><option value="custom">Personalizado</option></select></div>
+                    <div class="field"><label>De</label><input type="date" id="filter-start-date" disabled></div>
+                    <div class="field"><label>Até</label><input type="date" id="filter-end-date" disabled></div>
+                    <div class="field"><label>Analista</label><select id="filter-analyst"><option value="all">Todos</option></select></div>
+                    <div class="field"><label>Setor</label><select id="filter-sector"><option value="all">Todos</option></select></div>
+                    <div class="field"><label>Linha</label><select id="filter-line"><option value="all">Todas</option></select></div>
+                    <div class="field"><label>Defeito</label><select id="filter-defect"><option value="all">Todos</option></select></div>
+                </div>
+                 <button id="btn-apply-filters" class="btn primary" style="margin-top:10px;">Aplicar Filtros</button>
+            </section>
+            <section id="kpi-section">
+                 <h4>Resumo do Período</h4>
+                <div id="kpi-container" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpi-total-defects" style="color:var(--accent);">0</div>
+                        <div class="kpi-label">Total de Ocorrências</div>
+                        <div class="kpi-meta"></div>
+                    </div>
+                     <div class="kpi-card">
+                        <div class="kpi-value" id="kpi-scrap-rate">0%</div>
+                        <div class="kpi-label">Taxa de Refugo (Scrap)</div>
+                        <div class="kpi-meta" id="scrap-rate-meta">Meta: N/D</div>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <h4>Tendência de Ocorrências</h4>
+                <canvas id="trend-chart" style="margin-bottom: 30px;"></canvas>
+                <h4>Ranking de Defeitos (Pareto)</h4>
+                <canvas id="pareto-chart" style="margin-bottom: 30px;"></canvas>
+                <h4>Ocorrências por Setor</h4>
+                <canvas id="sector-chart" style="margin-bottom: 30px;"></canvas>
+                <h4>Ações Realizadas Mais Frequentes</h4>
+                <canvas id="action-chart"></canvas>
+            </section>
+        </div>
+        <div id="Cadastros" class="tab-content">
+             <section><h4>Cadastro de Setores</h4><div class="hidden-print" style="display:flex; gap:8px; margin-bottom:12px;"><button class="btn ghost" id="btn-import-sectors">Importar (CSV)</button><button class="btn ghost" id="btn-export-sectors">Exportar (CSV)</button></div><table class="db-table" id="sector-db-table"><thead><tr><th>Nome do Setor</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-sector" placeholder="Nome do novo setor" style="flex-grow:1;"><button class="btn ghost" data-type="sector">Adicionar</button></div></section>
+            <section><h4>Cadastro de Linhas</h4><div class="hidden-print" style="display:flex; gap:8px; margin-bottom:12px;"><button class="btn ghost" id="btn-import-lines">Importar (CSV)</button><button class="btn ghost" id="btn-export-lines">Exportar (CSV)</button></div><table class="db-table" id="line-db-table"><thead><tr><th>Nome da Linha</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-line" placeholder="Nome da nova linha" style="flex-grow:1;"><button class="btn ghost" data-type="line">Adicionar</button></div></section>
+            <section><h4>Cadastro de Ações Realizadas</h4><div class="hidden-print" style="display:flex; gap:8px; margin-bottom:12px;"><button class="btn ghost" id="btn-import-actions">Importar (CSV)</button><button class="btn ghost" id="btn-export-actions">Exportar (CSV)</button></div><table class="db-table" id="action-db-table"><thead><tr><th>Nome da Ação</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-action" placeholder="Nome da nova ação" style="flex-grow:1;"><button class="btn ghost" data-type="action">Adicionar</button></div></section>
+            <section><h4>Cadastro de Peças</h4><div class="hidden-print" style="display:flex; gap:8px; margin-bottom:12px;"><button class="btn ghost" id="btn-import-parts">Importar (CSV)</button><button class="btn ghost" id="btn-export-parts">Exportar (CSV)</button></div><table class="db-table" id="part-db-table"><thead><tr><th>Código</th><th>Descrição</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-part-code" placeholder="Código" style="flex:1;"><input type="text" id="new-part-desc" placeholder="Descrição" style="flex:2;"><button class="btn ghost" data-type="part">Adicionar</button></div></section>
+            <section><h4>Cadastro de Defeitos</h4><div class="hidden-print" style="display:flex; gap:8px; margin-bottom:12px;"><button class="btn ghost" id="btn-import-defects">Importar (CSV)</button><button class="btn ghost" id="btn-export-defects">Exportar (CSV)</button></div><table class="db-table" id="defect-db-table"><thead><tr><th>Nome do Defeito</th><th class="hidden-print">Ação</th></tr></thead><tbody></tbody></table><div style="margin-top:10px;display:flex;gap:10px;"><input type="text" id="new-defect" placeholder="Nome do novo defeito" style="flex-grow:1;"><button class="btn ghost" data-type="defect">Adicionar</button></div></section>
+        </div>
+        <div id="Ajuda" class="tab-content">
+            <section>
+                <h2>Guia Completo da Folha de Verificação</h2>
+                <p>Bem-vindo ao manual da sua ferramenta de Análise de Ocorrências. Aqui você encontrará tudo o que precisa para dominar suas funcionalidades.</p>
+                <h4>1. Registrando uma Ocorrência de Forma Inteligente</h4>
+                <p>A aba "Registro" é o coração da ferramenta. Ela foi projetada para velocidade e precisão:</p>
+                <ul>
+                    <li><strong>Autocompletar:</strong> Campos como <strong>Setor, Linha, Peça, Defeito e Ação Realizada</strong> são inteligentes. Comece a digitar e o sistema sugere opções do seu cadastro.</li>
+                    <li><strong>Adicionar Itens na Hora:</strong> Se um item não existe, digite o nome completo e a opção <strong>"+ Adicionar..."</strong> aparecerá na lista. Clique para cadastrá-lo instantaneamente.</li>
+                    <li><strong>Validação:</strong> Ao salvar, o sistema confirma que todos os itens selecionados existem no cadastro, garantindo a qualidade e consistência dos seus dados.</li>
+                </ul>
+                <h4>2. Gerenciando Seus Dados (Aba Cadastros)</h4>
+                <p>Esta aba é o cérebro da ferramenta, onde você gerencia as listas que alimentam os campos de autocompletar. Agora, você tem controle total sobre <strong>5 categorias</strong>: Setores, Linhas, Ações Realizadas, Peças e Defeitos.</p>
+                <ul>
+                    <li><strong>Gerenciamento em Massa (CSV):</strong> Utilize <strong>Importar (CSV)</strong> para carregar rapidamente listas a partir do Excel e <strong>Exportar (CSV)</strong> para fazer um backup de uma lista específica.</li>
+                </ul>
+                <h4>3. Análise de Dados Avançada (Aba Relatórios)</h4>
+                <p>Transforme seus dados brutos em inteligência de processo. A aba Relatórios é um dashboard poderoso:</p>
+                <ul>
+                    <li><strong>Filtros Avançados:</strong> Além de filtrar por período, agora você pode cruzar informações selecionando também o <strong>Setor, Linha e Defeito</strong> específicos, permitindo uma análise muito mais profunda.</li>
+                    <li><strong>KPIs com Metas:</strong> Acompanhe o <strong>Total de Ocorrências</strong> e a <strong>Taxa de Refugo</strong>. Clique em <strong>"Definir Metas"</strong> para inserir seus objetivos. O KPI de refugo ficará <strong>verde</strong> (meta atingida) ou <strong>vermelho</strong> (meta não atingida).</li>
+                    <li><strong>Gráfico de Tendência:</strong> Visualize a evolução das ocorrências ao longo do tempo. Com ele, você pode monitorar se as melhorias aplicadas estão surtindo efeito e reduzindo a frequência de falhas.</li>
+                    <li><strong>Gráfico de Pareto:</strong> Identifique os 20% de defeitos que causam 80% dos problemas. O gráfico ordena as falhas por frequência, mostrando onde focar seus esforços de melhoria.</li>
+                    <li><strong>Gráficos de Apoio:</strong> Explore as novas análises de <strong>Ocorrências por Setor</strong> e <strong>Ações Realizadas Mais Frequentes</strong>.</li>
+                </ul>
+                 <h4>4. Gerenciamento de Dados: Backups e Arquivamento</h4>
+                <p>A segurança dos seus dados é prioridade. A ferramenta oferece um sistema robusto de backup no cabeçalho:</p>
+                <ul>
+                    <li><strong>Baixar Backup (.json):</strong> Cria uma cópia de segurança <strong>completa</strong> de TUDO (registros, cadastros, metas) em um único arquivo <code>.json</code>.</li>
+                    <li><strong>Restaurar Backup (.json):</strong> Carrega um arquivo de backup <code>.json</code> previamente salvo, substituindo todos os dados atuais.</li>
+                    <li><strong>Arquivar e Limpar:</strong> Ferramenta de manutenção. Ela primeiro força o download de um backup completo e, após sua confirmação, <strong>limpa todos os dados do navegador</strong>.</li>
+                </ul>
+            </section>
+        </div>
+        
+        <div id="add-part-desc-modal" class="modal hidden"><div class="modal-content"><h3 id="new-item-modal-title">Adicionar Nova Peça</h3><p>Código: <b id="new-part-code-display"></b></p><form id="new-part-desc-form"><div class="field" style="text-align: left;"><label for="new-part-desc-input">Descrição da Peça</label><input type="text" id="new-part-desc-input" required></div><div style="display:flex;gap:10px;margin-top:15px;"><button type="button" id="btn-cancel-new-part" class="btn ghost">Cancelar</button><button type="submit" class="btn primary">Salvar Peça</button></div></form></div></div>
+        <div id="kpi-targets-modal" class="modal hidden"><div class="modal-content"><h3>Definir Metas de KPI</h3><form id="kpi-targets-form"><div class="field" style="text-align: left;"><label for="target-scrap-rate">Meta de Taxa de Refugo (%)</label><input type="number" id="target-scrap-rate" step="0.1" placeholder="Ex: 2.5"></div><div style="display:flex;gap:10px;margin-top:15px;"><button type="button" id="btn-cancel-targets" class="btn ghost">Cancelar</button><button type="submit" class="btn primary">Salvar Metas</button></div></form></div></div>
+    </main>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let defectLog = [], partDatabase = [], defectDatabase = [], sectorDatabase = [], lineDatabase = [], actionDatabase = [];
+        let kpiTargets = { scrapRate: null };
+        let charts = {};
+        const DB_KEY = 'all_data_v11';
+        const TARGETS_KEY = 'kpiTargets_v1';
+
+        const logForm = document.getElementById('log-form');
+        const logTableBody = document.querySelector('#log-table tbody');
+        
+        const showToast = (message, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 4000);
+        };
+
+        const saveData = () => {
+            try {
+                const allData = { defectLog, partDatabase, defectDatabase, sectorDatabase, lineDatabase, actionDatabase };
+                localStorage.setItem(DB_KEY, JSON.stringify(allData));
+                localStorage.setItem(TARGETS_KEY, JSON.stringify(kpiTargets));
+            } catch (e) { console.error("Erro ao salvar:", e); showToast("Erro ao salvar.", "error"); }
+        };
+
+        const loadData = () => {
+            try {
+                const data = JSON.parse(localStorage.getItem(DB_KEY));
+                const savedTargets = JSON.parse(localStorage.getItem(TARGETS_KEY));
+                sectorDatabase = data?.sectorDatabase || ["Montagem", "Usinagem", "Pintura", "Injeção", "Qualidade", "Logística"];
+                lineDatabase = data?.lineDatabase || ["Linha 01", "Linha 02", "Linha 03", "Célula A", "Célula B"];
+                actionDatabase = data?.actionDatabase || ["Ajuste de parâmetro", "Troca de ferramenta", "Limpeza de molde", "Sucata", "Liberado OK", "Reprocesso"];
+                defectDatabase = data?.defectDatabase || ["Risco", "Mancha", "Quebrado", "Fora de especificação", "Falta de material", "Rebarba"];
+                partDatabase = data?.partDatabase || [ {code: "PN-001", desc: "Componente Principal A"}, {code: "PN-002", desc: "Suporte Metálico B"}, {code: "PN-003", desc: "Carcaça Plástica C"} ];
+                defectLog = data?.defectLog || [];
+                if (savedTargets) kpiTargets = savedTargets;
+            } catch(e) { console.error("Erro ao carregar dados", e); }
+        };
+
+        const handleDownloadBackup = () => {
+            const fullBackup = { appData: { defectLog, partDatabase, defectDatabase, sectorDatabase, lineDatabase, actionDatabase }, kpiTargets: kpiTargets };
+            const blob = new Blob([JSON.stringify(fullBackup, null, 2)], {type: 'application/json'});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `dados_ocorrencias_${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            showToast("Backup baixado com sucesso!", "success");
+        };
+
+        const handleRestoreBackup = () => {
+            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    if (!confirm("Isso irá substituir TODOS os dados atuais. Deseja continuar?")) return;
+                    try {
+                        const backupData = JSON.parse(event.target.result);
+                        if (backupData.appData && backupData.kpiTargets) {
+                            defectLog = backupData.appData.defectLog || []; partDatabase = backupData.appData.partDatabase || []; defectDatabase = backupData.appData.defectDatabase || [];
+                            sectorDatabase = backupData.appData.sectorDatabase || []; lineDatabase = backupData.appData.lineDatabase || []; actionDatabase = backupData.appData.actionDatabase || [];
+                            kpiTargets = backupData.kpiTargets || { scrapRate: null };
+                            saveData();
+                            showToast("Backup restaurado com sucesso!", "success");
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else { showToast("Arquivo de backup inválido.", "error"); }
+                    } catch(err) { showToast("Erro ao ler o arquivo de backup.", "error"); console.error(err); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        };
+
+        const handleArchiveAndClear = () => {
+            if (confirm("ATENÇÃO: Esta ação irá baixar um backup e depois APAGAR os dados do navegador. Deseja continuar?")) {
+                handleDownloadBackup();
+                localStorage.removeItem(DB_KEY);
+                localStorage.removeItem(TARGETS_KEY);
+                showToast("Dados arquivados e limpos. A página será recarregada.", "info");
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        };
+        
+        window.openTab = (evt, tabName) => {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName)?.classList.add('active');
+            document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+        };
+
+        const createAutocomplete = (inputId, dataArray, isComplex = false) => {
+            const input = document.getElementById(inputId);
+            const container = input.parentElement;
+            let list = container.querySelector('.autocomplete-list');
+            if (!list) { list = document.createElement('div'); list.className = 'autocomplete-list hidden'; container.appendChild(list); }
+            const renderList = (filter = '') => {
+                list.innerHTML = '';
+                const filterLower = filter.toLowerCase();
+                if (!filter) { list.classList.add('hidden'); return; }
+                const matches = isComplex ? dataArray.filter(item => item.code.toLowerCase().includes(filterLower) || item.desc.toLowerCase().includes(filterLower)) : dataArray.filter(item => item.toLowerCase().includes(filterLower));
+                matches.forEach(item => { const itemEl = document.createElement('div'); itemEl.className = 'autocomplete-item'; itemEl.textContent = isComplex ? `${item.code} - ${item.desc}` : item; itemEl.addEventListener('mousedown', () => { input.value = isComplex ? item.code : item; list.classList.add('hidden'); }); list.appendChild(itemEl); });
+                const exactMatch = isComplex ? dataArray.some(item => item.code.toLowerCase() === filterLower) : dataArray.some(item => item.toLowerCase() === filterLower);
+                if (filter && !exactMatch) {
+                    const newItemEl = document.createElement('div'); newItemEl.className = 'autocomplete-item is-new'; newItemEl.textContent = `+ Adicionar "${filter}"...`;
+                    newItemEl.addEventListener('mousedown', () => {
+                        list.classList.add('hidden');
+                        if (isComplex) {
+                            const modal = document.getElementById('add-part-desc-modal');
+                            document.getElementById('new-part-code-display').textContent = filter;
+                            const descInput = document.getElementById('new-part-desc-input');
+                            descInput.value = ''; modal.classList.remove('hidden'); descInput.focus();
+                            document.getElementById('new-part-desc-form').onsubmit = e => { e.preventDefault(); const desc = descInput.value.trim(); if (desc) { partDatabase.push({ code: filter, desc }); input.value = filter; saveData(); renderAllDbTables(); showToast(`Peça "${filter}" adicionada!`, "success"); } modal.classList.add('hidden'); };
+                            document.getElementById('btn-cancel-new-part').onclick = () => modal.classList.add('hidden');
+                        } else {
+                            if(inputId === 'log-sector') sectorDatabase.push(filter); if(inputId === 'log-line') lineDatabase.push(filter); if(inputId === 'log-defect') defectDatabase.push(filter); if(inputId === 'log-action-taken') actionDatabase.push(filter);
+                            input.value = filter; saveData(); renderAllDbTables(); showToast(`Item "${filter}" adicionado!`, "success");
+                        }
+                    });
+                    list.appendChild(newItemEl);
+                }
+                list.classList.toggle('hidden', list.children.length === 0);
+            };
+            input.addEventListener('input', () => renderList(input.value)); input.addEventListener('focus', () => renderList(input.value)); input.addEventListener('blur', () => setTimeout(() => list.classList.add('hidden'), 200));
+        };
+        
+        const setupDbManagement = (dbArray, tableBody, addBtn, inputIds, isComplex = false) => {
+            const render = () => { if(!tableBody) return; tableBody.innerHTML = ''; dbArray.forEach((item, index) => { const row = tableBody.insertRow(); if (isComplex) row.innerHTML = `<td><input type="text" value="${item.code}" data-index="${index}" data-prop="code" readonly></td><td><input type="text" value="${item.desc}" data-index="${index}" data-prop="desc"></td>`; else row.innerHTML = `<td><input type="text" value="${item}" data-index="${index}"></td>`; row.innerHTML += `<td class="hidden-print"><button class="btn ghost btn-delete-db-item" data-index="${index}" style="padding: 5px 10px;">Excluir</button></td>`; }); };
+            if(tableBody){ tableBody.addEventListener('change', e => { if (e.target.tagName === 'INPUT' && e.target.dataset.index) { const index = e.target.dataset.index; if (isComplex) { if(e.target.dataset.prop === 'desc') dbArray[index].desc = e.target.value; } else { dbArray[index] = e.target.value; } saveData(); } }); tableBody.addEventListener('click', e => { const button = e.target.closest('.btn-delete-db-item'); if (button) { if (confirm('Tem certeza?')) { dbArray.splice(button.dataset.index, 1); saveData(); render(); } } }); }
+            if(addBtn){ addBtn.addEventListener('click', () => { const inputs = inputIds.map(id => document.getElementById(id)); const values = inputs.map(i => i.value.trim()); if (values.some(v => !v)) return showToast('Preencha todos os campos.', 'error'); if (isComplex) { if (dbArray.some(item => item.code.toLowerCase() === values[0].toLowerCase())) return showToast('Este código de peça já existe.', 'error'); dbArray.push({ code: values[0], desc: values[1] }); } else { if (dbArray.some(item => item.toLowerCase() === values[0].toLowerCase())) return showToast('Este item já existe no cadastro.', 'error'); dbArray.push(values[0]); } saveData(); render(); inputs.forEach(i => i.value = ''); showToast('Item adicionado!', 'success'); }); }
+            return render;
+        };
+
+        const handleExportCSV = (db, filename, isComplex = false) => {
+            if (db.length === 0) return showToast("Não há dados para exportar.", "info");
+            const header = isComplex ? Object.keys(db[0]).join(',') : "Nome";
+            const rows = db.map(item => isComplex ? Object.values(item).map(v => `"${v}"`).join(',') : `"${item}"`);
+            const csvContent = "data:text/csv;charset=utf-8," + [header, ...rows].join('\n');
+            const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", filename); link.click();
+            showToast("Dados exportados!", "success");
+        };
+
+        const handleImportCSV = (db, isComplex = false) => {
+            const input = document.createElement('input'); input.type = 'file'; input.accept = '.csv';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    if (!confirm("Isso irá substituir todos os dados existentes. Deseja continuar?")) return;
+                    const lines = event.target.result.split(/[\r\n]+/).filter(line => line.trim());
+                    const header = lines.shift().trim().split(',');
+                    db.length = 0;
+                    lines.forEach(line => {
+                        const values = line.trim().split(',');
+                        if (isComplex) { let obj = {}; header.forEach((key, i) => obj[key.trim()] = values[i]?.trim().replace(/"/g, '') || ''); db.push(obj);
+                        } else { db.push(values[0].trim().replace(/"/g, '')); }
+                    });
+                    saveData(); renderAllDbTables(); showToast("Dados importados com sucesso!", "success");
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        };
+
+        const renderGenericBarChart = (canvasId, data, labelField, valueField, chartTitle) => {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (charts[canvasId]) charts[canvasId].destroy();
+            const counts = data.reduce((acc, log) => { acc[log[labelField]] = (acc[log[labelField]] || 0) + log[valueField]; return acc; }, {});
+            const sortedData = Object.entries(counts).sort(([, a], [, b]) => b - a);
+            if (sortedData.length === 0) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); return; }
+            charts[canvasId] = new Chart(ctx, { type: 'bar', data: { labels: sortedData.map(item => item[0]), datasets: [{ label: chartTitle, data: sortedData.map(item => item[1]), backgroundColor: 'rgba(167, 139, 250, 0.6)', borderColor: 'rgba(167, 139, 250, 1)' }] }, options: { indexAxis: 'y', scales: { x: { beginAtZero: true } }, plugins: { legend: { display: false } } } });
+        };
+        const renderParetoChart = (filteredData) => {
+            const ctx = document.getElementById('pareto-chart').getContext('2d');
+            if (charts.pareto) charts.pareto.destroy();
+            if (filteredData.length === 0) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); return; }
+            const defectCounts = filteredData.reduce((acc, log) => { acc[log.defect] = (acc[log.defect] || 0) + log.quantity; return acc; }, {});
+            const sortedDefects = Object.entries(defectCounts).sort(([, a], [, b]) => b - a).map(([defect, count]) => ({ defect, count }));
+            const totalDefects = sortedDefects.reduce((sum, item) => sum + item.count, 0);
+            if (totalDefects === 0) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); return; }
+            let cumulativePercentage = 0;
+            const paretoData = sortedDefects.map(item => { cumulativePercentage += (item.count / totalDefects) * 100; return cumulativePercentage; });
+            charts.pareto = new Chart(ctx, { type: 'bar', data: { labels: sortedDefects.map(item => item.defect), datasets: [{ label: 'Qtd. de Defeitos', data: sortedDefects.map(item => item.count), backgroundColor: 'rgba(34, 211, 238, 0.6)', borderColor: 'rgba(34, 211, 238, 1)', yAxisID: 'y', }, { label: 'Pareto %', data: paretoData, type: 'line', borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.2)', tension: 0.2, yAxisID: 'y1', }] }, options: { scales: { y: { position: 'left', title: { display: true, text: 'Quantidade' } }, y1: { position: 'right', min: 0, max: 100, title: { display: true, text: 'Percentual Acumulado (%)' }, grid: { drawOnChartArea: false } } } } });
+        };
+        const renderTrendChart = (filteredData) => {
+            const ctx = document.getElementById('trend-chart').getContext('2d');
+            if (charts.trend) charts.trend.destroy();
+            if(filteredData.length === 0) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); return; }
+            const countsByDay = filteredData.reduce((acc, log) => { const day = log.timestamp.slice(0, 10); acc[day] = (acc[day] || 0) + log.quantity; return acc; }, {});
+            const sortedDays = Object.keys(countsByDay).sort((a,b) => new Date(a) - new Date(b));
+            charts.trend = new Chart(ctx, { type: 'line', data: { labels: sortedDays, datasets: [{ label: 'Ocorrências por Dia', data: sortedDays.map(day => countsByDay[day]), borderColor: 'rgba(22, 163, 74, 1)', backgroundColor: 'rgba(22, 163, 74, 0.2)', fill: true, tension: 0.1 }] }, options: { scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yyyy' } } } } });
+        };
+        const updateKPIs = (filteredData) => {
+            const totalOccurrences = filteredData.reduce((sum, log) => sum + log.quantity, 0);
+            const totalScrap = filteredData.reduce((sum, log) => sum + (log.scrapQty || 0), 0);
+            const scrapRate = totalOccurrences > 0 ? (totalScrap / totalOccurrences) * 100 : 0;
+            document.getElementById('kpi-total-defects').textContent = totalOccurrences;
+            const scrapRateEl = document.getElementById('kpi-scrap-rate');
+            scrapRateEl.textContent = `${scrapRate.toFixed(1)}%`;
+            const metaEl = document.getElementById('scrap-rate-meta');
+            if (kpiTargets.scrapRate !== null && kpiTargets.scrapRate !== undefined) {
+                metaEl.textContent = `Meta: < ${kpiTargets.scrapRate}%`;
+                scrapRateEl.style.color = (scrapRate <= kpiTargets.scrapRate) ? 'var(--ok)' : 'var(--bad)';
+            } else { metaEl.textContent = 'Meta: N/D'; scrapRateEl.style.color = 'var(--accent)'; }
+        };
+        
+        const populateFilterSelects = () => {
+            const populate = (elId, data, isComplex=false) => { const select = document.getElementById(elId); if(!select) return; select.innerHTML = '<option value="all">Todos</option>'; data.forEach(item => { const option = document.createElement('option'); option.value = isComplex ? item.code : item; option.textContent = isComplex ? `${item.code} - ${item.desc}` : item; select.appendChild(option); }); };
+            const uniqueAnalysts = [...new Set(defectLog.map(log => log.analyst))];
+            populate('filter-analyst', uniqueAnalysts);
+            populate('filter-sector', sectorDatabase);
+            populate('filter-line', lineDatabase);
+            populate('filter-defect', defectDatabase);
+        };
+        
+        const applyFiltersAndRenderReports = () => {
+            let filteredData = [...defectLog];
+            const analyst = document.getElementById('filter-analyst').value;
+            const sector = document.getElementById('filter-sector').value;
+            const line = document.getElementById('filter-line').value;
+            const defect = document.getElementById('filter-defect').value;
+            
+            if (analyst !== 'all') { filteredData = filteredData.filter(log => log.analyst === analyst); }
+            if (sector !== 'all') { filteredData = filteredData.filter(log => log.sector === sector); }
+            if (line !== 'all') { filteredData = filteredData.filter(log => log.line === line); }
+            if (defect !== 'all') { filteredData = filteredData.filter(log => log.defect === defect); }
+
+            updateKPIs(filteredData); renderParetoChart(filteredData); renderGenericBarChart('sector-chart', filteredData, 'sector', 'quantity', 'Ocorrências por Setor'); renderGenericBarChart('action-chart', filteredData, 'actionTaken', 'quantity', 'Ações por Frequência'); renderTrendChart(filteredData);
+        };
+
+        const clearForm = () => {
+            logForm.reset(); document.getElementById('log-id').value = '';
+            document.getElementById('log-timestamp').value = new Date().toLocaleString('pt-BR');
+        };
+        
+        const renderLogTable = () => {
+            if(!logTableBody) return;
+            logTableBody.innerHTML = '';
+            [...defectLog].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 100).forEach(log => {
+                const row = logTableBody.insertRow();
+                row.innerHTML = `<td>${new Date(log.timestamp).toLocaleString('pt-BR')}</td><td>${log.sector}</td><td>${log.line}</td><td>${log.partNumber}</td><td>${log.defect}</td><td>${log.actionTaken}</td><td>${log.quantity}</td><td>${log.analyst}</td><td class="hidden-print"><button class="btn ghost btn-edit-log" data-id="${log.id}">Editar</button><button class="btn ghost btn-delete-log" data-id="${log.id}">Excluir</button></td>`;
+            });
+        };
+        
+        loadData();
+
+        createAutocomplete('log-sector', sectorDatabase); createAutocomplete('log-line', lineDatabase); createAutocomplete('log-part-number', partDatabase, true); createAutocomplete('log-defect', defectDatabase); createAutocomplete('log-action-taken', actionDatabase);
+
+        const renderSectorDb = setupDbManagement(sectorDatabase, document.querySelector('#sector-db-table tbody'), document.querySelector('button[data-type="sector"]'), ['new-sector']);
+        const renderLineDb = setupDbManagement(lineDatabase, document.querySelector('#line-db-table tbody'), document.querySelector('button[data-type="line"]'), ['new-line']);
+        const renderActionDb = setupDbManagement(actionDatabase, document.querySelector('#action-db-table tbody'), document.querySelector('button[data-type="action"]'), ['new-action']);
+        const renderPartDb = setupDbManagement(partDatabase, document.querySelector('#part-db-table tbody'), document.querySelector('button[data-type="part"]'), ['new-part-code', 'new-part-desc'], true);
+        const renderDefectDb = setupDbManagement(defectDatabase, document.querySelector('#defect-db-table tbody'), document.querySelector('button[data-type="defect"]'), ['new-defect']);
+        const renderAllDbTables = () => { renderSectorDb(); renderLineDb(); renderActionDb(); renderPartDb(); renderDefectDb(); };
+        renderAllDbTables();
+
+        logForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const sector = document.getElementById('log-sector').value, line = document.getElementById('log-line').value, partNumber = document.getElementById('log-part-number').value, defect = document.getElementById('log-defect').value, actionTaken = document.getElementById('log-action-taken').value;
+            if (!sectorDatabase.includes(sector)) { return showToast(`Setor "${sector}" não cadastrado.`, "error"); } if (!lineDatabase.includes(line)) { return showToast(`Linha "${line}" não cadastrada.`, "error"); } if (!partDatabase.some(p => p.code === partNumber)) { return showToast(`Peça "${partNumber}" não cadastrada.`, "error"); } if (!defectDatabase.includes(defect)) { return showToast(`Defeito "${defect}" não cadastrado.`, "error"); } if (!actionDatabase.includes(actionTaken)) { return showToast(`Ação "${actionTaken}" não cadastrada.`, "error"); }
+            const id = document.getElementById('log-id').value;
+            const file = document.getElementById('log-image').files[0];
+            let image = id ? (defectLog.find(l=>l.id==id)?.image || null) : null;
+            if (file) image = await new Promise(resolve => { const reader = new FileReader(); reader.onload = e => resolve(e.target.result); reader.readAsDataURL(file); });
+            const logEntry = { id: id ? parseInt(id) : Date.now(), timestamp: id ? (defectLog.find(l=>l.id==id)?.timestamp) : new Date().toISOString(), shift: document.getElementById('log-shift').value, sector, line, partNumber, defect, actionTaken, quantity: parseInt(document.getElementById('log-quantity').value), analyst: document.getElementById('log-analyst').value, actionDetail: document.getElementById('log-action-detail').value, scrapQty: parseInt(document.getElementById('log-scrap-qty').value) || 0, image };
+            if (id) { const index = defectLog.findIndex(l => l.id == id); if (index > -1) defectLog[index] = logEntry; showToast("Registro atualizado!", "success"); } 
+            else { defectLog.push(logEntry); showToast("Registro salvo!", "success"); }
+            saveData(); renderLogTable(); clearForm();
+        });
+        
+        document.getElementById('btn-apply-filters').addEventListener('click', () => { applyFiltersAndRenderReports(); showToast("Filtros aplicados.", "info"); });
+        document.getElementById('btn-set-targets').addEventListener('click', () => { document.getElementById('target-scrap-rate').value = kpiTargets.scrapRate; document.getElementById('kpi-targets-modal').classList.remove('hidden'); });
+        document.getElementById('kpi-targets-form').addEventListener('submit', e => { e.preventDefault(); kpiTargets.scrapRate = parseFloat(document.getElementById('target-scrap-rate').value) || null; saveData(); showToast("Metas salvas!", "success"); document.getElementById('kpi-targets-modal').classList.add('hidden'); applyFiltersAndRenderReports(); });
+        document.getElementById('btn-cancel-targets').addEventListener('click', () => document.getElementById('kpi-targets-modal').classList.add('hidden'));
+        
+        document.getElementById('btn-download-backup').addEventListener('click', handleDownloadBackup);
+        document.getElementById('btn-restore-backup').addEventListener('click', handleRestoreBackup);
+        document.getElementById('btn-archive-and-clear').addEventListener('click', handleArchiveAndClear);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => window.print());
+
+        document.getElementById('btn-export-sectors').addEventListener('click', () => handleExportCSV(sectorDatabase, 'setores.csv'));
+        document.getElementById('btn-import-sectors').addEventListener('click', () => handleImportCSV(sectorDatabase));
+        document.getElementById('btn-export-lines').addEventListener('click', () => handleExportCSV(lineDatabase, 'linhas.csv'));
+        document.getElementById('btn-import-lines').addEventListener('click', () => handleImportCSV(lineDatabase));
+        document.getElementById('btn-export-actions').addEventListener('click', () => handleExportCSV(actionDatabase, 'acoes.csv'));
+        document.getElementById('btn-import-actions').addEventListener('click', () => handleImportCSV(actionDatabase));
+        document.getElementById('btn-export-parts').addEventListener('click', () => handleExportCSV(partDatabase, 'pecas.csv', true));
+        document.getElementById('btn-import-parts').addEventListener('click', () => handleImportCSV(partDatabase, true));
+        document.getElementById('btn-export-defects').addEventListener('click', () => handleExportCSV(defectDatabase, 'defeitos.csv'));
+        document.getElementById('btn-import-defects').addEventListener('click', () => handleImportCSV(defectDatabase));
+        
+        clearForm();
+        renderLogTable();
+        populateFilterSelects();
+        applyFiltersAndRenderReports();
+    });
+    </script>
+</body>
+</html>

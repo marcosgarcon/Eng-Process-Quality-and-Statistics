@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Análise CEP e Capabilidade</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      textarea{min-height:150px;resize:vertical;font-family:monospace;letter-spacing:1px;}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .dashboard-card{background-color:var(--card);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--muted);}.dashboard-card .value{font-size:24px;font-weight:bold;color:var(--accent2);margin-bottom:8px;}.dashboard-card .label{font-size:12px;color:#93c5fd;}
+      .interpretation-card{padding:16px;border-radius:12px;font-size:16px;font-weight:bold;text-align:center;color:white;}.status-ok{background:linear-gradient(45deg, var(--ok), #15803d);}.status-warn{background:linear-gradient(45deg, var(--warn), #a16207);}.status-bad{background:linear-gradient(45deg, var(--bad), #991b1b);}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}main{padding:0;} header,aside,.hidden-print,.btn{display:none !important;} section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black} .dashboard-card{background:#eee}}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">CEP - Análise de Processo e Capabilidade</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Estudos Salvos</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Estudos CEP: <span id="cep-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Estudos CEP e Capabilidade</h2><button id="btn-new-cep" class="btn primary">+ Novo Estudo</button></div>
+                <table id="cep-list-table">
+                    <thead><tr><th>Característica</th><th>Data</th><th>Cpk</th><th>Ppk</th><th>Status</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <form id="cep-form">
+                <input type="hidden" id="cep-id">
+                <section>
+                    <h4>Configuração do Estudo</h4>
+                    <div class="grid">
+                       <div class="field" style="grid-column:span 6;"><label for="cep-characteristic">Característica</label><input type="text" id="cep-characteristic" required></div>
+                       <div class="field" style="grid-column:span 3;"><label for="cep-date">Data</label><input type="date" id="cep-date"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="cep-lead">Responsável</label><input type="text" id="cep-lead"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="cep-lsl">Limite Inferior (LIE)</label><input type="number" step="any" id="cep-lsl"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="cep-usl">Limite Superior (LSE)</label><input type="number" step="any" id="cep-usl"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="cep-target">Alvo (Opcional)</label><input type="number" step="any" id="cep-target"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="cep-subgroup-size">Tamanho do Subgrupo</label><input type="number" id="cep-subgroup-size" value="5" min="1"></div>
+                    </div>
+                </section>
+                <section>
+                    <h4>Coleta de Dados</h4>
+                    <div class="field">
+                        <label>Insira os dados abaixo. Cada linha é um subgrupo. Cole de uma planilha ou importe de um arquivo.</label>
+                        <textarea id="cep-data" placeholder="Exemplo para subgrupo de 3:\n10.1 10.2 10.0\n9.9 10.1 10.1\n..."></textarea>
+                        <div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;">
+                            <button type="button" id="btn-download-template" class="btn ghost">Baixar Modelo (.csv)</button>
+                            <button type="button" id="btn-import-data" class="btn ghost">Importar CSV/TXT</button>
+                            <button type="button" id="btn-calculate" class="btn primary" style="margin-left: auto;">Calcular e Gerar Gráficos</button>
+                        </div>
+                    </div>
+                </section>
+                <section id="results-section" class="hidden">
+                    <h4>Análise e Resultados</h4>
+                    <div class="grid" style="grid-template-columns: repeat(6, 1fr);">
+                        <div class="dashboard-card"><div class="value" id="res-cp">0.00</div><div class="label">Cp</div></div>
+                        <div class="dashboard-card"><div class="value" id="res-cpk">0.00</div><div class="label">Cpk</div></div>
+                        <div class="dashboard-card"><div class="value" id="res-pp">0.00</div><div class="label">Pp</div></div>
+                        <div class="dashboard-card"><div class="value" id="res-ppk">0.00</div><div class="label">Ppk</div></div>
+                        <div class="dashboard-card"><div class="value" id="res-mean">0.00</div><div class="label">Média Geral</div></div>
+                        <div class="dashboard-card"><div class="value" id="res-stddev">0.00</div><div class="label">Desvio Padrão (Total)</div></div>
+                        <div style="grid-column:span 6;"><div class="interpretation-card" id="res-interpretation">Aguardando cálculo...</div></div>
+                    </div>
+                </section>
+                <section id="charts-section" class="hidden">
+                    <h4>Gráficos de Controle e Capabilidade</h4>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                        <div id="control-chart-container" style="grid-column: span 2;"></div>
+                        <canvas id="histogram-chart"></canvas>
+                        <canvas id="capability-chart"></canvas>
+                    </div>
+                </section>
+                 <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-cep" class="btn primary">Salvar Estudo</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Análise CEP e Capabilidade</h2>
+                <p>Esta ferramenta é um sistema completo para realizar o Controle Estatístico de Processo (CEP) e analisar a capabilidade do seu processo (Cp, Cpk, Pp, Ppk).</p>
+                <h3>Como Iniciar um Estudo</h3>
+                <ol>
+                    <li>No <strong>Dashboard</strong>, clique em <code>+ Novo Estudo</code>.</li>
+                    <li>Na seção <strong>Configuração do Estudo</strong>, preencha as informações básicas. Os <strong>Limites de Especificação (LIE e LSE)</strong> são essenciais para os cálculos de capabilidade.</li>
+                    <li>Defina o <strong>Tamanho do Subgrupo</strong>. Se você mede amostras individualmente, use o tamanho 1. Para medições em grupos (ex: 5 peças a cada hora), insira o tamanho do grupo.</li>
+                </ol>
+                <h3>Inserindo os Dados</h3>
+                <p>Para garantir que seus dados sejam lidos corretamente, recomendamos o seguinte fluxo de trabalho:</p>
+                <ul>
+                    <li><strong>1. Baixar o Modelo:</strong> Clique no botão <code>Baixar Modelo (.csv)</code>. A ferramenta irá gerar uma planilha com o número exato de colunas que você precisa, com base no "Tamanho do Subgrupo".</li>
+                    <li><strong>2. Preencher a Planilha:</strong> Abra o arquivo CSV em qualquer editor de planilhas (Excel, Google Sheets, etc.) e preencha com os dados da sua coleta.</li>
+                    <li><strong>3. Importar a Planilha:</strong> De volta à ferramenta, clique em <code>Importar CSV/TXT</code> e selecione o arquivo que você preencheu.</li>
+                    <li><strong>Alternativa (Copiar e Colar):</strong> Você também pode copiar os dados de uma planilha e colar diretamente na área de texto.</li>
+                </ul>
+                <p>Após inserir os dados, clique em <code>Calcular e Gerar Gráficos</code>.</p>
+                <h3>Interpretando os Resultados</h3>
+                <p>A ferramenta irá automaticamente calcular e exibir:</p>
+                <ul>
+                    <li><strong>Índices (Cp, Cpk, Pp, Ppk):</strong> Valores numéricos que quantificam a capabilidade e performance do seu processo.</li>
+                    <li><strong>Interpretação Automática:</strong> Um resumo em texto colorido que informa se o seu processo está <strong>Estável</strong> (sob controle, baseado nos gráficos) e/ou <strong>Capaz</strong> (atende às especificações, baseado no Cpk/Ppk).</li>
+                    <li><strong>Gráficos:</strong>
+                        <ul>
+                            <li><strong>Gráfico de Controle (X-barra e R/S):</strong> Mostra a variação do processo ao longo do tempo. Pontos em vermelho indicam causas especiais ou instabilidade.</li>
+                            <li><strong>Histograma:</strong> Mostra a distribuição dos seus dados em relação aos limites de especificação.</li>
+                            <li><strong>Gráfico de Capabilidade:</strong> Uma representação visual da "voz do processo" contra a "voz do cliente" (especificações).</li>
+                        </ul>
+                    </li>
+                </ul>
+                 <p><strong>Dica:</strong> <strong>Cp/Cpk</strong> medem a capabilidade potencial (variação de curto prazo), enquanto <strong>Pp/Ppk</strong> medem a performance real (variação de longo prazo, incluindo todas as fontes de variação).</p>
+                 <p><strong>Aviso Importante:</strong> Lembre-se que todos os dados são salvos localmente no seu navegador. Use a função de backup com frequência.</p>
+            </section>
+        </div>
+    </main>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE & DB ---
+        let cepStudies = [];
+        const DB_KEY = 'mg_cep_studies_v1';
+        let charts = {};
+        const STAT_CONSTANTS = {
+            A2: [0, 1.880, 1.023, 0.729, 0.577, 0.483, 0.419, 0.373, 0.337, 0.308, 0.285, 0.266, 0.249, 0.235, 0.223, 0.212, 0.203, 0.194, 0.187, 0.180, 0.173, 0.167, 0.162, 0.157, 0.153],
+            D3: [0, 0, 0, 0, 0, 0, 0.076, 0.136, 0.184, 0.223, 0.256, 0.284, 0.308, 0.329, 0.348, 0.364, 0.379, 0.392, 0.404, 0.414, 0.425, 0.434, 0.443, 0.452, 0.459],
+            D4: [0, 3.267, 2.574, 2.282, 2.114, 2.004, 1.924, 1.864, 1.816, 1.777, 1.744, 1.716, 1.692, 1.671, 1.652, 1.636, 1.622, 1.610, 1.599, 1.589, 1.575, 1.566, 1.557, 1.548, 1.541],
+            d2: [0, 1.128, 1.693, 2.059, 2.326, 2.534, 2.704, 2.847, 2.970, 3.078, 3.173, 3.258, 3.336, 3.407, 3.472, 3.532, 3.588, 3.640, 3.689, 3.735, 3.778, 3.819, 3.858, 3.895, 3.931],
+            A3: [0, 2.659, 1.954, 1.628, 1.427, 1.287, 1.182, 1.099, 1.032, 0.975, 0.927, 0.886, 0.850, 0.817, 0.789, 0.763, 0.739, 0.718, 0.698, 0.680, 0.663, 0.647, 0.633, 0.619, 0.606],
+            B3: [0, 0, 0, 0, 0, 0.030, 0.118, 0.185, 0.239, 0.284, 0.321, 0.354, 0.382, 0.406, 0.428, 0.448, 0.466, 0.482, 0.497, 0.510, 0.523, 0.534, 0.545, 0.555, 0.565],
+            B4: [0, 3.267, 2.568, 2.266, 2.089, 1.970, 1.882, 1.815, 1.761, 1.716, 1.679, 1.646, 1.618, 1.594, 1.572, 1.552, 1.534, 1.518, 1.503, 1.490, 1.477, 1.466, 1.455, 1.445, 1.435],
+            c4: [0, 0.7979, 0.8862, 0.9213, 0.9400, 0.9515, 0.9594, 0.9650, 0.9693, 0.9727, 0.9754, 0.9776, 0.9794, 0.9810, 0.9823, 0.9835, 0.9845, 0.9854, 0.9862, 0.9869, 0.9876, 0.9882, 0.9887, 0.9892, 0.9896]
+        };
+
+        // --- DOM ELEMENTS ---
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const helpContainer = document.getElementById('help-container');
+        const cepListContainer = document.querySelector('#cep-list-table tbody');
+        const cepCountSpan = document.getElementById('cep-count');
+        const resultsSection = document.getElementById('results-section');
+        const chartsSection = document.getElementById('charts-section');
+        const btnNewCep = document.getElementById('btn-new-cep');
+        const btnCalculate = document.getElementById('btn-calculate');
+        const btnSaveCep = document.getElementById('btn-save-cep');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnImportData = document.getElementById('btn-import-data');
+        const btnDownloadTemplate = document.getElementById('btn-download-template');
+        const cepDataTextArea = document.getElementById('cep-data');
+        
+        // --- HELPERS & NAVIGATION ---
+        const showToast = (message, type = 'info') => { const c=document.getElementById('toast-container');if(!c)return; const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=message;c.appendChild(t);setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>{t.classList.remove('show');t.addEventListener('transitionend',()=>t.remove())},4000);};
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(cepStudies)); } catch (e) { console.error(e); showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { cepStudies = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        window.openTab = (evt, tabId) => { document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.getElementById(tabId).classList.remove('hidden'); document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); evt.currentTarget.classList.add('active'); if(tabId !== 'form-container') document.getElementById('form-container').classList.add('hidden'); };
+        const showForm = () => { document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); formContainer.classList.remove('hidden'); document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); };
+        const showDashboard = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            dashboardContainer.classList.remove('hidden');
+            const dashboardLink = document.querySelector('.menu a[onclick*="dashboard-container"]');
+            if (dashboardLink) { document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active')); dashboardLink.classList.add('active'); }
+            renderCepList();
+        };
+
+        // --- RENDER FUNCTIONS ---
+        const renderCepList = () => {
+             cepListContainer.innerHTML = '';
+            if (cepStudies.length === 0) { cepListContainer.innerHTML = '<tr><td colspan="6">Nenhum estudo salvo.</td></tr>'; cepCountSpan.textContent = 0; return; }
+            cepStudies.sort((a, b) => b.id - a.id).forEach(study => {
+                const cpk = study.results?.cpk?.toFixed(2) ?? 'N/A';
+                const ppk = study.results?.ppk?.toFixed(2) ?? 'N/A';
+                const status = study.results?.interpretation.split('.')[0] ?? 'N/A';
+                const row = cepListContainer.insertRow();
+                row.innerHTML = `<td>${study.setup.characteristic}</td><td>${study.setup.date}</td><td>${cpk}</td><td>${ppk}</td><td>${status}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${study.id}">Editar</button><button class="btn ghost btn-delete" data-id="${study.id}">Excluir</button></div></td>`;
+            });
+             cepCountSpan.textContent = cepStudies.length;
+        };
+        
+        // --- CALCULATION ENGINE & DATA ---
+        const getConstants = (n) => ({
+            A2: STAT_CONSTANTS.A2[n - 1] || 0, D3: STAT_CONSTANTS.D3[n - 1] || 0, D4: STAT_CONSTANTS.D4[n - 1] || 0, d2: STAT_CONSTANTS.d2[n - 1] || 1,
+            A3: STAT_CONSTANTS.A3[n - 1] || 0, B3: STAT_CONSTANTS.B3[n - 1] || 0, B4: STAT_CONSTANTS.B4[n - 1] || 0, c4: STAT_CONSTANTS.c4[n - 1] || 1,
+        });
+
+        const calculateCEP = (data, n, lsl, usl) => {
+            if (!data || data.length === 0 || n === 0) return null;
+            const subgroups = data.map(subgroupData => {
+                const mean = subgroupData.reduce((a, b) => a + b, 0) / n;
+                const range = n > 1 ? Math.max(...subgroupData) - Math.min(...subgroupData) : 0;
+                const stdDev = n > 1 ? Math.sqrt(subgroupData.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (n - 1)) : 0;
+                return { data: subgroupData, mean, range, stdDev };
+            });
+            const k = subgroups.length;
+            const allData = data.flat();
+            if (allData.length < 2) return null;
+
+            const grandMean = allData.reduce((a,b) => a+b, 0) / allData.length;
+            const Rbar = n > 1 ? subgroups.reduce((sum, sg) => sum + sg.range, 0) / k : 0;
+            const Sbar = n > 1 ? subgroups.reduce((sum, sg) => sum + sg.stdDev, 0) / k : 0;
+            const overallStdDev = allData.length > 1 ? Math.sqrt(allData.map(x => Math.pow(x - grandMean, 2)).reduce((a, b) => a + b, 0) / (allData.length - 1)) : 0;
+            
+            let withinStdDev, UCLx, LCLx, UCLr_s, LCLr_s, controlChartType, outOfControlPoints = {x: [], rs: []};
+            if (n > 1) {
+                const C = getConstants(Math.min(n, 25));
+                if (n <= 10) { 
+                    controlChartType = 'R'; UCLx = grandMean + (C.A2 * Rbar); LCLx = grandMean - (C.A2 * Rbar);
+                    UCLr_s = C.D4 * Rbar; LCLr_s = C.D3 * Rbar; withinStdDev = Rbar / C.d2;
+                } else {
+                    controlChartType = 'S'; UCLx = grandMean + (C.A3 * Sbar); LCLx = grandMean - (C.A3 * Sbar);
+                    UCLr_s = C.B4 * Sbar; LCLr_s = C.B3 * Sbar; withinStdDev = Sbar / C.c4;
+                }
+            } else {
+                controlChartType = 'I-MR';
+                const MRs = []; for(let i=1; i<allData.length; i++) MRs.push(Math.abs(allData[i] - allData[i-1]));
+                const MRbar = MRs.length > 0 ? MRs.reduce((a,b)=>a+b,0)/MRs.length : 0;
+                UCLx = grandMean + 2.66 * MRbar; LCLx = grandMean - 2.66 * MRbar;
+                UCLr_s = 3.267 * MRbar; LCLr_s = 0; withinStdDev = MRbar / 1.128;
+            }
+
+            subgroups.forEach((sg, i) => {
+                if (sg.mean > UCLx || sg.mean < LCLx) outOfControlPoints.x.push(i);
+                if (n > 1 && controlChartType === 'R' && (sg.range > UCLr_s || (LCLr_s > 0 && sg.range < LCLr_s))) outOfControlPoints.rs.push(i);
+                if (n > 1 && controlChartType === 'S' && (sg.stdDev > UCLr_s || (LCLr_s > 0 && sg.stdDev < LCLr_s))) outOfControlPoints.rs.push(i);
+            });
+            const isStable = outOfControlPoints.x.length === 0 && outOfControlPoints.rs.length === 0;
+
+            let cp = NaN, cpk = NaN, pp = NaN, ppk = NaN, interpretation = '';
+            if(!isNaN(lsl) && !isNaN(usl)) {
+                const tolerance = usl - lsl;
+                cp = withinStdDev > 0 ? tolerance / (6 * withinStdDev) : Infinity;
+                cpk = withinStdDev > 0 ? Math.min((usl - grandMean) / (3 * withinStdDev), (grandMean - lsl) / (3 * withinStdDev)) : Infinity;
+                pp = overallStdDev > 0 ? tolerance / (6 * overallStdDev) : Infinity;
+                ppk = overallStdDev > 0 ? Math.min((usl - grandMean) / (3 * overallStdDev), (grandMean - lsl) / (3 * overallStdDev)) : Infinity;
+                let stabilityText = isStable ? 'Processo ESTÁVEL.' : 'Processo INSTÁVEL (causas especiais presentes).';
+                let capabilityText = 'Processo NÃO É CAPAZ.';
+                if (cpk >= 1.67) capabilityText = 'Processo EXCELENTE (Nível 6 Sigma).';
+                else if (cpk >= 1.33) capabilityText = 'Processo CAPAZ.';
+                else if (cpk >= 1.00) capabilityText = 'Processo ACEITÁVEL (requer controle rigoroso).';
+                interpretation = `${stabilityText} ${capabilityText}`;
+            } else {
+                interpretation = isStable ? 'Processo ESTÁVEL, mas sem limites de especificação para avaliar capabilidade.' : 'Processo INSTÁVEL. Capabilidade não pode ser avaliada.';
+            }
+            return { subgroups, grandMean, Rbar, Sbar, overallStdDev, withinStdDev, UCLx, LCLx, UCLr_s, LCLr_s, controlChartType, cp, cpk, pp, ppk, interpretation, allData, outOfControlPoints };
+        };
+        
+        const displayResultsAndCharts = (results) => {
+            if(!results) { showToast('Cálculo falhou. Verifique os dados de entrada.', 'error'); return; }
+            document.getElementById('res-cp').textContent = isFinite(results.cp) ? results.cp.toFixed(2) : 'N/A';
+            document.getElementById('res-cpk').textContent = isFinite(results.cpk) ? results.cpk.toFixed(2) : 'N/A';
+            document.getElementById('res-pp').textContent = isFinite(results.pp) ? results.pp.toFixed(2) : 'N/A';
+            document.getElementById('res-ppk').textContent = isFinite(results.ppk) ? results.ppk.toFixed(2) : 'N/A';
+            document.getElementById('res-mean').textContent = results.grandMean.toFixed(4);
+            document.getElementById('res-stddev').textContent = results.overallStdDev.toFixed(4);
+            const interpretationCard = document.getElementById('res-interpretation');
+            interpretationCard.textContent = results.interpretation;
+            interpretationCard.className = 'interpretation-card';
+            if (results.interpretation.includes('INSTÁVEL') || results.interpretation.includes('NÃO É CAPAZ')) interpretationCard.classList.add('status-bad');
+            else if (results.interpretation.includes('ACEITÁVEL')) interpretationCard.classList.add('status-warn');
+            else interpretationCard.classList.add('status-ok');
+            resultsSection.classList.remove('hidden'); chartsSection.classList.remove('hidden');
+            Object.values(charts).forEach(c => c.destroy());
+            createControlCharts(results); createHistogram(results); createCapabilityPlot(results);
+        };
+
+        const createControlCharts = (results) => {
+            const container = document.getElementById('control-chart-container');
+            container.innerHTML = '<canvas id="x-chart"></canvas><canvas id="r-s-chart"></canvas>';
+            const xLabels = results.subgroups.map((_, i) => i + 1);
+            const xData = results.subgroups.map(sg => sg.mean);
+            const xColors = xLabels.map((_,i) => results.outOfControlPoints.x.includes(i) ? 'var(--bad)' : 'var(--accent)');
+            charts.xChart = new Chart('x-chart', { type: 'line', data: { labels: xLabels, datasets: [{ label: 'Média do Subgrupo', data: xData, borderColor: 'var(--accent)', backgroundColor: 'var(--accent)', pointBackgroundColor: xColors, pointRadius: 4, pointHoverRadius: 6 }, { label: 'LSC', data: Array(xLabels.length).fill(results.UCLx), borderColor: 'var(--bad)', borderDash: [5, 5], fill: false, pointRadius: 0 }, { label: 'Média', data: Array(xLabels.length).fill(results.grandMean), borderColor: 'var(--ok)', fill: false, pointRadius: 0 }, { label: 'LIC', data: Array(xLabels.length).fill(results.LCLx), borderColor: 'var(--bad)', borderDash: [5, 5], fill: false, pointRadius: 0 }] }, options: { plugins: { title: { display: true, text: 'Gráfico X-barra', color: 'var(--text)' } }, scales:{x:{ticks:{color:'var(--text)'}}, y:{ticks:{color:'var(--text)'}}} } });
+
+            const rsLabels = results.subgroups.map((_, i) => i + 1);
+            const rsData = results.controlChartType === 'R' ? results.subgroups.map(sg => sg.range) : results.subgroups.map(sg => sg.stdDev);
+            const rsMean = results.controlChartType === 'R' ? results.Rbar : results.Sbar;
+            const rsColors = rsLabels.map((_,i) => results.outOfControlPoints.rs.includes(i) ? 'var(--bad)' : 'var(--accent)');
+            charts.rsChart = new Chart('r-s-chart', { type: 'line', data: { labels: rsLabels, datasets: [{ label: `${results.controlChartType}`, data: rsData, borderColor: 'var(--accent)', backgroundColor: 'var(--accent)', pointBackgroundColor: rsColors, pointRadius: 4, pointHoverRadius: 6 }, { label: 'LSC', data: Array(rsLabels.length).fill(results.UCLr_s), borderColor: 'var(--bad)', borderDash: [5, 5], fill: false, pointRadius: 0 }, { label: 'Média', data: Array(rsLabels.length).fill(rsMean), borderColor: 'var(--ok)', fill: false, pointRadius: 0 }, { label: 'LIC', data: Array(rsLabels.length).fill(results.LCLr_s), borderColor: 'var(--bad)', borderDash: [5, 5], fill: false, pointRadius: 0 }] }, options: { plugins: { title: { display: true, text: `Gráfico ${results.controlChartType}`, color: 'var(--text)' } }, scales:{x:{ticks:{color:'var(--text)'}}, y:{ticks:{color:'var(--text)'}}} } });
+        };
+
+        const createHistogram = (results) => {
+            const data = results.allData;
+            const min = Math.min(...data), max = Math.max(...data);
+            const binCount = Math.ceil(Math.sqrt(data.length));
+            const binWidth = (max-min)/binCount;
+            const bins = Array(binCount).fill(0);
+            const labels = [];
+            for(let i=0; i<binCount; i++) {
+                labels.push(`${(min + i*binWidth).toFixed(2)} - ${(min+(i+1)*binWidth).toFixed(2)}`);
+                const lower = min + i*binWidth;
+                const upper = min + (i+1)*binWidth;
+                bins[i] = data.filter(d => d >= lower && d < upper).length;
+            }
+            if (bins[binCount - 1] === 0) bins[binCount - 1] = data.filter(d => d === max).length;
+            
+            charts.histogram = new Chart('histogram-chart', { type: 'bar', data: { labels, datasets: [{label: 'Frequência', data: bins, backgroundColor: 'rgba(167, 139, 250, 0.6)'}] }, options: { plugins: { title: { display: true, text: 'Histograma de Frequência', color: 'var(--text)' } }, scales:{x:{ticks:{color:'var(--text)'}}, y:{ticks:{color:'var(--text)'}}} } });
+        };
+        const createCapabilityPlot = (results) => {
+            const { grandMean, overallStdDev, allData } = results;
+            const lsl = parseFloat(document.getElementById('cep-lsl').value);
+            const usl = parseFloat(document.getElementById('cep-usl').value);
+            const min = Math.min(...allData), max = Math.max(...allData);
+            const range = max - min;
+            
+            const pdf = (x, mean, std) => (1 / (std * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
+            const curveData = [];
+            for (let i = 0; i <= 100; i++) {
+                const x = min - range*0.1 + (range * 1.2 / 100) * i;
+                curveData.push({ x: x, y: pdf(x, grandMean, overallStdDev) });
+            }
+
+            const annotations = {};
+            if(!isNaN(lsl)) annotations.lsl = { type: 'line', xMin: lsl, xMax: lsl, borderColor: 'var(--bad)', borderWidth: 2, label: { content: 'LIE', enabled: true, position: 'start' } };
+            if(!isNaN(usl)) annotations.usl = { type: 'line', xMin: usl, xMax: usl, borderColor: 'var(--bad)', borderWidth: 2, label: { content: 'LSE', enabled: true, position: 'start' } };
+            
+            charts.capability = new Chart('capability-chart', { type: 'line', data: { datasets: [{ label: 'Distribuição do Processo', data: curveData, borderColor: 'var(--accent2)', fill: true, backgroundColor: 'rgba(167, 139, 250, 0.2)', pointRadius: 0 }] }, options: { plugins: { title: { display: true, text: 'Gráfico de Capabilidade', color: 'var(--text)' }, annotation: { annotations } }, scales: {x: { type: 'linear', ticks:{color:'var(--text)'}}, y: { ticks:{color:'var(--text)'}}} } });
+        };
+
+        const gatherFormData = () => ({
+            id: document.getElementById('cep-id').value ? parseInt(document.getElementById('cep-id').value) : Date.now(),
+            setup: {
+                characteristic: document.getElementById('cep-characteristic').value,
+                date: document.getElementById('cep-date').value,
+                lead: document.getElementById('cep-lead').value,
+                lsl: document.getElementById('cep-lsl').value,
+                usl: document.getElementById('cep-usl').value,
+                target: document.getElementById('cep-target').value,
+                subgroupSize: document.getElementById('cep-subgroup-size').value,
+            },
+            rawData: cepDataTextArea.value
+        });
+
+        const handleDownloadTemplate = () => {
+            const n = parseInt(document.getElementById('cep-subgroup-size').value) || 5;
+            let header = Array.from({length: n}, (_, i) => `Amostra ${i+1}`).join(',');
+            let csvContent = header + '\n' + Array.from({length: n}, () => (10 + Math.random()).toFixed(2)).join(',');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `modelo_cep_subgrupo_de_${n}.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        };
+
+        // --- EVENT LISTENERS ---
+        btnNewCep.addEventListener('click', () => { document.getElementById('cep-form').reset(); document.getElementById('cep-id').value = ''; document.getElementById('cep-date').value = new Date().toISOString().slice(0,10); resultsSection.classList.add('hidden'); chartsSection.classList.add('hidden'); Object.values(charts).forEach(c => c.destroy()); showForm(); });
+        btnCalculate.addEventListener('click', () => {
+            const dataStr = cepDataTextArea.value; const n = parseInt(document.getElementById('cep-subgroup-size').value);
+            const lsl = parseFloat(document.getElementById('cep-lsl').value); const usl = parseFloat(document.getElementById('cep-usl').value);
+            if (!dataStr || isNaN(n) || n <= 0) { showToast('Dados de entrada ou tamanho do subgrupo inválidos.', 'error'); return; }
+            const data = dataStr.trim().split('\n').map(line => line.trim().split(/[\s,;\t]+/).map(Number).filter(v => !isNaN(v))).filter(row => row.length > 0);
+            if(data.length > 0 && data.some(row => row.length !== n)) { showToast(`Erro: Todos os subgrupos devem ter tamanho ${n}. Verifique seus dados.`, 'error'); return; }
+            const results = calculateCEP(data, n, lsl, usl); displayResultsAndCharts(results);
+        });
+        btnSaveCep.addEventListener('click', () => {
+            const studyData = gatherFormData();
+            const index = cepStudies.findIndex(s => s.id == studyData.id);
+            if (index > -1) cepStudies[index] = studyData; else cepStudies.push(studyData);
+            saveData(); showToast('Estudo salvo com sucesso!', 'success'); showDashboard();
+        });
+        btnCancel.addEventListener('click', showDashboard);
+        btnDownloadTemplate.addEventListener('click', handleDownloadTemplate);
+        btnImportData.addEventListener('click', () => {
+            const fileInput = document.createElement('input'); fileInput.type = 'file'; fileInput.accept = '.csv,.txt';
+            fileInput.onchange = e => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = re => { cepDataTextArea.value = re.target.result; }; reader.readAsText(file); } };
+            fileInput.click();
+        });
+        cepDataTextArea.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text'); document.execCommand('insertText', false, text.replace(/\t/g, ' ')); });
+        main.addEventListener('click', e => {
+            if (e.target.classList.contains('btn-edit')) {
+                const study = cepStudies.find(s => s.id == e.target.dataset.id);
+                if (study) {
+                    const { setup, rawData } = study;
+                    document.getElementById('cep-id').value = study.id;
+                    Object.keys(setup).forEach(key => { const el = document.getElementById(`cep-${key.toLowerCase().replace('characteristic','characteristic')}`); if (el) el.value = setup[key]; });
+                    cepDataTextArea.value = rawData;
+                    resultsSection.classList.add('hidden'); chartsSection.classList.add('hidden');
+                    showForm();
+                }
+            } else if (e.target.classList.contains('btn-delete')) {
+                if (confirm('Tem certeza?')) { cepStudies = cepStudies.filter(s => s.id != e.target.dataset.id); saveData(); renderCepList(); }
+            }
+        });
+
+        // --- INITIALIZATION ---
+        const initApp = () => {
+            loadData();
+            showDashboard();
+        };
+
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra um estudo para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(cepStudies, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`cep_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){cepStudies=d;saveData();renderCepList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

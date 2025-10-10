@@ -1,0 +1,481 @@
+<div id="mapeamento" class="tab-content active">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0% concluído</div>
+            </div>
+
+            <!-- Etapa 1: Definir Objetivo -->
+            <div class="step-container" data-step="1">
+                <div class="step-header" onclick="toggleStep(1)">
+                    <div class="step-title">
+                        <div class="step-number">1</div>
+                        <span>Definir Objetivo do Mapeamento</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-12 field">
+                            <label>Qual é o objetivo principal do mapeamento?</label>
+                            <textarea id="objetivo" placeholder="Descreva o objetivo do mapeamento de processos..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label>Selecione os objetivos específicos:</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="obj1" value="Identificar gargalos">
+                                    <label for="obj1">Identificar gargalos</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="obj2" value="Reduzir desperdícios">
+                                    <label for="obj2">Reduzir desperdícios</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="obj3" value="Melhorar qualidade">
+                                    <label for="obj3">Melhorar qualidade</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="obj4" value="Padronizar processos">
+                                    <label for="obj4">Padronizar processos</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="obj5" value="Reduzir custos">
+                                    <label for="obj5">Reduzir custos</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="obj6" value="Aumentar produtividade">
+                                    <label for="obj6">Aumentar produtividade</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 2: Escolher Processo -->
+            <div class="step-container" data-step="2">
+                <div class="step-header" onclick="toggleStep(2)">
+                    <div class="step-title">
+                        <div class="step-number">2</div>
+                        <span>Escolher o Processo a Ser Mapeado</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-6 field">
+                            <label>Nome do Processo</label>
+                            <input type="text" id="nomeProcesso" placeholder="Ex: Processo de Vendas">
+                        </div>
+                        <div class="col-6 field">
+                            <label>Área/Departamento</label>
+                            <input type="text" id="areaProcesso" placeholder="Ex: Comercial">
+                        </div>
+                        <div class="col-12 field">
+                            <label>Descrição do Processo</label>
+                            <textarea id="descricaoProcesso" placeholder="Descreva brevemente o processo..."></textarea>
+                        </div>
+                        <div class="col-6 field">
+                            <label>Início do Processo</label>
+                            <input type="text" id="inicioProcesso" placeholder="Ex: Recebimento do pedido">
+                        </div>
+                        <div class="col-6 field">
+                            <label>Fim do Processo</label>
+                            <input type="text" id="fimProcesso" placeholder="Ex: Entrega do produto">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 3: Identificar Pessoas -->
+            <div class="step-container" data-step="3">
+                <div class="step-header" onclick="toggleStep(3)">
+                    <div class="step-title">
+                        <div class="step-number">3</div>
+                        <span>Quem Faz o Processo no Dia a Dia?</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-6 field">
+                            <label>Responsável Principal</label>
+                            <input type="text" id="responsavelPrincipal" placeholder="Nome do responsável">
+                        </div>
+                        <div class="col-6 field">
+                            <label>Cargo/Função</label>
+                            <input type="text" id="cargoResponsavel" placeholder="Cargo do responsável">
+                        </div>
+                        <div class="col-12">
+                            <label>Outras Pessoas Envolvidas</label>
+                            <div class="dynamic-list" id="pessoasEnvolvidas">
+                                <div class="list-item">
+                                    <input type="text" placeholder="Nome da pessoa" class="pessoa-nome">
+                                    <input type="text" placeholder="Cargo/Função" class="pessoa-cargo">
+                                    <button type="button" class="btn btn-small" onclick="removePessoa(this)">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-small" onclick="addPessoa()">
+                                <i class="ph ph-plus"></i> Adicionar Pessoa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 4: Identificar Etapas -->
+            <div class="step-container" data-step="4">
+                <div class="step-header" onclick="toggleStep(4)">
+                    <div class="step-title">
+                        <div class="step-number">4</div>
+                        <span>Identificar as Etapas do Processo</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-12">
+                            <label>Etapas do Processo (em ordem sequencial)</label>
+                            <div class="dynamic-list" id="etapasProcesso">
+                                <div class="list-item">
+                                    <input type="text" placeholder="Descrição da etapa" class="etapa-descricao">
+                                    <input type="text" placeholder="Responsável" class="etapa-responsavel">
+                                    <input type="text" placeholder="Tempo estimado" class="etapa-tempo">
+                                    <button type="button" class="btn btn-small" onclick="removeEtapa(this)">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-small" onclick="addEtapa()">
+                                <i class="ph ph-plus"></i> Adicionar Etapa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 5: Desenhar Fluxograma -->
+            <div class="step-container" data-step="5">
+                <div class="step-header" onclick="toggleStep(5)">
+                    <div class="step-title">
+                        <div class="step-number">5</div>
+                        <span>Desenhar o Fluxograma</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-12 field">
+                            <label>Descrição do Fluxograma</label>
+                            <textarea id="fluxograma" placeholder="Descreva o fluxo do processo ou cole o link para o fluxograma..."></textarea>
+                        </div>
+                        <div class="col-6 field">
+                            <label>Ferramenta Utilizada</label>
+                            <select id="ferramentaFluxograma">
+                                <option value="">Selecione...</option>
+                                <option value="Visio">Microsoft Visio</option>
+                                <option value="Lucidchart">Lucidchart</option>
+                                <option value="Draw.io">Draw.io</option>
+                                <option value="Bizagi">Bizagi</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-6 field">
+                            <label>Link do Fluxograma (opcional)</label>
+                            <input type="url" id="linkFluxograma" placeholder="https://...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 6: Validar com Equipe -->
+            <div class="step-container" data-step="6">
+                <div class="step-header" onclick="toggleStep(6)">
+                    <div class="step-title">
+                        <div class="step-number">6</div>
+                        <span>Validar com a Equipe</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-12 field">
+                            <label>Participantes da Validação</label>
+                            <textarea id="participantesValidacao" placeholder="Nomes e cargos dos participantes..."></textarea>
+                        </div>
+                        <div class="col-12 field">
+                            <label>Feedback Recebido</label>
+                            <textarea id="feedbackValidacao" placeholder="Principais pontos de feedback e sugestões..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 7: Definir Indicadores -->
+            <div class="step-container" data-step="7">
+                <div class="step-header" onclick="toggleStep(7)">
+                    <div class="step-title">
+                        <div class="step-number">7</div>
+                        <span>Definir Indicadores de Performance (KPIs)</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-12">
+                            <label>Indicadores Chave de Performance (KPIs)</label>
+                            <div class="dynamic-list" id="kpis">
+                                <div class="list-item">
+                                    <input type="text" placeholder="Nome do KPI" class="kpi-nome">
+                                    <input type="text" placeholder="Meta" class="kpi-meta">
+                                    <input type="text" placeholder="Frequência de Medição" class="kpi-frequencia">
+                                    <button type="button" class="btn btn-small" onclick="removeKpi(this)">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-small" onclick="addKpi()">
+                                <i class="ph ph-plus"></i> Adicionar KPI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 8: Analisar e Otimizar -->
+            <div class="step-container" data-step="8">
+                <div class="step-header" onclick="toggleStep(8)">
+                    <div class="step-title">
+                        <div class="step-number">8</div>
+                        <span>Analisar e Otimizar o Processo</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-12 field">
+                            <label>Pontos de Melhoria Identificados</label>
+                            <textarea id="pontosMelhoria" placeholder="Descreva os pontos onde o processo pode ser melhorado..."></textarea>
+                        </div>
+                        <div class="col-12 field">
+                            <label>Ações de Otimização Propostas</label>
+                            <textarea id="acoesOtimizacao" placeholder="Descreva as ações para otimizar o processo..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 9: Monitorar e Controlar -->
+            <div class="step-container" data-step="9">
+                <div class="step-header" onclick="toggleStep(9)">
+                    <div class="step-title">
+                        <div class="step-number">9</div>
+                        <span>Monitorar e Controlar o Processo</span>
+                    </div>
+                    <div class="step-status">
+                        <i class="ph ph-caret-down"></i>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="grid">
+                        <div class="col-12 field">
+                            <label>Plano de Monitoramento</label>
+                            <textarea id="planoMonitoramento" placeholder="Descreva como o processo será monitorado continuamente..."></textarea>
+                        </div>
+                        <div class="col-12 field">
+                            <label>Responsáveis pelo Controle</label>
+                            <input type="text" id="responsaveisControle" placeholder="Nomes dos responsáveis pelo controle...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-bar">
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">Limpar</button>
+                <button type="button" class="btn btn-primary" onclick="showSummary()">Gerar Resumo</button>
+            </div>
+        </div>
+
+        <div id="ajuda" class="tab-content">
+            <section>
+                <h2>Guia de Mapeamento de Processos</h2>
+                <p>O Mapeamento de Processos é uma ferramenta essencial para visualizar e entender o fluxo de trabalho de uma organização. Ele permite identificar gargalos, otimizar recursos e melhorar a eficiência geral.</p>
+                <h4>Passos Essenciais:</h4>
+                <ul>
+                    <li><strong>Definição do Objetivo:</strong> Clarifique o que você deseja alcançar com o mapeamento.</li>
+                    <li><strong>Identificação do Processo:</strong> Escolha o processo específico a ser analisado.</li>
+                    <li><strong>Envolvimento das Pessoas:</strong> Inclua todos os envolvidos para uma visão completa.</li>
+                    <li><strong>Listagem das Etapas:</strong> Detalhe cada passo do processo em ordem.</li>
+                    <li><strong>Desenho do Fluxograma:</strong> Represente visualmente o fluxo.</li>
+                    <li><strong>Definição de KPIs:</strong> Estabeleça métricas para medir o sucesso.</li>
+                    <li><strong>Análise e Otimização:</strong> Identifique melhorias e proponha ações.</li>
+                    <li><strong>Monitoramento e Controle:</strong> Garanta a sustentabilidade das melhorias.</li>
+                </ul>
+                <p>Utilize esta ferramenta para guiar seu mapeamento e alcançar resultados superiores.</p>
+            </section>
+        </div>
+
+    <div class="summary-modal" id="summaryModal">
+        <div class="summary-content">
+            <div class="summary-header">
+                <h3>Resumo do Mapeamento de Processo</h3>
+                <button class="close-modal" onclick="closeSummary()">&times;</button>
+            </div>
+            <div id="summaryBody"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+
+        function toggleStep(step) {
+            const stepContent = document.querySelector(`.step-container[data-step=\'${step}\'] .step-content`);
+            const stepHeader = document.querySelector(`.step-container[data-step=\'${step}\'] .step-header`);
+            const isActive = stepContent.classList.contains(\'active\');
+
+            // Fecha todos os outros steps
+            document.querySelectorAll(\'.step-content.active\').forEach(el => {
+                if (el !== stepContent) {
+                    el.classList.remove(\'active\');
+                    el.previousElementSibling.classList.remove(\'active\');
+                }
+            });
+
+            stepContent.classList.toggle(\'active\');
+            stepHeader.classList.toggle(\'active\');
+        }
+
+        function updateProgress() {
+            const totalSteps = 9;
+            let completedSteps = 0;
+
+            // Lógica de verificação de preenchimento de cada etapa
+            if (document.getElementById(\'objetivo\').value.trim() !== \'\') completedSteps++;
+            if (document.getElementById(\'nomeProcesso\').value.trim() !== \'\') completedSteps++;
+            if (document.getElementById(\'responsavelPrincipal\').value.trim() !== \'\') completedSteps++;
+            if (document.querySelector(\'#etapasProcesso .list-item\')) completedSteps++;
+            if (document.getElementById(\'fluxograma\').value.trim() !== \'\') completedSteps++;
+            if (document.getElementById(\'participantesValidacao\').value.trim() !== \'\') completedSteps++;
+            if (document.querySelector(\'#kpis .list-item\')) completedSteps++;
+            if (document.getElementById(\'pontosMelhoria\').value.trim() !== \'\') completedSteps++;
+            if (document.getElementById(\'planoMonitoramento\').value.trim() !== \'\') completedSteps++;
+
+            const progress = (completedSteps / totalSteps) * 100;
+            document.getElementById(\'progressFill\').style.width = `${progress}%`;
+            document.getElementById(\'progressText\').textContent = `${Math.round(progress)}% concluído`;
+        }
+
+        function addPessoa() {
+            const container = document.getElementById(\'pessoasEnvolvidas\');
+            const newItem = document.createElement(\'div\');
+            newItem.className = \'list-item\';
+            newItem.innerHTML = `
+                <input type="text" placeholder="Nome da pessoa" class="pessoa-nome">
+                <input type="text" placeholder="Cargo/Função" class="pessoa-cargo">
+                <button type="button" class="btn btn-small" onclick="removePessoa(this)">
+                    <i class="ph ph-trash"></i>
+                </button>
+            `;
+            container.appendChild(newItem);
+        }
+
+        function removePessoa(button) {
+            button.parentElement.remove();
+        }
+
+        function addEtapa() {
+            const container = document.getElementById(\'etapasProcesso\');
+            const newItem = document.createElement(\'div\');
+            newItem.className = \'list-item\';
+            newItem.innerHTML = `
+                <input type="text" placeholder="Descrição da etapa" class="etapa-descricao">
+                <input type="text" placeholder="Responsável" class="etapa-responsavel">
+                <input type="text" placeholder="Tempo estimado" class="etapa-tempo">
+                <button type="button" class="btn btn-small" onclick="removeEtapa(this)">
+                    <i class="ph ph-trash"></i>
+                </button>
+            `;
+            container.appendChild(newItem);
+        }
+
+        function removeEtapa(button) {
+            button.parentElement.remove();
+        }
+
+        function addKpi() {
+            const container = document.getElementById(\'kpis\');
+            const newItem = document.createElement(\'div\');
+            newItem.className = \'list-item\';
+            newItem.innerHTML = `
+                <input type="text" placeholder="Nome do KPI" class="kpi-nome">
+                <input type="text" placeholder="Meta" class="kpi-meta">
+                <input type="text" placeholder="Frequência de Medição" class="kpi-frequencia">
+                <button type="button" class="btn btn-small" onclick="removeKpi(this)">
+                    <i class="ph ph-trash"></i>
+                </button>
+            `;
+            container.appendChild(newItem);
+        }
+
+        function removeKpi(button) {
+            button.parentElement.remove();
+        }
+
+        function showSummary() {
+            const summaryBody = document.getElementById(\'summaryBody\');
+            summaryBody.innerHTML = \'\'; // Limpa o conteúdo anterior
+
+            // Coleta e exibe os dados de cada etapa
+            summaryBody.innerHTML += \'<div class="summary-section"><h4>Objetivo do Mapeamento</h4><p>\' + document.getElementById(\'objetivo\').value + \'</p></div>\';
+            summaryBody.innerHTML += \'<div class="summary-section"><h4>Processo Mapeado</h4><p><strong>Nome:</strong> \' + document.getElementById(\'nomeProcesso\').value + \'<br><strong>Área:</strong> \' + document.getElementById(\'areaProcesso\').value + \'</p></div>\';
+            
+            // ... (adicionar o resto da coleta de dados para o resumo)
+
+            document.getElementById(\'summaryModal\').style.display = \'block\';
+        }
+
+        function closeSummary() {
+            document.getElementById(\'summaryModal\').style.display = \'none\';
+        }
+
+        function resetForm() {
+            if (confirm(\'Tem certeza que deseja limpar todos os campos?\')) {
+                document.querySelectorAll(\'input, textarea\').forEach(el => el.value = \'\');
+                document.querySelectorAll(\'input[type="checkbox"]\').forEach(el => el.checked = false);
+                document.querySelectorAll(\'.dynamic-list\').forEach(el => {
+                    while (el.children.length > 1) {
+                        el.removeChild(el.lastChild);
+                    }
+                });
+                updateProgress();
+            }
+        }
+
+        // Adiciona listeners para atualização do progresso
+        document.querySelectorAll(\'input, textarea\').forEach(el => {
+            el.addEventListener(\'input\', updateProgress);
+        });
+
+        // Inicializa o primeiro step como aberto
+        toggleStep(1);
+    </script>

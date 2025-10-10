@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Análise de Histograma</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation/dist/chartjs-plugin-annotation.min.js"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      textarea{min-height:150px;resize:vertical;font-family:monospace;letter-spacing:1px;}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .dashboard-card{background-color:var(--card);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--muted);}.dashboard-card .value{font-size:20px;font-weight:bold;color:var(--accent2);margin-bottom:8px;}.dashboard-card .label{font-size:12px;color:#93c5fd;}
+      .capability-interpretation{font-size:14px;text-align:center;font-weight:bold;padding:8px;border-radius:8px;margin-top:10px;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .user-info{text-align:center;}
+      .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:100;display:flex;justify-content:center;align-items:center;}
+      .modal-content{background:var(--bg);padding:24px;border-radius:16px;width:90%;max-width:400px;border:1px solid var(--muted);text-align:center;}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}main{padding:0;} header,aside,.hidden-print,.btn{display:none !important;} section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black} .dashboard-card{background:#eee}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Análise de Histograma e Capabilidade</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a href="./painel.html" style="border-color:var(--accent2);color:var(--accent2);background:rgba(167,139,250,.05);"><i class="ph-bold ph-arrow-left"></i> Voltar ao Painel</a>
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Análises Salvas</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Análises: <span id="analysis-count">0</span></p></div>
+        <div class="user-info"><p style="margin:0 0 8px 0;font-size:12px;">Usuário Ativo:</p><span id="current-user-display" style="color:var(--accent);font-weight:bold;">Nenhum</span><button class="btn ghost" id="btn-switch-user" style="width:100%;margin-top:10px;font-size:12px;padding:5px;">Trocar Usuário</button></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Análises de Histograma Salvas</h2><button id="btn-new-analysis" class="btn primary">+ Nova Análise</button></div>
+                <table id="analysis-list-table">
+                    <thead><tr><th>Título da Análise</th><th>Responsável</th><th>Data</th><th>N (Amostra)</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <form id="analysis-form">
+                <input type="hidden" id="analysis-id">
+                <section>
+                    <h4>Configuração da Análise</h4>
+                    <div class="grid">
+                       <div class="field" style="grid-column:span 6;"><label for="analysis-title">Título da Análise</label><input type="text" id="analysis-title" required placeholder="Ex: Diâmetro do Eixo 12A"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="analysis-date">Data</label><input type="date" id="analysis-date"></div>
+                       <div class="field" style="grid-column:span 3;"><label for="analysis-lead">Responsável</label><input type="text" id="analysis-lead" readonly></div>
+                       <div class="field" style="grid-column:span 4;"><label for="analysis-lsl">Limite Inferior (LIE)</label><input type="number" step="any" id="analysis-lsl"></div>
+                       <div class="field" style="grid-column:span 4;"><label for="analysis-usl">Limite Superior (LSE)</label><input type="number" step="any" id="analysis-usl"></div>
+                       <div class="field" style="grid-column:span 4;"><label for="analysis-classes">Nº de Classes (auto se vazio)</label><input type="number" id="analysis-classes" min="2"></div>
+                    </div>
+                </section>
+                <section>
+                    <h4>Entrada de Dados e Resultados</h4>
+                    <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 16px;">
+                        <div>
+                            <h4>Resumo Estatístico</h4>
+                            <div id="stats-summary" class="grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="dashboard-card"><div class="value" id="stat-n">0</div><div class="label">Amostra (N)</div></div>
+                                <div class="dashboard-card"><div class="value" id="stat-mean">0.00</div><div class="label">Média</div></div>
+                                <div class="dashboard-card"><div class="value" id="stat-stddev">0.00</div><div class="label">Desvio Padrão</div></div>
+                                <div class="dashboard-card"><div class="value" id="stat-median">0.00</div><div class="label">Mediana</div></div>
+                                <div class="dashboard-card"><div class="value" id="stat-min">0.00</div><div class="label">Mínimo</div></div>
+                                <div class="dashboard-card"><div class="value" id="stat-max">0.00</div><div class="label">Máximo</div></div>
+                                <div class="dashboard-card"><div class="value" id="stat-cp">-</div><div class="label">Cp</div></div>
+                                <div class="dashboard-card"><div class="value" id="stat-cpk">-</div><div class="label">Cpk</div></div>
+                            </div>
+                            <div id="capability-interpretation" class="capability-interpretation" style="display:none;"></div>
+                        </div>
+                        <div class="field">
+                            <label>Cole os dados de uma planilha, importe um arquivo ou digite (separados por vírgula, espaço ou linha)</label>
+                            <textarea id="histogram-data"></textarea>
+                            <div style="display:flex; gap:10px; margin-top:10px;">
+                                <button type="button" id="btn-download-template" class="btn ghost">Baixar Modelo</button>
+                                <button type="button" id="btn-import-data" class="btn ghost">Importar CSV/TXT</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <h4>Histograma Visual</h4>
+                    <div style="position:relative; min-height:400px; width:100%;">
+                        <canvas id="histogram-chart"></canvas>
+                    </div>
+                </section>
+                 <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-analysis" class="btn primary">Salvar Análise</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Análise de Histograma e Capabilidade</h2>
+                <p>Esta ferramenta é um sistema completo para analisar a distribuição de um conjunto de dados, calcular estatísticas descritivas e visualizar o comportamento e a capabilidade do seu processo.</p>
+                <h3>Como Iniciar uma Análise</h3>
+                <ol>
+                    <li>No <strong>Dashboard</strong>, clique em <code>+ Nova Análise</code>.</li>
+                    <li>Na seção <strong>Configuração da Análise</strong>, preencha as informações básicas. Os <strong>Limites de Especificação (LIE e LSE)</strong> são opcionais, mas necessários para o cálculo de <strong>Cp e Cpk</strong>.</li>
+                    <li>O <strong>Nº de Classes</strong> (barras do histograma) é calculado automaticamente (regra de Sturges). Você pode forçar um número diferente se desejar.</li>
+                </ol>
+                <h3>Inserindo os Dados</h3>
+                <p>À medida que você insere os dados, o <strong>Resumo Estatístico</strong>, os <strong>Índices de Capabilidade</strong> e o <strong>Histograma</strong> são atualizados em tempo real.</p>
+                <ul>
+                    <li><strong>Copiar e Colar (Recomendado):</strong> Copie uma coluna de números diretamente do Excel e cole na área de dados.</li>
+                    <li><strong>Importar Arquivo:</strong> Clique em <code>Importar CSV/TXT</code> para carregar um arquivo com uma única coluna de números.</li>
+                    <li><strong>Baixar Modelo:</strong> Use o botão <code>Baixar Modelo (.csv)</code> para obter um arquivo de exemplo.</li>
+                </ul>
+                <h3>Interpretando os Resultados</h3>
+                <ul>
+                    <li><strong>Cp:</strong> Mede o potencial do processo. Valores > 1.33 indicam que a "largura" do seu processo cabe dentro dos limites de especificação.</li>
+                    <li><strong>Cpk:</strong> Mede a performance real do processo, considerando sua centralização. É o índice mais importante. Um <strong>Cpk > 1.33</strong> é geralmente considerado "Capaz".</li>
+                    <li><strong>Histograma Visual:</strong> O gráfico mostra a frequência dos seus dados. A <strong>Curva Normal</strong> (linha azul) ajuda a verificar a normalidade da distribuição, e as <strong>Linhas de Especificação</strong> (vermelhas) mostram se o processo está operando dentro das tolerâncias.</li>
+                </ul>
+            </section>
+        </div>
+        <div id="login-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Bem-vindo!</h3><p>Identifique-se para continuar.</p>
+                <form id="login-form" style="margin-top:12px;">
+                    <div class="field"><label style="text-align:left;">Seu Nome</label><input id="analyst-name-input" required></div>
+                    <button type="submit" class="btn primary" style="margin-top:16px;width:100%;">Entrar</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            if(window.ChartAnnotation) Chart.register(window.ChartAnnotation);
+        } catch(e) {
+            console.warn("Chart.js Annotation plugin registration failed. May already be registered.");
+        }
+
+        let analyses = [];
+        const DB_KEY = 'mg_histogram_analyses_v1';
+        const USER_KEY = 'currentUser_histogram_v1';
+        let histogramChart = null;
+
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const helpContainer = document.getElementById('help-container');
+        const btnNewAnalysis = document.getElementById('btn-new-analysis');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveAnalysis = document.getElementById('btn-save-analysis');
+        const analysisListContainer = document.querySelector('#analysis-list-table tbody');
+        const analysisCountSpan = document.getElementById('analysis-count');
+        const analysisLeadField = document.getElementById('analysis-lead');
+        const loginModal = document.getElementById('login-modal');
+        const currentUserDisplay = document.getElementById('current-user-display');
+        const dataTextArea = document.getElementById('histogram-data');
+
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(analyses)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { analyses = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        const setCurrentUser = (name) => { localStorage.setItem(USER_KEY, name); currentUserDisplay.textContent = name; analysisLeadField.value = name; loginModal.classList.add('hidden'); };
+        
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+        };
+        const showForm = () => openTab({currentTarget: document.querySelector('.menu a')}, 'form-container');
+        const showDashboard = () => { openTab({currentTarget: document.querySelector('.menu a[onclick*="dashboard-container"]')}, 'dashboard-container'); renderAnalysisList(); };
+
+        const renderAnalysisList = () => {
+            analysisListContainer.innerHTML = '';
+            analysisCountSpan.textContent = analyses.length;
+            if (analyses.length === 0) { analysisListContainer.innerHTML = '<tr><td colspan="5">Nenhuma análise salva.</td></tr>'; return; }
+            analyses.sort((a, b) => new Date(b.setup.date) - new Date(a.setup.date)).forEach(a => {
+                const row = analysisListContainer.insertRow();
+                row.innerHTML = `<td>${a.setup.title || 'N/A'}</td><td>${a.setup.lead || 'N/A'}</td><td>${a.setup.date ? new Date(a.setup.date + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td>${a.stats?.n || 0}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${a.id}">Editar</button><button class="btn ghost btn-delete" data-id="${a.id}">Excluir</button></div></td>`;
+            });
+        };
+        
+        const populateForm = (analysis = {}) => {
+            document.getElementById('analysis-form').reset();
+            document.getElementById('analysis-id').value = analysis.id || '';
+            document.getElementById('analysis-title').value = analysis.setup?.title || '';
+            document.getElementById('analysis-date').value = analysis.setup?.date || new Date().toISOString().slice(0, 10);
+            document.getElementById('analysis-lead').value = analysis.setup?.lead || currentUserDisplay.textContent;
+            document.getElementById('analysis-lsl').value = analysis.setup?.lsl ?? '';
+            document.getElementById('analysis-usl').value = analysis.setup?.usl ?? '';
+            document.getElementById('analysis-classes').value = analysis.setup?.classes ?? '';
+            dataTextArea.value = analysis.rawData || '';
+            calculateAndUpdate();
+        };
+
+        const calculateAndUpdate = () => {
+            const dataStr = dataTextArea.value;
+            const data = dataStr.trim().split(/[\s,;\t\n]+/).map(Number).filter(n => !isNaN(n));
+            
+            if (data.length < 2) {
+                updateStats(); updateCapabilityStats();
+                if (histogramChart) { histogramChart.destroy(); histogramChart = null; }
+                return;
+            }
+
+            const sortedData = [...data].sort((a, b) => a - b);
+            const n = data.length;
+            const mean = data.reduce((a, b) => a + b, 0) / n;
+            const stdDev = n > 1 ? Math.sqrt(data.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (n - 1)) : 0;
+            const stats = { n, mean, stdDev, median: n % 2 === 0 ? (sortedData[n/2 - 1] + sortedData[n/2]) / 2 : sortedData[Math.floor(n/2)], min: sortedData[0], max: sortedData[n - 1], range: sortedData[n-1] - sortedData[0] };
+            
+            updateStats(stats);
+            
+            const lsl = parseFloat(document.getElementById('analysis-lsl').value);
+            const usl = parseFloat(document.getElementById('analysis-usl').value);
+            
+            if (!isNaN(lsl) && !isNaN(usl) && stats.stdDev > 0) {
+                const cp = (usl - lsl) / (6 * stats.stdDev);
+                const cpk = Math.min((usl - stats.mean) / (3 * stats.stdDev), (stats.mean - lsl) / (3 * stats.stdDev));
+                updateCapabilityStats(cp, cpk);
+            } else {
+                updateCapabilityStats();
+            }
+
+            updateChart(data, stats, lsl, usl);
+        };
+        
+        const updateStats = (stats = {}) => {
+            document.getElementById('stat-n').textContent = stats.n || 0;
+            document.getElementById('stat-mean').textContent = stats.mean?.toFixed(4) ?? '0.00';
+            document.getElementById('stat-median').textContent = stats.median?.toFixed(4) ?? '0.00';
+            document.getElementById('stat-stddev').textContent = stats.stdDev?.toFixed(4) ?? '0.00';
+            document.getElementById('stat-min').textContent = stats.min?.toFixed(4) ?? '0.00';
+            document.getElementById('stat-max').textContent = stats.max?.toFixed(4) ?? '0.00';
+        };
+
+        const updateCapabilityStats = (cp, cpk) => {
+            const interpEl = document.getElementById('capability-interpretation');
+            document.getElementById('stat-cp').textContent = cp?.toFixed(2) ?? '-';
+            document.getElementById('stat-cpk').textContent = cpk?.toFixed(2) ?? '-';
+
+            if(cpk === undefined) {
+                interpEl.style.display = 'none';
+                return;
+            }
+            interpEl.style.display = 'block';
+            if (cpk >= 1.33) {
+                interpEl.textContent = 'Processo Capaz';
+                interpEl.style.backgroundColor = 'var(--ok)';
+            } else if (cpk >= 1.00) {
+                interpEl.textContent = 'Processo Requer Atenção';
+                interpEl.style.backgroundColor = 'var(--warn)';
+            } else {
+                interpEl.textContent = 'Processo Incapaz';
+                interpEl.style.backgroundColor = 'var(--bad)';
+            }
+        };
+
+        const updateChart = (data, stats, lsl, usl) => {
+            if (histogramChart) histogramChart.destroy();
+            const numClasses = parseInt(document.getElementById('analysis-classes').value) || Math.ceil(1 + 3.322 * Math.log10(stats.n));
+            const binWidth = stats.range > 0 ? stats.range / numClasses : 1;
+            const bins = Array(numClasses).fill(0);
+            const labels = [];
+            for (let i = 0; i < numClasses; i++) {
+                const lower = stats.min + i * binWidth;
+                const upper = stats.min + (i + 1) * binWidth;
+                labels.push(lower.toFixed(3));
+                bins[i] = data.filter(d => (d >= lower && d < upper) || (i === numClasses - 1 && d === stats.max)).length;
+            }
+            labels.push((stats.min + numClasses * binWidth).toFixed(3));
+
+            const normalCurveData = [];
+            if(stats.stdDev > 0){
+                const step = stats.range / 100;
+                for(let x = stats.min - stats.range*0.1; x <= stats.max + stats.range*0.1; x += step){
+                    const pdf = (1 / (stats.stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - stats.mean) / stats.stdDev, 2));
+                    normalCurveData.push({x: x, y: pdf * stats.n * binWidth});
+                }
+            }
+
+            const annotations = {};
+            if(!isNaN(lsl)) annotations.lsl = { type: 'line', xMin: lsl, xMax: lsl, borderColor: 'var(--bad)', borderWidth: 2, label: { content: 'LIE', enabled: true, position: 'start'} };
+            if(!isNaN(usl)) annotations.usl = { type: 'line', xMin: usl, xMax: usl, borderColor: 'var(--bad)', borderWidth: 2, label: { content: 'LSE', enabled: true, position: 'start'} };
+
+            const ctx = document.getElementById('histogram-chart').getContext('2d');
+            histogramChart = new Chart(ctx, {
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        type: 'bar', label: 'Frequência', data: bins,
+                        backgroundColor: 'rgba(167, 139, 250, 0.6)', borderColor: 'rgba(167, 139, 250, 1)',
+                        borderWidth: 1, barPercentage: 1, categoryPercentage: 1
+                    }, {
+                        type: 'line', label: 'Curva Normal', data: normalCurveData,
+                        borderColor: 'var(--accent)', backgroundColor: 'transparent', pointRadius: 0, yAxisID: 'y2'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { 
+                        x: { type: 'linear', ticks:{color:'var(--text)'}, grid:{color:'rgba(255,255,255,0.1)'} }, 
+                        y: { position: 'left', beginAtZero: true, ticks:{color:'var(--text)'}, grid:{color:'rgba(255,255,255,0.1)'}, title: { display: true, text: 'Frequência', color: 'var(--text)' } },
+                        y2: { position: 'right', beginAtZero: true, ticks:{color:'var(--accent)'}, grid:{drawOnChartArea: false}, title: { display: true, text: 'Densidade', color: 'var(--accent)' } }
+                    },
+                    plugins: { title: { display: true, text: 'Histograma e Curva de Distribuição Normal', color: 'var(--text)'}, annotation: { annotations } }
+                }
+            });
+        };
+
+        const debounce = (func, delay) => { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), delay); }; };
+        const updateAll = debounce(calculateAndUpdate, 300);
+
+        const gatherFormData = () => {
+            const id = document.getElementById('analysis-id').value;
+            return {
+                id: id ? parseInt(id) : Date.now(),
+                setup: {
+                    title: document.getElementById('analysis-title').value,
+                    date: document.getElementById('analysis-date').value,
+                    lead: document.getElementById('analysis-lead').value,
+                    lsl: document.getElementById('analysis-lsl').value,
+                    usl: document.getElementById('analysis-usl').value,
+                    classes: document.getElementById('analysis-classes').value
+                },
+                rawData: dataTextArea.value,
+                stats: {
+                    n: parseInt(document.getElementById('stat-n').textContent),
+                    mean: parseFloat(document.getElementById('stat-mean').textContent),
+                }
+            };
+        };
+        
+        document.getElementById('btn-new-analysis').addEventListener('click', () => { populateForm(); showForm(); });
+        document.getElementById('btn-save-analysis').addEventListener('click', () => {
+            const analysisData = gatherFormData();
+            if(!analysisData.rawData) { showToast('Não é possível salvar uma análise sem dados.', 'warn'); return; }
+            const index = analyses.findIndex(a => a.id == analysisData.id);
+            if (index > -1) { analyses[index] = analysisData; } else { analyses.push(analysisData); }
+            saveData(); showToast('Análise salva com sucesso!', 'success'); showDashboard();
+        });
+
+        main.addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            if (target.id === 'btn-import-data') {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.csv,.txt';
+                fileInput.onchange = e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            dataTextArea.value = event.target.result;
+                            calculateAndUpdate();
+                            showToast('Dados importados com sucesso!', 'success');
+                        };
+                        reader.readAsText(file);
+                    }
+                };
+                fileInput.click();
+            }
+            if (target.id === 'btn-download-template') {
+                const csvContent = "data:text/csv;charset=utf-8,Valor\n10.1\n10.2\n9.9\n10.0\n10.3\n";
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "modelo_histograma.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            if (target.classList.contains('btn-edit')) {
+                const analysis = analyses.find(a => a.id == target.dataset.id);
+                if (analysis) { populateForm(analysis); showForm(); }
+            }
+            if (target.classList.contains('btn-delete')){
+                if (confirm('Tem certeza que deseja excluir esta análise?')) {
+                    analyses = analyses.filter(a => a.id != target.dataset.id);
+                    saveData();
+                    renderAnalysisList();
+                    showToast('Análise excluída.', 'info');
+                }
+            }
+        });
+
+        dataTextArea.addEventListener('input', updateAll);
+        ['analysis-lsl', 'analysis-usl', 'analysis-classes'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateAll);
+        });
+        
+        const initApp = () => {
+            loadData();
+            const savedUser = localStorage.getItem(USER_KEY);
+            if (savedUser) { 
+                setCurrentUser(savedUser);
+            } else {
+                const loginModalContent = `<div class="modal-content"><h3>Bem-vindo!</h3><p>Identifique-se para continuar.</p><form id="login-form" style="margin-top:12px;"><div class="field"><label style="text-align:left;">Seu Nome</label><input id="analyst-name-input" required></div><button type="submit" class="btn primary" style="margin-top:16px;width:100%;">Entrar</button></form></div>`;
+                loginModal.innerHTML = loginModalContent;
+                loginModal.classList.remove('hidden');
+                document.getElementById('login-form').addEventListener('submit', e => { e.preventDefault(); const name = document.getElementById('analyst-name-input').value.trim(); if (name) { setCurrentUser(name); showToast(`Bem-vindo, ${name}!`, "success"); showDashboard(); } });
+            }
+            showDashboard();
+        };
+        
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(analyses, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`histogram_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){analyses=d;saveData();renderAnalysisList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); localStorage.removeItem(USER_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 1500); } });
+        document.getElementById('btn-switch-user').addEventListener('click', () => { localStorage.removeItem(USER_KEY); window.location.reload(); });
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra uma análise para exportar.', 'info'); return; } window.print(); });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>
+}
+

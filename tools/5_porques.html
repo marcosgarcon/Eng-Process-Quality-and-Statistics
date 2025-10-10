@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - 5 Porquês</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{
+        --bg:#0f172a; --panel:#111827; --muted:#1f2937; --card:#0b1220; --text:#e5e7eb; --accent:#22d3ee; --accent2:#a78bfa; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+        --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px;
+        --status-aberto: #0d6efd; --status-andamento: #fd7e14; --status-concluido: #22c55e; --status-cancelado: #6c757d;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial; background:linear-gradient(120deg,#0b1020,#0a1328); color:var(--text); display:grid; grid-template-columns:280px 1fr; grid-template-rows:auto 1fr; gap:0; }
+      header{grid-column:1/3; display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:linear-gradient(90deg,#0b1020,#0a1a35); border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:5}
+      .header-title h1 { margin: 0; font-size: 20px; letter-spacing: .4px; color: var(--text); }
+      .header-title .subtitle { margin: 4px 0 0 0; font-size: 14px; font-weight: normal; color: var(--accent); }
+      .header-title .dev-credit { margin: 4px 0 0 0; font-size: 11px; font-weight: normal; color: #64748b; }
+      header .actions{display:flex; flex-wrap: wrap; gap:8px}
+      button, .btn{background:var(--muted); color:var(--text); border:1px solid #243041; border-radius:12px; padding:10px 14px; cursor:pointer; box-shadow:var(--shadow); transition:.2s; font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px); border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb); border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent; border-color:#334155}
+      aside{border-right:1px solid #1f2937; background:linear-gradient(180deg,#0b1020,#0a1328); padding:16px; display:flex; flex-direction:column; gap:24px; justify-content: space-between;}
+      .menu{display:flex; flex-direction:column; gap:8px}
+      .menu .tab-link{display:flex; gap:10px; align-items:center; text-decoration:none; color:#cbd5e1; padding:10px 12px; border:1px solid #1e293b; border-radius:12px; background:rgba(255,255,255,.02); cursor:pointer;}
+      .menu .tab-link.active,.menu .tab-link:hover{border-color:#334155; background:rgba(34,211,238,.08); color:#e2e8f0}
+      main{padding:18px; overflow:auto}
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      section{background:rgba(255,255,255,.03); border:1px solid #1f2937; border-radius:var(--radius); padding:16px; margin-bottom:18px; box-shadow:var(--shadow)}
+      h2, h3{margin:0 0 12px 0; font-size:18px; color: var(--accent);}
+      h4{margin:0 0 12px 0; font-size:16px; color: var(--accent2);}
+      .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
+      .col-6{grid-column:span 6} .col-4{grid-column:span 4} .col-3{grid-column:span 3} .col-12{grid-column:span 12}
+      .field{display:flex; flex-direction:column; gap:6px}
+      label{font-size:12px; color:#93c5fd}
+      input, select, textarea{background:#0b1220; border:1px solid #243041; color:var(--text); padding:10px 12px; border-radius:10px; outline:none; font-family:inherit; font-size:14px;}
+      textarea{min-height:40px; resize: vertical;}
+      .hidden { display: none !important; }
+
+      .analysis-card { padding: 16px; border: 1px solid var(--muted); border-radius: var(--radius); margin-bottom: 12px; background: var(--card); }
+      .analysis-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--muted); padding-bottom: 10px; margin-bottom: 10px; }
+      .analysis-header h3 { color: var(--accent); font-size: 16px; margin: 0; }
+      .analysis-header .actions button { padding: 4px 8px; font-size: 12px; }
+      .why-chain { padding-left: 15px; border-left: 2px solid var(--muted); }
+      .why-item { position: relative; margin-bottom: 8px; }
+      .why-item::before { content: '➔'; position: absolute; left: -25px; color: var(--accent); }
+      .why-item p { margin: 0; font-style: italic; color: #bdc5d1; }
+      .root-cause { margin-top: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--bad); border-radius: 4px; }
+      .root-cause strong { color: var(--bad); }
+      .action-plan-display, .action-plan-form-item { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--muted); }
+      .action-plan-form-item { padding: 12px; border: 1px solid var(--muted); border-radius: 12px; background: var(--card); position: relative;}
+      .remove-action-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; color: #fca5a5; font-size: 1.5rem; cursor: pointer;}
+      .action-plan-item b { font-size: 11px; text-transform: uppercase; color: #a5b4fc; }
+      .action-plan-item p { margin: 4px 0 0 0; }
+      .status-pill { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: bold; color: white; text-align: center;}
+      .status-aberto { background-color: var(--status-aberto); } .status-andamento { background-color: var(--status-andamento); } .status-concluido { background-color: var(--status-concluido); } .status-cancelado { background-color: var(--status-cancelado); }
+      #attachment-drop-zone { border: 2px dashed var(--muted); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: .2s; }
+      #attachment-drop-zone:hover, #attachment-drop-zone.dragover { border-color: var(--accent); background: rgba(34,211,238,.08); }
+      .attachment-preview-grid, .attachments-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+      .attachment-item { width: 100px; position: relative; }
+      .attachment-item img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; }
+      .attachment-item .file-info { font-size: 12px; text-align: center; word-break: break-all; }
+      .attachment-item .remove-attachment { position: absolute; top: -5px; right: -5px; background: var(--bad); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-weight: bold; line-height: 20px;}
+      .attachments-section { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--muted); }
+      .attachments-section a { display: inline-block; }
+      #record-counter { background:rgba(255,255,255,.02); border:1px solid #1e293b; border-radius: 12px; padding: 12px;}
+      #record-counter p { margin: 8px 0; color: #cbd5e1; display: flex; justify-content: space-between; }
+      #record-counter span { font-weight: bold; color: var(--accent); }
+      .help-content h3 { color: var(--accent2); margin-top: 24px; margin-bottom: 10px; border-bottom: 1px solid var(--muted); padding-bottom: 5px; font-size: 16px; }
+      .help-content p, .help-content li { line-height: 1.6; color: var(--text); }
+      .help-content code { background-color: var(--muted); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: var(--accent); }
+      .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+      .toast { padding: 12px 18px; border-radius: 12px; color: white; font-weight: 600; font-size: 14px; box-shadow: var(--shadow); opacity: 0; transform: translateX(100%); transition: all 0.4s ease; }
+      .toast.show { opacity: 1; transform: translateX(0); }
+      .toast.success { background: linear-gradient(90deg, #22c55e, #16a34a); }
+      .toast.error { background: linear-gradient(90deg, #ef4444, #dc2626); }
+      .toast.info { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+
+      @media print {
+        body { display: block; grid-template-columns: 1fr; }
+        header, aside, .btn, #form-section, #Ajuda, .remove-attachment, .remove-action-btn { display: none !important; }
+        main { padding: 0; overflow: visible;}
+        section, .analysis-card { box-shadow: none; border: 1px solid #ccc; background: white; color: black; page-break-inside: avoid; }
+        h2, h3, p, strong, h4 { color: black !important; }
+        .root-cause { background: #ffebee; border-left-color: #c62828; }
+        .analysis-header .actions { display: none; }
+        .attachments-section img { max-width: 150px; border: 1px solid #ccc; }
+      }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title">
+            <h1>Eng Process & Quality</h1>
+            <p class="subtitle">Análise dos 5 Porquês</p>
+            <p class="dev-credit">Desenvolvido por Marcos Garçon</p>
+        </div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF (Imprimir)</button>
+        </div>
+    </header>
+
+    <aside>
+        <div>
+            <div class="menu">
+                 <a class="tab-link active" onclick="openTab(event, 'Analise')">Análises Salvas</a>
+                 <a class="tab-link" onclick="openTab(event, 'Ajuda')">Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter" style="text-align: left;">
+            <p>Análises Salvas: <span id="analysis-count">0</span></p>
+        </div>
+    </aside>
+
+    <main>
+        <div id="Analise" class="tab-content active">
+            <button id="btn-new-analysis" class="btn primary" style="margin-bottom: 18px;">+ Nova Análise 5 Porquês</button>
+            <section id="form-section" class="hidden">
+                <h2 id="form-title">Nova Análise</h2>
+                <form id="5whys-form">
+                    <input type="hidden" id="analysis-id">
+                    <div class="grid">
+                        <div class="col-12 field"><label for="problem">Problema</label><textarea id="problem" rows="2" placeholder="Ex: A máquina parou de funcionar." required></textarea></div>
+                        <div class="col-12 field"><label for="why1">1. Por quê?</label><input type="text" id="why1" placeholder="Ex: O fusível queimou."></div>
+                        <div class="col-12 field"><label for="why2">2. Por quê?</label><input type="text" id="why2" placeholder="Ex: Houve uma sobrecarga no circuito."></div>
+                        <div class="col-12 field"><label for="why3">3. Por quê?</label><input type="text" id="why3" placeholder="Ex: O rolamento estava travado, exigindo mais corrente."></div>
+                        <div class="col-12 field"><label for="why4">4. Por quê?</label><input type="text" id="why4" placeholder="Ex: Falta de lubrificação no rolamento."></div>
+                        <div class="col-12 field"><label for="why5">5. Por quê? (Causa Raiz)</label><input type="text" id="why5" placeholder="Ex: O plano de manutenção preventiva não foi seguido."></div>
+                        
+                        <div class="col-12"><h4>Planos de Ação Corretiva</h4></div>
+                        <div class="col-12" id="action-plan-form-container"></div>
+                        <div class="col-12">
+                            <button type="button" id="btn-add-action-form" class="btn ghost">+ Adicionar Plano de Ação</button>
+                        </div>
+
+                        <div class="col-12"><h4>Anexos e Evidências</h4></div>
+                        <div class="col-8 field">
+                            <label for="attachment-link">Colar link de um anexo (Google Drive, Sharepoint, etc.)</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="text" id="attachment-link-url" placeholder="https://..." style="flex-grow:1;">
+                                <input type="text" id="attachment-link-name" placeholder="Nome do link" style="width: 150px;">
+                                <button type="button" id="btn-add-link" class="btn ghost">Adicionar Link</button>
+                            </div>
+                        </div>
+                        <div class="col-4 field">
+                            <label for="attachments">Ou arraste/selecione arquivos de imagem (máx 1MB)</label>
+                            <input type="file" id="attachments-input" multiple accept="image/*" class="hidden">
+                            <div id="attachment-drop-zone">Clique ou arraste imagens aqui</div>
+                        </div>
+                        <div class="col-12" id="attachment-preview-container">
+                             <div id="attachment-preview-grid" class="attachment-preview-grid"></div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; display: flex; gap: 10px;">
+                        <button type="submit" class="btn primary">Salvar Análise</button>
+                        <button type="button" id="btn-cancel" class="btn ghost">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+            
+            <div id="analysis-list-container"></div>
+        </div>
+
+        <div id="Ajuda" class="tab-content">
+             <section class="help-content">
+                <h2>Guia de Utilização - Análise dos 5 Porquês</h2>
+                <h3>O que é?</h3>
+                <p>Os 5 Porquês é uma técnica simples de análise de causa raiz que busca encontrar a origem de um problema perguntando "Por quê?" sucessivamente.</p>
+                <h3>Como Usar</h3>
+                <ul>
+                    <li>Na tela <strong>Análises Salvas</strong>, clique em <code>+ Nova Análise</code>.</li>
+                    <li>Descreva o <strong>Problema</strong> inicial de forma clara.</li>
+                    <li>Responda à primeira pergunta "Por quê?". A resposta se torna a base para a próxima pergunta, e assim por diante, até chegar à causa fundamental.</li>
+                    <li>Após identificar a causa raiz (geralmente no 5º porquê), crie <strong>Planos de Ação</strong> para tratá-la.</li>
+                    <li>Você pode anexar evidências, como fotos ou links para documentos, para enriquecer sua análise.</li>
+                </ul>
+            </section>
+        </div>
+    </main>
+    
+    <template id="action-plan-form-template">
+        <div class="action-plan-form-item">
+            <button type="button" class="remove-action-btn">&times;</button>
+            <div class="grid">
+                <div class="col-12 field"><label>Ação Corretiva</label><textarea class="action-input" rows="2"></textarea></div>
+                <div class="col-4 field"><label>Responsável</label><input type="text" class="responsible-input"></div>
+                <div class="col-2 field"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+                <div class="col-2 field"><label>Data Início</label><input type="date" class="start-date-input"></div>
+                <div class="col-2 field"><label>Data Final</label><input type="date" class="end-date-input"></div>
+                <div class="col-2 field"><label>Nova Data (Atraso)</label><input type="date" class="new-date-input"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="analysis-card-template">
+        <div class="analysis-card">
+            <div class="analysis-header">
+                <h3 class="problem-title"></h3>
+                <div class="actions">
+                    <button class="btn ghost btn-edit">Editar</button>
+                    <button class="btn ghost btn-delete">Excluir</button>
+                </div>
+            </div>
+            <div class="why-chain"></div>
+            <div class="root-cause"> <p><strong>Causa Raiz:</strong> <span class="root-cause-text"></span></p> </div>
+            <div class="action-plan-display"></div>
+            <div class="attachments-section hidden">
+                <h4>Evidências Anexadas:</h4>
+                <div class="attachments-list"></div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE & DBs ---
+            let analyses = [];
+            let tempAttachments = [];
+            const DB_KEY = 'mg_5whys_v3';
+
+            // --- DOM Elements ---
+            const formSection = document.getElementById('form-section');
+            const form = document.getElementById('5whys-form');
+            const btnNewAnalysis = document.getElementById('btn-new-analysis');
+            const btnCancel = document.getElementById('btn-cancel');
+            const analysisListContainer = document.getElementById('analysis-list-container');
+            const analysisCardTemplate = document.getElementById('analysis-card-template');
+            const analysisCountSpan = document.getElementById('analysis-count');
+            const formTitle = document.getElementById('form-title');
+            const actionPlanFormContainer = document.getElementById('action-plan-form-container');
+            const btnAddActionForm = document.getElementById('btn-add-action-form');
+            const actionPlanFormTemplate = document.getElementById('action-plan-form-template');
+            const dropZone = document.getElementById('attachment-drop-zone');
+            const fileInput = document.getElementById('attachments-input');
+            const previewGrid = document.getElementById('attachment-preview-grid');
+            const btnAddLink = document.getElementById('btn-add-link');
+            
+            // --- Helper Functions ---
+            const showToast = (message, type = 'info') => {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                container.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 4000);
+            };
+
+            // --- Data Persistence & Backup ---
+            const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(analyses)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+            const loadData = () => { analyses = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+            const handleDownloadBackup = () => { const blob = new Blob([JSON.stringify(analyses, null, 2)], {type: 'application/json'}); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `backup_5porques_${new Date().toISOString().slice(0,10)}.json`; link.click(); URL.revokeObjectURL(link.href); showToast("Backup baixado!", "success"); };
+            const handleRestoreBackup = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = e => { const file = e.target.files[0]; const reader = new FileReader(); reader.onload = event => { if (!confirm("Isso irá substituir TODOS os dados atuais. Deseja continuar?")) return; try { const restored = JSON.parse(event.target.result); if (Array.isArray(restored)) { analyses = restored; saveData(); renderAnalyses(); showToast('Backup restaurado com sucesso!'); } else { throw new Error('Formato inválido.'); } } catch (err) { showToast('Erro: Arquivo de backup inválido.', 'error'); } }; reader.readAsText(file); }; input.click(); };
+            const handleArchiveAndClear = () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e depois APAGAR os dados do navegador. Deseja continuar?")) { handleDownloadBackup(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } };
+            
+            // --- Tabs ---
+            window.openTab = (evt, tabName) => { document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove('active')); document.getElementById(tabName).classList.add('active'); document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active')); evt.currentTarget.classList.add('active'); };
+
+            // --- Core App Logic ---
+            const renderAnalyses = () => {
+                analysisListContainer.innerHTML = '';
+                if (analyses.length === 0) {
+                    analysisListContainer.innerHTML = '<section><p>Nenhuma análise salva. Clique em "+ Nova Análise 5 Porquês" para começar.</p></section>';
+                } else {
+                    [...analyses].sort((a,b) => b.id - a.id).forEach(analysis => {
+                        const cardClone = analysisCardTemplate.content.cloneNode(true);
+                        const card = cardClone.querySelector('.analysis-card');
+                        card.dataset.id = analysis.id; card.querySelector('.problem-title').textContent = analysis.problem;
+                        const whyChain = card.querySelector('.why-chain');
+                        whyChain.innerHTML = '';
+                        [analysis.why1, analysis.why2, analysis.why3, analysis.why4].forEach(why => { if(why) { const p = document.createElement('p'); p.textContent = why; const item = document.createElement('div'); item.className = 'why-item'; item.appendChild(p); whyChain.appendChild(item); } });
+                        card.querySelector('.root-cause-text').textContent = analysis.why5;
+                        const actionPlanDisplay = card.querySelector('.action-plan-display');
+                        actionPlanDisplay.innerHTML = '';
+                        if(analysis.actionPlans && analysis.actionPlans.length > 0) {
+                            const title = document.createElement('h4'); title.textContent = "Planos de Ação"; actionPlanDisplay.appendChild(title);
+                            analysis.actionPlans.forEach(plan => { const planDiv = document.createElement('div'); planDiv.className = 'action-plan-item grid'; planDiv.innerHTML = `<div class="col-6"><b>Ação Corretiva</b><p>${plan.action || ''}</p></div><div class="col-3"><b>Responsável</b><p>${plan.responsible || ''}</p></div><div class="col-3"><b>Status</b><p><span class="status-pill status-${plan.status}">${plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}</span></p></div>`; actionPlanDisplay.appendChild(planDiv); });
+                        }
+                        if(analysis.attachments && analysis.attachments.length > 0){
+                           const attachmentsSection = card.querySelector('.attachments-section');
+                           const attachmentsList = card.querySelector('.attachments-list');
+                           attachmentsSection.classList.remove('hidden'); attachmentsList.innerHTML = '';
+                           analysis.attachments.forEach(att => { const item = document.createElement('div'); item.className = 'attachment-item'; if(att.type === 'image'){ item.innerHTML = `<a href="${att.data}" target="_blank"><img src="${att.data}" alt="${att.name}"></a><div class="file-info">${att.name}</div>`; } else if (att.type === 'link'){ item.innerHTML = `<a href="${att.data}" target="_blank" title="${att.data}"><i class="ph-bold ph-link" style="font-size: 48px;"></i><div class="file-info">${att.name}</div></a>`; } attachmentsList.appendChild(item); });
+                        }
+                        analysisListContainer.appendChild(cardClone);
+                    });
+                }
+                analysisCountSpan.textContent = analyses.length;
+            };
+
+            const showForm = (isNew = true) => { formTitle.textContent = isNew ? 'Nova Análise' : 'Editar Análise'; actionPlanFormContainer.innerHTML = ''; formSection.classList.remove('hidden'); btnNewAnalysis.classList.add('hidden'); };
+            const hideForm = () => { form.reset(); document.getElementById('analysis-id').value = ''; tempAttachments = []; previewGrid.innerHTML = ''; actionPlanFormContainer.innerHTML = ''; formSection.classList.add('hidden'); btnNewAnalysis.classList.remove('hidden'); };
+            const renderAttachmentPreview = () => {
+                previewGrid.innerHTML = '';
+                tempAttachments.forEach((att, index) => {
+                    const item = document.createElement('div'); item.className = 'attachment-item'; let content = '';
+                    if(att.type === 'image'){ content = `<img src="${att.data}" alt="${att.name}"><div class="file-info">${att.name}</div>`; }
+                    else if (att.type === 'link'){ content = `<a href="${att.data}" target="_blank" title="${att.data}"><i class="ph-bold ph-link" style="font-size: 48px;"></i><div class="file-info">${att.name}</div></a>`; }
+                    item.innerHTML = content + `<button type="button" class="remove-attachment" data-index="${index}">&times;</button>`;
+                    previewGrid.appendChild(item);
+                });
+            };
+            const handleFiles = (files) => {
+                for (const file of files) {
+                    if (file.type.startsWith('image/')) {
+                        if (file.size > 1 * 1024 * 1024) { showToast(`A imagem "${file.name}" é maior que 1MB.`, 'error'); continue; }
+                        const reader = new FileReader();
+                        reader.onload = (e) => { tempAttachments.push({ type: 'image', name: file.name, data: e.target.result }); renderAttachmentPreview(); };
+                        reader.readAsDataURL(file);
+                    } else { showToast(`"${file.name}" não é uma imagem.`, 'info'); }
+                }
+            };
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+            fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+            btnAddLink.addEventListener('click', () => { const url = document.getElementById('attachment-link-url').value; const name = document.getElementById('attachment-link-name').value; if(url && name){ tempAttachments.push({ type: 'link', name: name, data: url }); renderAttachmentPreview(); document.getElementById('attachment-link-url').value = ''; document.getElementById('attachment-link-name').value = ''; } else { showToast('Preencha a URL e o Nome do link.', 'error'); } });
+            previewGrid.addEventListener('click', (e) => { if(e.target.classList.contains('remove-attachment')){ const index = e.target.dataset.index; tempAttachments.splice(index, 1); renderAttachmentPreview(); } });
+            btnAddActionForm.addEventListener('click', () => { actionPlanFormContainer.appendChild(actionPlanFormTemplate.content.cloneNode(true)); });
+            actionPlanFormContainer.addEventListener('click', (e) => { if(e.target.classList.contains('remove-action-btn')) { e.target.closest('.action-plan-form-item').remove(); } });
+            btnNewAnalysis.addEventListener('click', () => showForm(true));
+            btnCancel.addEventListener('click', hideForm);
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if(!document.getElementById('problem').value.trim()) { return showToast("O campo 'Problema' é obrigatório.", "error"); }
+                const id = document.getElementById('analysis-id').value;
+                const actionPlans = [];
+                actionPlanFormContainer.querySelectorAll('.action-plan-form-item').forEach(item => { actionPlans.push({ action: item.querySelector('.action-input').value, responsible: item.querySelector('.responsible-input').value, status: item.querySelector('.status-input').value, startDate: item.querySelector('.start-date-input').value, endDate: item.querySelector('.end-date-input').value, newDate: item.querySelector('.new-date-input').value }); });
+                const analysisData = {
+                    problem: document.getElementById('problem').value, why1: document.getElementById('why1').value, why2: document.getElementById('why2').value, why3: document.getElementById('why3').value,
+                    why4: document.getElementById('why4').value, why5: document.getElementById('why5').value,
+                    actionPlans: actionPlans, attachments: [...tempAttachments]
+                };
+                if (id) { const index = analyses.findIndex(a => a.id == id); analyses[index] = { ...analysisData, id: parseInt(id) }; showToast('Análise atualizada!', 'success');
+                } else { analysisData.id = Date.now(); analyses.push(analysisData); showToast('Análise salva!', 'success'); }
+                saveData(); renderAnalyses(); hideForm();
+            });
+
+            analysisListContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.analysis-card'); if (!card) return; const id = card.dataset.id;
+                if (e.target.classList.contains('btn-delete')) { if (confirm('Tem certeza?')) { analyses = analyses.filter(a => a.id != id); saveData(); renderAnalyses(); } }
+                if (e.target.classList.contains('btn-edit')) {
+                    const analysis = analyses.find(a => a.id == id);
+                    document.getElementById('analysis-id').value = analysis.id;
+                    document.getElementById('problem').value = analysis.problem;
+                    document.getElementById('why1').value = analysis.why1; document.getElementById('why2').value = analysis.why2;
+                    document.getElementById('why3').value = analysis.why3; document.getElementById('why4').value = analysis.why4;
+                    document.getElementById('why5').value = analysis.why5; 
+                    actionPlanFormContainer.innerHTML = '';
+                    if(analysis.actionPlans){
+                        analysis.actionPlans.forEach(plan => {
+                           const actionClone = actionPlanFormTemplate.content.cloneNode(true);
+                           actionClone.querySelector('.action-input').value = plan.action; actionClone.querySelector('.responsible-input').value = plan.responsible;
+                           actionClone.querySelector('.status-input').value = plan.status; actionClone.querySelector('.start-date-input').value = plan.startDate;
+                           actionClone.querySelector('.end-date-input').value = plan.endDate; actionClone.querySelector('.new-date-input').value = plan.newDate;
+                           actionPlanFormContainer.appendChild(actionClone);
+                        });
+                    }
+                    tempAttachments = analysis.attachments ? [...analysis.attachments] : [];
+                    renderAttachmentPreview();
+                    showForm(false);
+                }
+            });
+            
+            document.getElementById('btn-download-backup').addEventListener('click', handleDownloadBackup);
+            document.getElementById('btn-restore-backup').addEventListener('click', handleRestoreBackup);
+            document.getElementById('btn-archive-and-clear').addEventListener('click', handleArchiveAndClear);
+            document.getElementById('btn-export-pdf').addEventListener('click', () => window.print());
+
+            loadData();
+            renderAnalyses();
+        });
+    </script>
+</body>
+</html>

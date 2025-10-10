@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Controle de Estamparia</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden, .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;gap:16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:13px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;}
+      .kpi-card{background:var(--card);border-radius:12px;padding:16px;text-align:center;}
+      .kpi-card h3{font-size:12px;color:var(--accent2);margin:0 0 8px 0;font-weight:normal;text-transform:uppercase;}
+      .kpi-card .kpi-value{font-size:2.25rem;font-weight:bold;color:var(--accent);}
+      .oee-bar{display:flex;width:100%;height:20px;background:var(--muted);border-radius:8px;overflow:hidden;margin-top:8px;}
+      .oee-bar > div{height:100%;color:white;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:bold;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:100;display:none;justify-content:center;align-items:center;padding:16px;}
+      .modal.active{display:flex;}
+      .modal-content{background:var(--bg);padding:24px;border-radius:16px;width:90%;max-width:700px;border:1px solid var(--muted);max-height:90vh;overflow-y:auto;}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a3a4);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .autocomplete-container { position: relative; }
+      .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 10; background: var(--panel); border: 1px solid var(--muted); border-radius: 10px; max-height: 200px; overflow-y: auto; margin-top: 4px; }
+      .autocomplete-item { padding: 10px 12px; cursor: pointer; font-size: 14px; text-align: left; }
+      .autocomplete-item:hover { background: var(--muted); }
+      .autocomplete-item.is-new { font-style: italic; color: var(--accent); }
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn,.modal{display:none!important;}main{padding:0;overflow:visible;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label,p{color:black;}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Controle de Estamparia</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary hidden-print" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a href="#" class="tab-link active" onclick="openTab(event, 'dashboard')"><i class="ph-bold ph-gauge"></i> Dashboard</a>
+                <a href="#" class="tab-link" onclick="openTab(event, 'setups')"><i class="ph-bold ph-sliders"></i> Ficha de Parâmetros</a>
+                <a href="#" class="tab-link" onclick="openTab(event, 'production')"><i class="ph-bold ph-chart-line"></i> Controle de Produção</a>
+                <a href="#" class="tab-link" onclick="openTab(event, 'quality')"><i class="ph-bold ph-check-square-offset"></i> Controle de Qualidade</a>
+                <a href="#" class="tab-link" onclick="openTab(event, 'history')"><i class="ph-bold ph-archive"></i> Histórico de Produção</a>
+                <a href="#" class="tab-link" onclick="openTab(event, 'cadastros')">🗳️ Cadastros</a>
+                <a href="#" class="tab-link" onclick="openTab(event, 'help')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter">
+             <p>Ordens Ativas: <span id="op-count">0</span></p>
+             <p>Fichas de Param.: <span id="setup-count">0</span></p>
+        </div>
+    </aside>
+    <main id="main-content"></main>
+    
+    <div id="os-modal" class="modal"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE & DB ---
+        let state = {};
+        const DB_KEY = 'mg_stamping_v1';
+        let oeeChart = null;
+        let dashboardChart = null;
+
+        const main = document.getElementById('main-content');
+        const osModal = document.getElementById('os-modal');
+        
+        // --- HELPERS ---
+        const showToast = (message, type = 'info') => {
+            const container = document.getElementById('toast-container'); if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`; toast.textContent = message; container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 4000);
+        };
+        const formatDate = (dateString) => dateString ? new Date(dateString + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+        const formatDateTime = (dateString) => dateString ? new Date(dateString).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A';
+        
+        // --- DATA & NAVIGATION ---
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(state)); } catch (e) { showToast('Erro ao salvar dados.', 'error'); } };
+        const loadData = () => {
+            const loaded = JSON.parse(localStorage.getItem(DB_KEY));
+            state = {
+                dies: loaded?.dies || [],
+                presses: loaded?.presses || [{id:1, name:"Prensa 100T"}, {id:2, name:"Prensa 200T"}], 
+                parts: loaded?.parts || [],
+                setups: loaded?.setups || [],
+                productionOrders: loaded?.productionOrders || [],
+                qualityChecks: loaded?.qualityChecks || []
+            };
+        };
+        window.openTab = (evt, tabId) => {
+            evt.preventDefault();
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            const el = document.getElementById(tabId);
+            if(el) el.classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(link => link.classList.remove('active'));
+            if(evt.currentTarget) evt.currentTarget.classList.add('active');
+            if(tabId === 'dashboard') renderDashboard();
+        };
+
+        const handleExportCSV = (dataArray, filename) => {
+            if (!dataArray || dataArray.length === 0) return showToast('Não há dados para exportar.', 'info');
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += 'name\r\n';
+            dataArray.forEach(item => { csvContent += `"${item.name}"\r\n`; });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Dados exportados!', 'success');
+        };
+
+        const handleImportCSV = (stateKey) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = event => {
+                    if (!confirm(`Isso irá ADICIONAR os dados do CSV à lista atual de "${stateKey}". Deseja continuar?`)) return;
+                    try {
+                        const text = event.target.result;
+                        const lines = text.trim().split(/\r\n|\n/);
+                        lines.shift();
+                        let importedCount = 0;
+                        lines.forEach(line => {
+                           const name = line.trim().replace(/"/g, '');
+                           if(name){
+                                state[stateKey].push({ id: Date.now() + importedCount, name: name });
+                                importedCount++;
+                           }
+                        });
+                        saveData();
+                        renderAll();
+                        showToast(`${importedCount} itens importados com sucesso!`, 'success');
+                    } catch (err) {
+                        showToast('Erro ao processar o arquivo CSV.', 'error');
+                        console.error(err);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        };
+
+        const calculateOEE = (order) => {
+            const { logs = [], idealCycleTime = 0, downtime = 0 } = order;
+            if (!logs.length || !idealCycleTime) return { oee: 0, availability: 0, performance: 0, quality: 0 };
+            const firstLog = logs[0];
+            const lastLog = logs[logs.length - 1];
+            const plannedTime = (new Date(lastLog.timestamp) - new Date(firstLog.timestamp)) / (1000 * 60);
+            if (plannedTime <= 0) return { oee: 0, availability: 0, performance: 0, quality: 0 };
+            const operatingTime = plannedTime - downtime;
+            const availability = (operatingTime / plannedTime);
+            const totalProduced = lastLog.totalCounter;
+            const totalScrap = logs.reduce((acc, log) => acc + (log.scrap || 0), 0);
+            const goodParts = totalProduced - totalScrap;
+            const quality = totalProduced > 0 ? (goodParts / totalProduced) : 0;
+            const idealTimeForProduction = (totalProduced * idealCycleTime) / 60;
+            const performance = operatingTime > 0 ? (idealTimeForProduction / operatingTime) : 0;
+            const oee = availability * performance * quality;
+            return {
+                oee: oee * 100,
+                availability: availability * 100,
+                performance: performance * 100,
+                quality: quality * 100,
+            };
+        };
+
+        // --- RENDER FUNCTIONS ---
+        const renderDashboard = () => {
+            const completedOrders = state.productionOrders.filter(op => op.status === 'Finalizada');
+            let totalOEE = 0, totalA = 0, totalP = 0, totalQ = 0, totalProduced = 0, totalScrap = 0;
+
+            completedOrders.forEach(op => {
+                const setup = state.setups.find(s => s.id === op.setupId);
+                op.idealCycleTime = setup ? setup.cycleTime : 0;
+                const oeeData = calculateOEE(op);
+                totalOEE += oeeData.oee;
+                totalA += oeeData.availability;
+                totalP += oeeData.performance;
+                totalQ += oeeData.quality;
+                totalProduced += op.logs.length ? op.logs[op.logs.length-1].totalCounter : 0;
+                totalScrap += op.logs.reduce((acc, log) => acc + (log.scrap || 0), 0);
+            });
+            
+            const avgOEE = completedOrders.length > 0 ? (totalOEE / completedOrders.length) : 0;
+            const avgA = completedOrders.length > 0 ? (totalA / completedOrders.length) : 0;
+            const avgP = completedOrders.length > 0 ? (totalP / completedOrders.length) : 0;
+            const avgQ = completedOrders.length > 0 ? (totalQ / completedOrders.length) : 0;
+            const scrapRate = totalProduced > 0 ? (totalScrap / totalProduced) * 100 : 0;
+
+            document.getElementById('kpi-oee').textContent = `${avgOEE.toFixed(1)}%`;
+            document.getElementById('kpi-availability').textContent = `${avgA.toFixed(1)}%`;
+            document.getElementById('kpi-performance').textContent = `${avgP.toFixed(1)}%`;
+            document.getElementById('kpi-quality').textContent = `${avgQ.toFixed(1)}%`;
+            document.getElementById('kpi-produced').textContent = totalProduced;
+            document.getElementById('kpi-scrap').textContent = `${scrapRate.toFixed(1)}%`;
+            
+            document.getElementById('bar-a').style.width = `${avgA}%`;
+            document.getElementById('bar-a').textContent = `D: ${avgA.toFixed(0)}%`;
+            document.getElementById('bar-p').style.width = `${avgP}%`;
+            document.getElementById('bar-p').textContent = `P: ${avgP.toFixed(0)}%`;
+            document.getElementById('bar-q').style.width = `${avgQ}%`;
+            document.getElementById('bar-q').textContent = `Q: ${avgQ.toFixed(0)}%`;
+
+            const ctx = document.getElementById('oee-chart')?.getContext('2d');
+            if(!ctx) return;
+            if (oeeChart) oeeChart.destroy();
+            const chartData = completedOrders.slice(-10).map(op => calculateOEE(op).oee);
+            const chartLabels = completedOrders.slice(-10).map(op => op.opNumber);
+
+            oeeChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: chartLabels, datasets: [{ label: 'OEE por Ordem de Produção (%)', data: chartData, backgroundColor: 'rgba(34, 211, 238, 0.6)', borderColor: 'var(--accent)', borderWidth: 1 }] },
+                options: { scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        };
+
+        const renderSetupsList = () => {
+            const tbody = document.getElementById('tbl-setups');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            state.setups.forEach(s => {
+                const tr = tbody.insertRow();
+                tr.innerHTML = `<td>${s.partNumber}</td><td>${s.dieCode}</td><td>${s.pressName}</td><td>${s.force} T</td><td>${s.speed} GPM</td>`;
+                const actionsCell = tr.insertCell();
+                actionsCell.innerHTML = `<button class="btn ghost btn-edit-setup" data-id="${s.id}">Editar</button> <button class="btn ghost btn-delete-setup" data-id="${s.id}" style="color:var(--bad)">Excluir</button>`;
+            });
+        };
+
+        const renderProductionOrders = () => {
+             const tbody = document.getElementById('tbl-production');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            state.productionOrders.filter(op => op.status === 'Ativa').forEach(op => {
+                const tr = tbody.insertRow();
+                const setup = state.setups.find(s => s.id == op.setupId) || {};
+                const lastLog = op.logs.length > 0 ? op.logs[op.logs.length - 1] : {totalCounter: 0};
+                const progress = op.plannedQty > 0 ? (lastLog.totalCounter / op.plannedQty) * 100 : 0;
+                tr.innerHTML = `<td>${op.opNumber}</td><td>${setup.partNumber || 'N/A'}</td><td>${lastLog.totalCounter} / ${op.plannedQty}</td><td><progress value="${progress}" max="100"></progress> ${progress.toFixed(0)}%</td><td>${formatDateTime(op.startTime)}</td>`;
+                const actionsCell = tr.insertCell();
+                actionsCell.innerHTML = `<button class="btn ghost btn-log-production" data-id="${op.id}">Apontar</button> <button class="btn primary btn-finish-op" data-id="${op.id}">Finalizar</button>`;
+            });
+        };
+
+        const renderQualityChecks = () => {
+            const tbody = document.getElementById('tbl-quality');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            state.qualityChecks.slice(-20).reverse().forEach(qc => {
+                const tr = tbody.insertRow();
+                tr.innerHTML = `<td>${qc.opNumber}</td><td>${qc.dimension}</td><td>${qc.result}</td><td>${qc.inspector}</td><td>${formatDateTime(qc.timestamp)}</td>`;
+                const actionsCell = tr.insertCell();
+                actionsCell.innerHTML = `<button class="btn ghost btn-delete-qc" data-id="${qc.id}" style="color:var(--bad)">Excluir</button>`;
+            });
+        };
+
+        const renderHistory = () => {
+            const tbody = document.getElementById('tbl-history');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            state.productionOrders.filter(op => op.status === 'Finalizada').forEach(op => {
+                const setup = state.setups.find(s => s.id === op.setupId) || {};
+                op.idealCycleTime = setup ? setup.cycleTime : 0;
+                const oee = calculateOEE(op).oee;
+                const totalProduced = op.logs.length > 0 ? op.logs[op.logs.length - 1].totalCounter : 0;
+                const totalScrap = op.logs.reduce((acc, log) => acc + (log.scrap || 0), 0);
+                
+                const tr = tbody.insertRow();
+                tr.innerHTML = `<td>${op.opNumber}</td><td>${setup.partNumber || 'N/A'}</td><td>${totalProduced}</td><td>${totalScrap}</td><td>${oee.toFixed(1)}%</td><td>${formatDateTime(op.endTime)}</td>`;
+                const actionsCell = tr.insertCell();
+                actionsCell.innerHTML = `<button class="btn ghost btn-view-op" data-id="${op.id}">Detalhes</button>`;
+            });
+        };
+
+        const renderCadastros = () => {
+            const renderList = (key, tableId, nameField) => {
+                const tbody = document.querySelector(`#${tableId} tbody`);
+                if(!tbody) return;
+                tbody.innerHTML = '';
+                state[key].forEach(item => {
+                    const tr = tbody.insertRow();
+                    tr.insertCell().textContent = item[nameField];
+                    tr.insertCell().innerHTML = `<button class="btn ghost" onclick="deleteCadItem('${key}', ${item.id})">Excluir</button>`;
+                });
+            };
+            renderList('dies', 'tbl-dies', 'name');
+            renderList('presses', 'tbl-presses', 'name');
+            renderList('parts', 'tbl-parts', 'name');
+        };
+
+        window.deleteCadItem = (key, id) => {
+            if(confirm(`Tem certeza que deseja excluir este item?`)){
+                state[key] = state[key].filter(item => item.id !== id);
+                saveData();
+                renderAll();
+                showToast('Item excluído.', 'success');
+            }
+        };
+
+        const updateRecordCounters = () => {
+            document.getElementById('op-count').textContent = state.productionOrders.filter(op => op.status === 'Ativa').length;
+            document.getElementById('setup-count').textContent = state.setups.length;
+        };
+        
+        const fillAllSelects = () => {
+            const setupPartNumber = document.getElementById('setup_partNumber');
+            const setupDieCode = document.getElementById('setup_dieCode');
+            const setupPressName = document.getElementById('setup_pressName');
+            const qcOpNumber = document.getElementById('qc_opNumber');
+            
+            if(setupPartNumber) setupPartNumber.innerHTML = '<option value="">Selecione...</option>' + state.parts.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+            if(setupDieCode) setupDieCode.innerHTML = '<option value="">Selecione...</option>' + state.dies.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
+            if(setupPressName) setupPressName.innerHTML = '<option value="">Selecione...</option>' + state.presses.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+            if(qcOpNumber) qcOpNumber.innerHTML = '<option value="">Selecione...</option>' + state.productionOrders.filter(op => op.status === 'Ativa').map(op => `<option value="${op.opNumber}">${op.opNumber}</option>`).join('');
+        }
+
+        const renderAll = () => {
+            renderSetupsList();
+            renderProductionOrders();
+            renderQualityChecks();
+            renderHistory();
+            renderCadastros();
+            updateRecordCounters();
+            fillAllSelects();
+        };
+
+        // --- MASTER RENDER & HTML INJECTION ---
+        const createViewsHTML = () => {
+            return `
+                <div id="dashboard" class="tab-content">
+                    <section>
+                        <h2>Dashboard de OEE (Overall Equipment Effectiveness)</h2>
+                        <div class="kpi-grid">
+                            <div class="kpi-card"><h3>OEE Geral</h3><b class="kpi-value" id="kpi-oee">0%</b></div>
+                            <div class="kpi-card"><h3>Disponibilidade</h3><b class="kpi-value" id="kpi-availability">0%</b></div>
+                            <div class="kpi-card"><h3>Performance</h3><b class="kpi-value" id="kpi-performance">0%</b></div>
+                            <div class="kpi-card"><h3>Qualidade</h3><b class="kpi-value" id="kpi-quality">0%</b></div>
+                            <div class="kpi-card"><h3>Total Produzido</h3><b class="kpi-value" id="kpi-produced">0</b></div>
+                            <div class="kpi-card"><h3>Refugo (%)</h3><b class="kpi-value" id="kpi-scrap">0%</b></div>
+                        </div>
+                        <div class="oee-bar">
+                            <div id="bar-a" style="background:var(--accent);"></div>
+                            <div id="bar-p" style="background:var(--accent2);"></div>
+                            <div id="bar-q" style="background:var(--ok);"></div>
+                        </div>
+                    </section>
+                    <section><h4>OEE das Últimas Ordens Finalizadas</h4><canvas id="oee-chart" height="80"></canvas></section>
+                </div>
+                
+                <div id="setups" class="tab-content hidden">
+                    <section>
+                        <h2>Ficha de Parâmetros de Processo</h2>
+                        <form id="form-setup">
+                           <input type="hidden" id="setup_id">
+                           <div class="grid" style="grid-template-columns: repeat(4, 1fr);">
+                                <div class="field"><label>Peça (Cód)</label><select id="setup_partNumber" required></select></div>
+                                <div class="field"><label>Ferramenta (Cód)</label><select id="setup_dieCode" required></select></div>
+                                <div class="field"><label>Prensa</label><select id="setup_pressName" required></select></div>
+                                <div class="field"><label>Ciclo Ideal (segundos/pç)</label><input id="setup_cycleTime" type="number" step="0.1" required></div>
+                                <div class="field"><label>Força (ton)</label><input id="setup_force" type="number"></div>
+                                <div class="field"><label>Velocidade (GPM)</label><input id="setup_speed" type="number"></div>
+                                <div class="field"><label>Material (Tipo/Espessura)</label><input id="setup_material" placeholder="Aço 1020 / 1.5mm"></div>
+                                <div class="field"><label>Lubrificante</label><input id="setup_lubricant"></div>
+                           </div>
+                           <div style="margin-top:16px; display:flex; gap:10px;">
+                               <button type="submit" class="btn primary">Salvar Ficha</button>
+                               <button type="button" class="btn ghost" id="btn-clear-setup">Limpar</button>
+                           </div>
+                        </form>
+                    </section>
+                    <section><h4>Fichas Salvas</h4><div style="max-height: 400px; overflow: auto;"><table><thead><tr><th>Peça</th><th>Ferramenta</th><th>Prensa</th><th>Força</th><th>Veloc.</th><th>Ações</th></tr></thead><tbody id="tbl-setups"></tbody></table></div></section>
+                </div>
+
+                <div id="production" class="tab-content hidden">
+                    <section>
+                         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h2>Ordens de Produção Ativas</h2>
+                            <button id="btn-new-op" class="btn primary hidden-print">Iniciar Nova OP</button>
+                        </div>
+                        <div style="max-height: 600px; overflow: auto;"><table><thead><tr><th>OP</th><th>Peça</th><th>Progresso</th><th>%</th><th>Início</th><th>Ações</th></tr></thead><tbody id="tbl-production"></tbody></table></div>
+                    </section>
+                </div>
+
+                <div id="quality" class="tab-content hidden">
+                    <section>
+                        <h2>Controle de Qualidade</h2>
+                        <form id="form-quality">
+                            <input type="hidden" id="qc_id">
+                            <div class="grid" style="grid-template-columns: repeat(4, 1fr);">
+                                <div class="field"><label>Ordem de Produção</label><select id="qc_opNumber" required></select></div>
+                                <div class="field"><label>Dimensão Medida (mm)</label><input id="qc_dimension" type="number" step="0.01"></div>
+                                <div class="field"><label>Resultado</label><select id="qc_result"><option>Aprovado</option><option>Reprovado</option></select></div>
+                                <div class="field"><label>Inspetor</label><input id="qc_inspector" required></div>
+                           </div>
+                            <div style="margin-top:16px; display:flex; gap:10px;">
+                               <button type="submit" class="btn primary">Salvar Medição</button>
+                           </div>
+                        </form>
+                    </section>
+                    <section><h4>Últimos Registros</h4><div style="max-height: 400px; overflow: auto;"><table><thead><tr><th>OP</th><th>Medida</th><th>Resultado</th><th>Inspetor</th><th>Data/Hora</th><th>Ação</th></tr></thead><tbody id="tbl-quality"></tbody></table></div></section>
+                </div>
+                
+                <div id="history" class="tab-content hidden">
+                    <section>
+                        <h2>Histórico de Ordens Finalizadas</h2>
+                        <div style="max-height: 600px; overflow: auto;"><table><thead><tr><th>OP</th><th>Peça</th><th>Produzido</th><th>Refugo</th><th>OEE</th><th>Fim</th><th>Ações</th></tr></thead><tbody id="tbl-history"></tbody></table></div>
+                    </section>
+                </div>
+                
+                <div id="cadastros" class="tab-content hidden">
+                    <section>
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4>Cadastro de Ferramentas (Estampos)</h4>
+                            <div class="actions hidden-print"><button class="btn ghost btn-import" data-key="dies">Importar (CSV)</button><button class="btn ghost btn-export" data-key="dies">Exportar (CSV)</button></div>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-bottom:12px;"><input class="new-item-input" data-key="dies" placeholder="Código da ferramenta" style="flex-grow:1;"><button class="btn ghost btn-add-item" data-key="dies">Adicionar</button></div>
+                        <div style="max-height: 200px; overflow:auto;"><table id="tbl-dies"><thead><tr><th>Código</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+                    </section>
+                     <section>
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4>Cadastro de Prensas</h4>
+                            <div class="actions hidden-print"><button class="btn ghost btn-import" data-key="presses">Importar (CSV)</button><button class="btn ghost btn-export" data-key="presses">Exportar (CSV)</button></div>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-bottom:12px;"><input class="new-item-input" data-key="presses" placeholder="Nome da prensa" style="flex-grow:1;"><button class="btn ghost btn-add-item" data-key="presses">Adicionar</button></div>
+                        <div style="max-height: 200px; overflow:auto;"><table id="tbl-presses"><thead><tr><th>Nome</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+                    </section>
+                     <section>
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4>Cadastro de Peças</h4>
+                             <div class="actions hidden-print"><button class="btn ghost btn-import" data-key="parts">Importar (CSV)</button><button class="btn ghost btn-export" data-key="parts">Exportar (CSV)</button></div>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-bottom:12px;"><input class="new-item-input" data-key="parts" placeholder="Código da peça" style="flex-grow:1;"><button class="btn ghost btn-add-item" data-key="parts">Adicionar</button></div>
+                        <div style="max-height: 200px; overflow:auto;"><table id="tbl-parts"><thead><tr><th>Código</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+                    </section>
+                </div>
+
+                <div id="help" class="tab-content hidden">
+                    <section>
+                        <h2>Guia Rápido - Controle de Estamparia</h2>
+                        <h4>1. O que é OEE?</h4>
+                        <p>OEE (Overall Equipment Effectiveness) é o principal indicador para medir a eficiência produtiva. Ele é calculado por: <b>OEE = Disponibilidade x Performance x Qualidade</b>.</p>
+                        <ul>
+                            <li><b>Disponibilidade:</b> Quanto tempo a máquina realmente produziu em relação ao tempo que estava planejada para produzir. É afetada por paradas.</li>
+                            <li><b>Performance:</b> A velocidade da produção em relação à velocidade ideal. É afetada por pequenas paradas e ritmo lento.</li>
+                            <li><b>Qualidade:</b> A quantidade de peças boas em relação ao total de peças produzidas. É afetada por refugo.</li>
+                        </ul>
+                        <h4>2. Fluxo de Trabalho Sugerido</h4>
+                        <ol>
+                            <li><b>Cadastros:</b> Antes de tudo, alimente as listas de Ferramentas, Prensas e Peças. Use os botões de Importar/Exportar CSV para facilitar.</li>
+                            <li><b>Ficha de Parâmetros:</b> Crie uma ficha para cada combinação de Peça/Ferramenta/Prensa. O "Ciclo Ideal" é fundamental para o cálculo do OEE.</li>
+                            <li><b>Controle de Produção:</b> Inicie uma nova Ordem de Produção (OP). Durante o turno, use o botão "Apontar" para registrar a quantidade produzida, refugo e tempo de parada.</li>
+                            <li><b>Finalizar OP:</b> Ao final da produção, clique em "Finalizar". A OP será movida para o Histórico e seus dados alimentarão o Dashboard de OEE.</li>
+                        </ol>
+                        <h4>3. Backup e CSV</h4>
+                        <p>Utilize os botões no cabeçalho para fazer backup de todos os dados em um arquivo <code>.json</code>. Na aba de Cadastros, é possível importar e exportar as listas em formato <code>.csv</code> para edição em planilhas.</p>
+                    </section>
+                </div>
+            `;
+        };
+        
+        const openProductionOrderModal = (opId = null) => {
+            const op = opId ? state.productionOrders.find(o => o.id === opId) : null;
+            const setupOptions = state.setups.map(s => `<option value="${s.id}" ${op?.setupId == s.id ? 'selected':''}>${s.partNumber} / ${s.pressName}</option>`).join('');
+
+            osModal.innerHTML = `
+                <div class="modal-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><h3>${op ? 'Detalhes da OP' : 'Nova Ordem de Produção'}</h3><button class="btn ghost" id="btn-close-modal">&times;</button></div>
+                    <form id="form-op">
+                        <input type="hidden" id="op_id" value="${op?.id || ''}">
+                        <div class="grid">
+                            <div class="field"><label>Número da OP</label><input id="op_opNumber" value="${op?.opNumber || `OP-${Date.now()}`}" required></div>
+                            <div class="field"><label>Ficha de Parâmetros (Peça/Prensa)</label><select id="op_setupId" required><option value="">Selecione...</option>${setupOptions}</select></div>
+                            <div class="field"><label>Quantidade Planejada</label><input id="op_plannedQty" type="number" value="${op?.plannedQty || ''}" required></div>
+                            <div class="field"><label>Data/Hora de Início</label><input id="op_startTime" type="datetime-local" value="${op?.startTime ? op.startTime.slice(0,16) : new Date().toISOString().slice(0,16)}" required></div>
+                        </div>
+                        <div style="margin-top:20px;"><button type="submit" class="btn primary">${op ? 'Salvar Alterações' : 'Iniciar Produção'}</button></div>
+                    </form>
+                </div>`;
+            osModal.classList.add('active');
+        };
+
+        const openLogProductionModal = (opId) => {
+            const op = state.productionOrders.find(o => o.id === opId);
+            if(!op) return showToast('OP não encontrada', 'error');
+            const lastLogCounter = op.logs.length > 0 ? op.logs[op.logs.length - 1].totalCounter : 0;
+            
+            osModal.innerHTML = `
+                <div class="modal-content" style="max-width: 500px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><h3>Apontamento - OP ${op.opNumber}</h3><button class="btn ghost" id="btn-close-modal">&times;</button></div>
+                    <form id="form-log">
+                        <input type="hidden" id="log_opId" value="${op.id}">
+                        <div class="grid">
+                             <div class="field"><label>Contador Total de Peças</label><input id="log_totalCounter" type="number" value="${lastLogCounter}" required></div>
+                             <div class="field"><label>Peças de Refugo (neste período)</label><input id="log_scrap" type="number" value="0" required></div>
+                             <div class="field"><label>Tempo de Parada (minutos)</label><input id="log_downtime" type="number" value="0" required></div>
+                        </div>
+                        <div class="field" style="margin-top:10px;"><label>Observação (motivo da parada, etc)</label><input id="log_notes"></div>
+                        <div style="margin-top:20px;"><button type="submit" class="btn primary">Registrar Apontamento</button></div>
+                    </form>
+                </div>`;
+            osModal.classList.add('active');
+        };
+
+        const addEventListeners = () => {
+            document.getElementById('form-setup')?.addEventListener('submit', e => {
+                e.preventDefault();
+                const id = document.getElementById('setup_id').value;
+                const record = {
+                    id: id ? parseInt(id) : Date.now(),
+                    partNumber: document.getElementById('setup_partNumber').value,
+                    dieCode: document.getElementById('setup_dieCode').value,
+                    pressName: document.getElementById('setup_pressName').value,
+                    cycleTime: parseFloat(document.getElementById('setup_cycleTime').value),
+                    force: document.getElementById('setup_force').value,
+                    speed: document.getElementById('setup_speed').value,
+                    material: document.getElementById('setup_material').value,
+                    lubricant: document.getElementById('setup_lubricant').value,
+                };
+                if(id) state.setups = state.setups.map(s => s.id == id ? record : s);
+                else state.setups.push(record);
+                saveData();
+                renderAll();
+                showToast('Ficha de parâmetros salva!', 'success');
+                e.target.reset();
+                document.getElementById('setup_id').value = '';
+            });
+            document.getElementById('btn-clear-setup')?.addEventListener('click', () => document.getElementById('form-setup').reset());
+            document.getElementById('tbl-setups')?.addEventListener('click', e => {
+                 const id = e.target.dataset.id;
+                 if(e.target.classList.contains('btn-edit-setup')) {
+                    const setup = state.setups.find(s => s.id == id);
+                    if(setup) {
+                        Object.keys(setup).forEach(key => {
+                            const input = document.getElementById(`setup_${key}`);
+                            if(input) input.value = setup[key];
+                        });
+                        window.scrollTo(0, 0);
+                    }
+                 }
+                 if(e.target.classList.contains('btn-delete-setup')) {
+                     if(confirm('Tem certeza?')) {
+                        state.setups = state.setups.filter(s => s.id != id);
+                        saveData();
+                        renderAll();
+                     }
+                 }
+            });
+
+            document.getElementById('btn-new-op')?.addEventListener('click', () => openProductionOrderModal());
+            document.getElementById('tbl-production')?.addEventListener('click', e => {
+                const opId = parseInt(e.target.dataset.id);
+                if(e.target.classList.contains('btn-log-production')) openLogProductionModal(opId);
+                if(e.target.classList.contains('btn-finish-op')) {
+                    if(confirm(`Finalizar a OP?`)) {
+                        const op = state.productionOrders.find(o => o.id === opId);
+                        if(op){
+                            op.status = 'Finalizada';
+                            op.endTime = new Date().toISOString();
+                            saveData();
+                            renderAll();
+                            showToast('OP Finalizada!', 'success');
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('form-quality')?.addEventListener('submit', e => {
+                e.preventDefault();
+                const record = {
+                    id: Date.now(),
+                    opNumber: document.getElementById('qc_opNumber').value,
+                    dimension: document.getElementById('qc_dimension').value,
+                    result: document.getElementById('qc_result').value,
+                    inspector: document.getElementById('qc_inspector').value,
+                    timestamp: new Date().toISOString()
+                };
+                state.qualityChecks.push(record);
+                saveData();
+                renderAll();
+                showToast('Registro de qualidade salvo!', 'success');
+                e.target.reset();
+            });
+            document.getElementById('tbl-quality')?.addEventListener('click', e => {
+                if(e.target.classList.contains('btn-delete-qc')) {
+                    const id = parseInt(e.target.dataset.id);
+                    if(confirm('Excluir este registro?')) {
+                        state.qualityChecks = state.qualityChecks.filter(qc => qc.id != id);
+                        saveData();
+                        renderQualityChecks();
+                    }
+                }
+            });
+
+            osModal.addEventListener('click', e => { if(e.target.id === 'btn-close-modal') osModal.classList.remove('active'); });
+            osModal.addEventListener('submit', e => {
+                e.preventDefault();
+                if(e.target.id === 'form-op'){
+                    const opId = document.getElementById('op_id').value;
+                    const setupId = parseInt(document.getElementById('op_setupId').value);
+                    if(!setupId) return showToast('Selecione uma Ficha de Parâmetros!', 'error');
+                    
+                    const record = {
+                        opNumber: document.getElementById('op_opNumber').value,
+                        setupId: setupId,
+                        plannedQty: parseInt(document.getElementById('op_plannedQty').value),
+                        startTime: document.getElementById('op_startTime').value,
+                    };
+
+                    if(opId){ 
+                        const op = state.productionOrders.find(o => o.id == opId);
+                        if(op) Object.assign(op, record);
+                        showToast(`OP ${record.opNumber} atualizada!`, 'success');
+                    } else { 
+                        Object.assign(record, {
+                            id: Date.now(),
+                            status: 'Ativa',
+                            logs: [],
+                            downtime: 0
+                        });
+                        state.productionOrders.push(record);
+                        showToast(`OP ${record.opNumber} iniciada!`, 'success');
+                    }
+                    saveData();
+                    renderAll();
+                    osModal.classList.remove('active');
+                }
+                if(e.target.id === 'form-log') {
+                    const opId = parseInt(document.getElementById('log_opId').value);
+                    const op = state.productionOrders.find(o => o.id == opId);
+                    const downtime = parseInt(document.getElementById('log_downtime').value);
+                    if(op) {
+                        op.logs.push({
+                            timestamp: new Date().toISOString(),
+                            totalCounter: parseInt(document.getElementById('log_totalCounter').value),
+                            scrap: parseInt(document.getElementById('log_scrap').value),
+                            notes: document.getElementById('log_notes').value
+                        });
+                        op.downtime += downtime;
+                        saveData();
+                        renderAll();
+                        showToast('Apontamento registrado!', 'success');
+                        osModal.classList.remove('active');
+                    }
+                }
+            });
+            
+            document.querySelectorAll('.btn-add-item').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const key = e.target.dataset.key;
+                    const input = document.querySelector(`.new-item-input[data-key="${key}"]`);
+                    if(input.value.trim()){
+                        state[key].push({ id: Date.now(), name: input.value.trim() });
+                        saveData();
+                        renderAll();
+                        input.value = '';
+                        input.focus();
+                    }
+                });
+            });
+            document.querySelectorAll('.btn-export').forEach(btn => btn.addEventListener('click', e => handleExportCSV(state[e.target.dataset.key], `${e.target.dataset.key}.csv`)));
+            document.querySelectorAll('.btn-import').forEach(btn => btn.addEventListener('click', e => handleImportCSV(e.target.dataset.key)));
+        };
+        
+        // --- INIT ---
+        const initApp = () => {
+            loadData();
+            main.innerHTML = createViewsHTML();
+            addEventListeners();
+            renderAll();
+            openTab({currentTarget: document.querySelector('.menu a')}, 'dashboard');
+        };
+        
+        // --- GLOBAL EVENT LISTENERS ---
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(state, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`estamparia_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);state=d;saveData();showToast('Backup restaurado!', 'success');setTimeout(() => window.location.reload(), 1000);}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 1500); } });
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { window.print(); });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

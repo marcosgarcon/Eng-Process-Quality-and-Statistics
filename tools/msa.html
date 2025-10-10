@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Gerenciador MSA (R&R)</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .dashboard-card{background-color:var(--card);padding:16px;border-radius:12px;text-align:center;border:1px solid var(--muted);}.dashboard-card .value{font-size:24px;font-weight:bold;color:var(--accent2);margin-bottom:8px;}.dashboard-card .label{font-size:12px;color:#93c5fd;}
+      .verdict-card{padding:20px;border-radius:12px;font-size:20px;font-weight:bold;text-align:center;color:white;}.verdict-ok{background:linear-gradient(45deg, var(--ok), #15803d);}.verdict-warn{background:linear-gradient(45deg, var(--warn), #a16207);}.verdict-bad{background:linear-gradient(45deg, var(--bad), #991b1b);}
+      #collection-grid table{margin-top:10px;} #collection-grid td input{width:100%;text-align:center;padding:6px;}
+      .action-item-block{padding:12px;border:1px solid var(--muted);border-radius:12px;background:var(--card);position:relative;margin-top:10px;}
+      .remove-action-btn{position:absolute;top:5px;right:5px;background:none;border:none;color:#fca5a5;font-size:1.5rem;cursor:pointer;}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      #toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn{display:none !important;}main{padding:0;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black}.dashboard-card{background:#eee}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">MSA - Análise de Sistemas de Medição (R&R)</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+             <div id="record-counter"><h4>Registros</h4><p>Estudos R&R Salvos: <span id="msa-count">0</span></p></div>
+        </div>
+    </aside>
+    <main>
+        <div id="dashboard-container">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h2>Estudos de R&R Salvos</h2>
+                    <button id="btn-new-msa" class="btn primary">+ Novo Estudo R&R</button>
+                </div>
+                <table id="msa-list-table">
+                    <thead><tr><th>Instrumento</th><th>Característica</th><th>%R&R</th><th>ndc</th><th>Status</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="hidden">
+            <form id="msa-form">
+                <input type="hidden" id="msa-id">
+                <section>
+                    <h4>Informações Gerais e Parâmetros do Estudo</h4>
+                    <div class="grid">
+                        <div class="field" style="grid-column:span 6;"><label for="gage-name">Nome do Instrumento</label><input type="text" id="gage-name"></div>
+                        <div class="field" style="grid-column:span 6;"><label for="characteristic">Característica Medida</label><input type="text" id="characteristic"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="study-date">Data do Estudo</label><input type="date" id="study-date"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="analyst-name">Analista</label><input type="text" id="analyst-name"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="tolerance">Tolerância do Processo (Ex: 0.5)</label><input type="number" id="tolerance" step="any"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="num-appraisers">Nº de Avaliadores</label><input type="number" id="num-appraisers" value="3" min="2"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="num-parts">Nº de Peças</label><input type="number" id="num-parts" value="10" min="2"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="num-trials">Nº de Ensaios</label><input type="number" id="num-trials" value="3" min="2"></div>
+                    </div>
+                    <div style="margin-top:15px;display:flex;gap:10px;">
+                        <button type="button" id="btn-generate-grid" class="btn primary">Gerar Tabela de Coleta</button>
+                        <button type="button" id="btn-calculate" class="btn ghost">Calcular e Analisar</button>
+                    </div>
+                </section>
+                <section id="collection-section" class="hidden"><h4>Coleta de Dados</h4><div id="collection-grid"></div></section>
+                <section id="results-section" class="hidden">
+                    <h4>Resultados da Análise (ANOVA)</h4>
+                    <div class="grid">
+                        <div style="grid-column:span 8;"><div class="grid" style="grid-template-columns:repeat(4,1fr);">
+                            <div class="dashboard-card"><div class="value" id="res-grr">0.00%</div><div class="label">%R&R (Total)</div></div>
+                            <div class="dashboard-card"><div class="value" id="res-ev">0.00%</div><div class="label">%Repetitividade (EV)</div></div>
+                            <div class="dashboard-card"><div class="value" id="res-av">0.00%</div><div class="label">%Reprodutibilidade (AV)</div></div>
+                            <div class="dashboard-card"><div class="value" id="res-pv">0.00%</div><div class="label">%Variação da Peça (PV)</div></div>
+                        </div></div>
+                        <div style="grid-column:span 4;"><div class="grid" style="grid-template-columns:repeat(2,1fr);">
+                             <div class="dashboard-card"><div class="value" id="res-ndc">0</div><div class="label">ndc</div></div>
+                             <div class="verdict-card" id="res-verdict">Aguardando...</div>
+                        </div></div>
+                    </div>
+                </section>
+                <section id="charts-section" class="hidden"><h4>Análise Gráfica</h4><div class="grid">
+                    <div style="grid-column:span 6;"><canvas id="chart-main"></canvas></div>
+                    <div style="grid-column:span 6;"><canvas id="chart-by-part"></canvas></div>
+                    <div style="grid-column:span 6;"><canvas id="chart-by-appraiser"></canvas></div>
+                    <div style="grid-column:span 6;"><canvas id="chart-interaction"></canvas></div>
+                </div></section>
+                <section id="action-plan-section" class="hidden"><h4>Plano de Ação</h4><div id="action-plan-container"></div><button type="button" id="btn-add-action-plan" class="btn ghost" style="width:100%;margin-top:12px;">+ Adicionar Ação</button></section>
+                <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-msa" class="btn primary">Salvar Estudo</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+    </main>
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid">
+            <div class="field" style="grid-column:span 12;"><label>Ação / Pendência</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column:span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column:span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+        </div></div>
+    </template>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE & DB ---
+        let msaStudies = [];
+        const DB_KEY = 'mg_msa_studies_v1';
+        let charts = {};
+
+        // --- DOM ELEMENTS ---
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const btnNewMsa = document.getElementById('btn-new-msa');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveMsa = document.getElementById('btn-save-msa');
+        const msaListContainer = document.querySelector('#msa-list-table tbody');
+        const msaCountSpan = document.getElementById('msa-count');
+        
+        // --- FORM ELEMENTS ---
+        const btnGenerateGrid = document.getElementById('btn-generate-grid');
+        const btnCalculate = document.getElementById('btn-calculate');
+        const collectionGrid = document.getElementById('collection-grid');
+        const collectionSection = document.getElementById('collection-section');
+        const resultsSection = document.getElementById('results-section');
+        const chartsSection = document.getElementById('charts-section');
+        const actionPlanSection = document.getElementById('action-plan-section');
+
+        // --- HELPERS ---
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(msaStudies)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { msaStudies = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        const showForm = () => { dashboardContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); };
+        const showDashboard = () => { document.getElementById('msa-form').reset(); formContainer.classList.add('hidden'); dashboardContainer.classList.remove('hidden'); collectionSection.classList.add('hidden'); resultsSection.classList.add('hidden'); chartsSection.classList.add('hidden'); actionPlanSection.classList.add('hidden'); collectionGrid.innerHTML = ''; renderMsaList(); };
+
+        // --- MSA CALCULATION ENGINE (ANOVA) ---
+        const calculateRR = (data, p, a, n, tolerance) => {
+            if (!data || data.length !== p * a * n) return null;
+            
+            const grandMean = data.reduce((sum, val) => sum + val, 0) / (p * a * n);
+            let partMeans = Array(p).fill(0), appraiserMeans = Array(a).fill(0);
+            
+            for(let i = 0; i < p; i++) { for(let j = 0; j < a; j++) { for(let k = 0; k < n; k++) { const val = data[i * a * n + j * n + k]; partMeans[i] += val; appraiserMeans[j] += val; } } partMeans[i] /= (a * n); }
+            appraiserMeans = appraiserMeans.map(sum => sum / (p * n));
+
+            const ssTotal = data.reduce((sum, val) => sum + Math.pow(val - grandMean, 2), 0);
+            const ssPart = a * n * partMeans.reduce((sum, mean) => sum + Math.pow(mean - grandMean, 2), 0);
+            const ssAppraiser = p * n * appraiserMeans.reduce((sum, mean) => sum + Math.pow(mean - grandMean, 2), 0);
+
+            let cellMeans = [];
+            for(let i=0; i < p; i++){ for(let j=0; j < a; j++){ let cellSum = 0; for(let k=0; k < n; k++) cellSum += data[i*a*n + j*n + k]; cellMeans.push(cellSum/n); }}
+            const ssRepeatability = cellMeans.reduce((sum, mean, idx) => { const i = Math.floor(idx/a), j = idx % a; let innerSum = 0; for(let k=0; k<n; k++) innerSum += Math.pow(data[i*a*n + j*n + k] - mean, 2); return sum + innerSum; },0);
+
+            const ssInteraction = ssTotal - ssPart - ssAppraiser - ssRepeatability;
+
+            const dfPart = p - 1, dfAppraiser = a - 1, dfInteraction = (p - 1) * (a - 1), dfRepeatability = p * a * (n - 1);
+            const msPart = ssPart / dfPart, msAppraiser = ssAppraiser / dfAppraiser, msInteraction = ssInteraction / dfInteraction, msRepeatability = ssRepeatability / dfRepeatability;
+            
+            const varRepeatability = msRepeatability;
+            const varInteraction = Math.max(0, (msInteraction - msRepeatability) / n);
+            const varAppraiser = Math.max(0, (msAppraiser - msInteraction) / (p * n));
+            const varPart = Math.max(0, (msPart - msInteraction) / (a * n));
+
+            const varGRR = varRepeatability + varAppraiser + varInteraction;
+            const varTotal = varGRR + varPart;
+
+            const stdevRepeatability = Math.sqrt(varRepeatability); const stdevAppraiser = Math.sqrt(varAppraiser); const stdevGRR = Math.sqrt(varGRR); const stdevPart = Math.sqrt(varPart); const stdevTotal = Math.sqrt(varTotal);
+            
+            const K = 6;
+            const ev = K * stdevRepeatability, av = K * stdevAppraiser, grr = K * stdevGRR, pv = K * stdevPart, tv = K * stdevTotal;
+
+            const percentEV = (ev / (tolerance || tv)) * 100; const percentAV = (av / (tolerance || tv)) * 100; const percentGRR = (grr / (tolerance || tv)) * 100; const percentPV = (pv / (tolerance || tv)) * 100;
+            const ndc = grr > 0 ? Math.floor(1.41 * (pv / grr)) : 0;
+            
+            let partRanges = []; for(let i=0; i<p; i++){ let partData = []; for(let j=0; j<a; j++){ for(let k=0; k<n; k++){ partData.push(data[i*a*n + j*n + k]); } } partRanges.push(Math.max(...partData) - Math.min(...partData)); }
+            const Rbar = partRanges.reduce((s,r) => s+r,0)/p;
+            const D4 = [1, 1, 3.267, 2.574, 2.282, 2.114, 2.004, 1.924, 1.864, 1.816][n] || 2.114;
+            const UCLr = D4 * Rbar;
+
+            return { percentGRR, percentEV, percentAV, percentPV, ndc, Rbar, UCLr, grandMean, partMeans, appraiserMeans };
+        };
+
+        // --- UI & RENDERING ---
+        const renderMsaList = () => {
+            msaListContainer.innerHTML = '';
+            if (msaStudies.length === 0) { msaListContainer.innerHTML = '<tr><td colspan="6">Nenhum estudo salvo.</td></tr>'; }
+            else {
+                msaStudies.sort((a,b)=>b.id-a.id).forEach(study => {
+                    const grr = study.results ? study.results.percentGRR.toFixed(2) + '%' : 'N/A';
+                    const ndc = study.results ? study.results.ndc : 'N/A';
+                    let status = 'N/A';
+                    if (study.results) {
+                        if (study.results.percentGRR < 10) status = 'Aprovado';
+                        else if (study.results.percentGRR <= 30) status = 'Condicional';
+                        else status = 'Reprovado';
+                    }
+                    const row = msaListContainer.insertRow();
+                    row.innerHTML = `<td>${study.setup.gageName}</td><td>${study.setup.characteristic}</td><td>${grr}</td><td>${ndc}</td><td>${status}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${study.id}">Editar</button><button class="btn ghost btn-delete" data-id="${study.id}">Excluir</button></div></td>`;
+                });
+            }
+            msaCountSpan.textContent = msaStudies.length;
+        };
+
+        btnGenerateGrid.addEventListener('click', () => {
+            const p = parseInt(document.getElementById('num-parts').value);
+            const a = parseInt(document.getElementById('num-appraisers').value);
+            const n = parseInt(document.getElementById('num-trials').value);
+            if(isNaN(p) || isNaN(a) || isNaN(n)){ showToast('Parâmetros inválidos.','error'); return; }
+            
+            collectionGrid.innerHTML = '';
+            for(let j=0; j<a; j++){
+                const table = document.createElement('table');
+                const caption = document.createElement('caption');
+                caption.textContent = `Avaliador ${j + 1}`;
+                table.appendChild(caption);
+                let theadHTML = '<thead><tr><th>Peça</th>';
+                for(let k=0; k<n; k++) theadHTML += `<th>Ensaio ${k+1}</th>`;
+                theadHTML += '</tr></thead>';
+                table.innerHTML += theadHTML;
+                const tbody = document.createElement('tbody');
+                for(let i=0; i<p; i++){
+                    let rowHTML = `<tr><td>${i+1}</td>`;
+                    for(let k=0; k<n; k++){
+                        rowHTML += `<td><input type="number" step="any" data-part="${i}" data-appraiser="${j}" data-trial="${k}"></td>`;
+                    }
+                    rowHTML += '</tr>';
+                    tbody.innerHTML += rowHTML;
+                }
+                table.appendChild(tbody);
+                collectionGrid.appendChild(table);
+            }
+            collectionSection.classList.remove('hidden');
+        });
+        
+        btnCalculate.addEventListener('click', () => {
+            const p = parseInt(document.getElementById('num-parts').value);
+            const a = parseInt(document.getElementById('num-appraisers').value);
+            const n = parseInt(document.getElementById('num-trials').value);
+            const tolerance = parseFloat(document.getElementById('tolerance').value) || null;
+            if(!tolerance) showToast('Atenção: Tolerância não definida. Cálculos serão baseados na Variação Total.', 'info');
+            
+            const data = [];
+            let allFilled = true;
+            for(let i=0; i < p; i++){ for(let j=0; j < a; j++){ for(let k=0; k < n; k++){
+                const input = collectionGrid.querySelector(`input[data-part="${i}"][data-appraiser="${j}"][data-trial="${k}"]`);
+                if(input && input.value !== ''){ data.push(parseFloat(input.value)); }
+                else { allFilled = false; }
+            }}}
+            if(!allFilled) { showToast('Preencha todos os campos de medição.', 'error'); return; }
+            
+            const results = calculateRR(data, p, a, n, tolerance);
+            if(results){
+                document.getElementById('res-grr').textContent = `${results.percentGRR.toFixed(2)}%`;
+                document.getElementById('res-ev').textContent = `${results.percentEV.toFixed(2)}%`;
+                document.getElementById('res-av').textContent = `${results.percentAV.toFixed(2)}%`;
+                document.getElementById('res-pv').textContent = `${results.percentPV.toFixed(2)}%`;
+                document.getElementById('res-ndc').textContent = results.ndc;
+
+                const verdictEl = document.getElementById('res-verdict');
+                verdictEl.classList.remove('verdict-ok', 'verdict-warn', 'verdict-bad');
+                if(results.percentGRR < 10) { verdictEl.textContent = 'Aprovado'; verdictEl.classList.add('verdict-ok'); }
+                else if (results.percentGRR <= 30) { verdictEl.textContent = 'Condicional'; verdictEl.classList.add('verdict-warn'); }
+                else { verdictEl.textContent = 'Reprovado'; verdictEl.classList.add('verdict-bad'); }
+                
+                resultsSection.classList.remove('hidden'); chartsSection.classList.remove('hidden'); actionPlanSection.classList.remove('hidden');
+                updateCharts(p, a, n, results);
+            }
+        });
+
+        const updateCharts = (p, a, n, results) => {
+            Object.values(charts).forEach(chart => chart.destroy());
+            const labelsParts = Array.from({length: p}, (_,i) => `P${i+1}`);
+            const labelsAppraisers = Array.from({length: a}, (_,i) => `A${i+1}`);
+
+            charts.main = new Chart('chart-main', { type: 'line', data: { labels: labelsParts, datasets: [ { label: 'Média', data: results.partMeans, borderColor: 'var(--accent)', tension: 0.1 }, { label: 'LSC', data: Array(p).fill(results.grandMean + (results.Rbar*0.577)), borderColor: 'var(--bad)', borderDash: [5, 5], fill: false }, { label: 'LIC', data: Array(p).fill(results.grandMean - (results.Rbar*0.577)), borderColor: 'var(--bad)', borderDash: [5, 5], fill: false }, { label: 'Média Geral', data: Array(p).fill(results.grandMean), borderColor: 'var(--ok)', fill: false } ]}, options: {plugins: {title: {display: true, text: 'Gráfico de Médias por Peça'}}}});
+            charts.byPart = new Chart('chart-by-part', { type: 'bar', data: { labels: labelsParts, datasets: [{ label: 'Média por Peça', data: results.partMeans, backgroundColor: 'rgba(167, 139, 250, 0.6)' }]}, options: {plugins: {title: {display: true, text: 'Médias por Peça'}}} });
+            charts.byAppraiser = new Chart('chart-by-appraiser', { type: 'bar', data: { labels: labelsAppraisers, datasets: [{ label: 'Média por Avaliador', data: results.appraiserMeans, backgroundColor: 'rgba(34, 211, 238, 0.6)' }]}, options: {plugins: {title: {display: true, text: 'Médias por Avaliador'}}} });
+
+            let interactionData = [];
+            for(let j=0; j < a; j++){
+                let appData = { label: `Avaliador ${j+1}`, data: [], borderColor: `hsl(${j * 100}, 70%, 50%)`, tension: 0.1 };
+                for(let i=0; i < p; i++){
+                    let sum = 0;
+                    for(let k=0; k < n; k++) sum += parseFloat(collectionGrid.querySelector(`input[data-part="${i}"][data-appraiser="${j}"][data-trial="${k}"]`).value);
+                    appData.data.push(sum/n);
+                }
+                interactionData.push(appData);
+            }
+            charts.interaction = new Chart('chart-interaction', {type: 'line', data: {labels: labelsParts, datasets: interactionData}, options: {plugins: {title: {display: true, text: 'Interação Avaliador vs Peça'}}}});
+        };
+
+        btnSaveMsa.addEventListener('click', () => {
+            showToast('Funcionalidade de salvar em desenvolvimento.');
+        });
+        
+        // --- Init & Generic Listeners ---
+        loadData();
+        renderMsaList();
+        btnNewMsa.addEventListener('click', showForm);
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra um estudo para exportar.', 'info'); return; } window.print(); });
+    });
+    </script>
+</body>
+</html>

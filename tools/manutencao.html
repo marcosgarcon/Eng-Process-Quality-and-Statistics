@@ -1,0 +1,2213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Manutenção - EPQS</title>
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        /* EPQS Standard Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Inter, Arial, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            line-height: 1.6;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            gap: 0;
+        }
+
+        .header {
+            grid-column: 1/3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #22d3ee, #3b82f6);
+            color: #0f172a;
+            border-bottom: 1px solid #334155;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .header-title .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 2px;
+        }
+
+        .header-title .dev-credit {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            min-height: 40px;
+        }
+
+        .btn-primary {
+            background: #22d3ee;
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            background: #06b6d4;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #374151;
+            color: #e5e7eb;
+            border: 1px solid #4b5563;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            border-color: #6b7280;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: #0f172a;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            min-height: 32px;
+        }
+
+        .sidebar {
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #374151;
+            color: #e5e7eb;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #4b5563;
+        }
+
+        .menu-item:hover {
+            background: #4b5563;
+            border-color: #6b7280;
+        }
+
+        .menu-item.active {
+            background: #22d3ee;
+            color: #0f172a;
+            border-color: #22d3ee;
+        }
+
+        .menu-item i {
+            font-size: 18px;
+        }
+
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+            background: #0f172a;
+        }
+
+        .section {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #334155;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22d3ee;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            padding: 12px;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            background: #374151;
+            color: #e5e7eb;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            min-height: 44px;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #22d3ee;
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .table-container {
+            max-height: 500px;
+            overflow: auto;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+            font-size: 14px;
+        }
+
+        .table th {
+            background: #374151;
+            font-weight: 600;
+            color: #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .table tbody tr:hover {
+            background: #374151;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: #374151;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #4b5563;
+        }
+
+        .kpi-card h3 {
+            font-size: 0.9rem;
+            color: #a78bfa;
+            margin-bottom: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #22d3ee;
+            margin-bottom: 8px;
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            color: white;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .status-aberta { background: #ef4444; }
+        .status-andamento { background: #f59e0b; }
+        .status-concluida { background: #10b981; }
+        .status-cancelada { background: #6b7280; }
+
+        .priority-baixa { color: #10b981; }
+        .priority-media { color: #f59e0b; }
+        .priority-alta { color: #ef4444; }
+        .priority-urgente { color: #dc2626; font-weight: 700; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22d3ee;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #e5e7eb;
+            background: #374151;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 600;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            min-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #10b981;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        .notification.info {
+            background: #3b82f6;
+        }
+
+        .notification.warning {
+            background: #f59e0b;
+        }
+
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .autocomplete-list.show {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #4b5563;
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: #4b5563;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .stats-container {
+            background: #374151;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #4b5563;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22d3ee;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .chart-container {
+            background: #374151;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #4b5563;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+            }
+
+            .sidebar {
+                grid-row: 2;
+                padding: 16px;
+                border-right: none;
+                border-bottom: 1px solid #334155;
+            }
+
+            .menu {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 12px;
+            }
+
+            .menu-item {
+                flex-shrink: 0;
+                min-width: 120px;
+                justify-content: center;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                grid-template-columns: 1fr;
+                color: #000;
+                background: #fff;
+            }
+
+            .header,
+            .sidebar,
+            .btn,
+            .modal {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 0;
+                overflow: visible;
+            }
+
+            .section {
+                border: 1px solid #ccc;
+                box-shadow: none;
+                background: #fff;
+                page-break-inside: avoid;
+            }
+
+            .section-title,
+            .section-subtitle,
+            .form-label,
+            .kpi-value {
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    e-clear">
+                <i class="ph ph-archive"></i> Arquivar e Limpar
+            </button>
+            <button class="btn btn-primary" id="btn-export-pdf">
+                <i class="ph ph-file-pdf"></i> Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="menu">
+            <a href="#" class="menu-item active" data-tab="dashboard">
+                <i class="ph ph-gauge"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="machines">
+                <i class="ph ph-robot"></i>
+                <span>Máquinas</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="preventive">
+                <i class="ph ph-calendar-check"></i>
+                <span>Planos Preventivos</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="workorders">
+                <i class="ph ph-wrench"></i>
+                <span>Ordens de Serviço</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="history">
+                <i class="ph ph-archive"></i>
+                <span>Histórico</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="kpis">
+                <i class="ph ph-chart-line-up"></i>
+                <span>KPIs & Análises</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="settings">
+                <i class="ph ph-gear"></i>
+                <span>Configurações</span>
+            </a>
+        </div>
+
+        <div class="stats-container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-machines">0</div>
+                    <div class="stat-label">Máquinas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-open-os">0</div>
+                    <div class="stat-label">OS Abertas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-preventive">0</div>
+                    <div class="stat-label">Planos Preventivos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Dashboard Tab -->
+        <div id="tab-dashboard" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-gauge"></i>
+                        Dashboard de Manutenção
+                    </h2>
+                </div>
+                
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <h3>Ordens Abertas</h3>
+                        <div class="kpi-value" id="kpi-open">0</div>
+                        <div class="kpi-label">Aguardando execução</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Em Andamento</h3>
+                        <div class="kpi-value" id="kpi-progress">0</div>
+                        <div class="kpi-label">Sendo executadas</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Concluídas (7 dias)</h3>
+                        <div class="kpi-value" id="kpi-completed">0</div>
+                        <div class="kpi-label">Últimos 7 dias</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Eficiência</h3>
+                        <div class="kpi-value" id="kpi-efficiency">0%</div>
+                        <div class="kpi-label">Preventiva vs Corretiva</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="section-subtitle">
+                        <i class="ph ph-chart-line"></i>
+                        Ordens de Serviço por Período
+                    </h3>
+                    <canvas id="dashboard-chart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Machines Tab -->
+        <div id="tab-machines" class="tab-content hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-robot"></i>
+                        Cadastro de Máquinas
+                    </h2>
+                    <div>
+                        <button class="btn btn-secondary" id="btn-import-machines">
+                            <i class="ph ph-upload"></i> Importar CSV
+                        </button>
+                        <button class="btn btn-secondary" id="btn-export-machines">
+                            <i class="ph ph-download"></i> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+
+                <form id="form-machine">
+                    <input type="hidden" id="machine_id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="machine_tag">Tag/Código</label>
+                            <input type="text" class="form-input" id="machine_tag" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="machine_name">Nome da Máquina</label>
+                            <input type="text" class="form-input" id="machine_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="machine_department">Departamento/Setor</label>
+                            <input type="text" class="form-input" id="machine_department">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="machine_install_date">Data de Instalação</label>
+                            <input type="date" class="form-input" id="machine_install_date">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top: 16px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ph ph-check"></i> Salvar Máquina
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btn-clear-machine">
+                            <i class="ph ph-x"></i> Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="section">
+                <h3 class="section-subtitle">
+                    <i class="ph ph-list"></i>
+                    Máquinas Cadastradas
+                </h3>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tag</th>
+                                <th>Nome</th>
+                                <th>Departamento</th>
+                                <th>Data Instalação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="machines-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preventive Tab -->
+        <div id="tab-preventive" class="tab-content hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-calendar-check"></i>
+                        Planos de Manutenção Preventiva
+                    </h2>
+                </div>
+
+                <form id="form-preventive">
+                    <input type="hidden" id="plan_id">
+                    <div class="form-grid">
+                        <div class="form-group autocomplete-container">
+                            <label class="form-label" for="plan_machine">Máquina</label>
+                            <input type="text" class="form-input" id="plan_machine" required>
+                            <div class="autocomplete-list" id="plan-machine-autocomplete"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="plan_task">Tarefa/Atividade</label>
+                            <input type="text" class="form-input" id="plan_task" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="plan_frequency">Frequência</label>
+                            <select class="form-select" id="plan_frequency" required>
+                                <option value="">Selecione...</option>
+                                <option value="Diária">Diária</option>
+                                <option value="Semanal">Semanal</option>
+                                <option value="Quinzenal">Quinzenal</option>
+                                <option value="Mensal">Mensal</option>
+                                <option value="Bimestral">Bimestral</option>
+                                <option value="Trimestral">Trimestral</option>
+                                <option value="Semestral">Semestral</option>
+                                <option value="Anual">Anual</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="plan_technician">Equipe Responsável</label>
+                            <select class="form-select" id="plan_technician" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top: 16px;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ph ph-check"></i> Salvar Plano
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btn-clear-plan">
+                            <i class="ph ph-x"></i> Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="section">
+                <h3 class="section-subtitle">
+                    <i class="ph ph-list"></i>
+                    Planos Cadastrados
+                </h3>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Máquina</th>
+                                <th>Tarefa</th>
+                                <th>Frequência</th>
+                                <th>Equipe</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="preventive-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Orders Tab -->
+        <div id="tab-workorders" class="tab-content hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-wrench"></i>
+                        Ordens de Serviço em Aberto
+                    </h2>
+                    <button class="btn btn-primary" id="btn-new-workorder">
+                        <i class="ph ph-plus"></i> Nova Ordem de Serviço
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Máquina</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Prioridade</th>
+                                <th>Status</th>
+                                <th>Criação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workorders-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="tab-history" class="tab-content hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-archive"></i>
+                        Histórico de Ordens de Serviço
+                    </h2>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Máquina</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Criação</th>
+                                <th>Conclusão</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs Tab -->
+        <div id="tab-kpis" class="tab-content hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-chart-line-up"></i>
+                        Indicadores de Manutenção (KPIs)
+                    </h2>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <h3>MTTR</h3>
+                        <div class="kpi-value" id="kpi-mttr">0h</div>
+                        <div class="kpi-label">Tempo Médio para Reparo</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>MTBF</h3>
+                        <div class="kpi-value" id="kpi-mtbf">0h</div>
+                        <div class="kpi-label">Tempo Médio Entre Falhas</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Disponibilidade</h3>
+                        <div class="kpi-value" id="kpi-availability">0%</div>
+                        <div class="kpi-label">Disponibilidade dos Equipamentos</div>
+                    </div>
+                    <div class="kpi-card">
+                        <h3>Custo Médio</h3>
+                        <div class="kpi-value" id="kpi-cost">R$ 0</div>
+                        <div class="kpi-label">Custo Médio por OS</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="section-subtitle">
+                        <i class="ph ph-chart-bar"></i>
+                        Manutenções por Tipo (Mensal)
+                    </h3>
+                    <canvas id="kpi-chart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tab-content hidden">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-gear"></i>
+                        Configurações do Sistema
+                    </h2>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-subtitle">
+                        <i class="ph ph-users"></i>
+                        Equipes/Técnicos
+                    </h3>
+                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                        <input type="text" class="form-input" id="new-technician" placeholder="Nome da equipe/técnico" style="flex: 1;">
+                        <button class="btn btn-primary" id="btn-add-technician">
+                            <i class="ph ph-plus"></i> Adicionar
+                        </button>
+                    </div>
+                    <div class="table-container" style="max-height: 300px;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="technicians-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-subtitle">
+                        <i class="ph ph-package"></i>
+                        Peças/Componentes
+                    </h3>
+                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                        <input type="text" class="form-input" id="new-part" placeholder="Nome ou código da peça" style="flex: 1;">
+                        <button class="btn btn-primary" id="btn-add-part">
+                            <i class="ph ph-plus"></i> Adicionar
+                        </button>
+                    </div>
+                    <div class="table-container" style="max-height: 300px;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="parts-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Order Modal -->
+    <div id="workorder-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Nova Ordem de Serviço</h3>
+                <button class="close-btn" id="btn-close-modal">&times;</button>
+            </div>
+            <form id="form-workorder">
+                <input type="hidden" id="wo_id">
+                
+                <h4 class="section-subtitle">
+                    <i class="ph ph-info"></i>
+                    Dados da Solicitação
+                </h4>
+                <div class="form-grid">
+                    <div class="form-group autocomplete-container">
+                        <label class="form-label" for="wo_machine">Máquina</label>
+                        <input type="text" class="form-input" id="wo_machine" required>
+                        <div class="autocomplete-list" id="wo-machine-autocomplete"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="wo_priority">Prioridade</label>
+                        <select class="form-select" id="wo_priority" required>
+                            <option value="Baixa">Baixa</option>
+                            <option value="Média">Média</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Urgente">Urgente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="wo_type">Tipo de Manutenção</label>
+                        <select class="form-select" id="wo_type" required>
+                            <option value="Corretiva">Corretiva</option>
+                            <option value="Preventiva">Preventiva</option>
+                            <option value="Melhoria">Melhoria</option>
+                            <option value="Inspeção">Inspeção</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="wo_description">Descrição do Problema/Serviço</label>
+                    <textarea class="form-textarea" id="wo_description" rows="3" required></textarea>
+                </div>
+
+                <h4 class="section-subtitle" style="margin-top: 24px;">
+                    <i class="ph ph-wrench"></i>
+                    Execução e Fechamento
+                </h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="wo_status">Status</label>
+                        <select class="form-select" id="wo_status">
+                            <option value="Aberta">Aberta</option>
+                            <option value="Em Andamento">Em Andamento</option>
+                            <option value="Concluída">Concluída</option>
+                            <option value="Cancelada">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="wo_technician">Equipe/Técnico</label>
+                        <select class="form-select" id="wo_technician">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="wo_start_date">Início da Execução</label>
+                        <input type="datetime-local" class="form-input" id="wo_start_date">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="wo_end_date">Fim da Execução</label>
+                        <input type="datetime-local" class="form-input" id="wo_end_date">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="wo_cause">Causa da Falha (se aplicável)</label>
+                    <input type="text" class="form-input" id="wo_cause">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="wo_solution">Solução Aplicada/Detalhes do Serviço</label>
+                    <textarea class="form-textarea" id="wo_solution" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="wo_parts">Peças Utilizadas</label>
+                    <select class="form-select" id="wo_parts" multiple>
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ph ph-check"></i> Salvar Ordem de Serviço
+                    </button>
+                    <button type="button" class="btn btn-danger hidden" id="btn-delete-workorder">
+                        <i class="ph ph-trash"></i> Excluir OS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global State Management
+        class MaintenanceSystem {
+            constructor() {
+                this.state = {
+                    machines: [],
+                    preventivePlans: [],
+                    workOrders: [],
+                    technicians: ["Equipe Mecânica", "Equipe Elétrica", "Automação"],
+                    parts: []
+                };
+                this.charts = {};
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.setupEventListeners();
+                this.renderAll();
+                this.showTab('dashboard');
+            }
+
+            // Data Management
+            saveData() {
+                try {
+                    localStorage.setItem('maintenance_system_v2', JSON.stringify(this.state));
+                    if (window.EPQS && typeof window.EPQS.saveData === 'function') {
+                        window.EPQS.saveData('maintenance_system', {
+                            ...this.state,
+                            lastModified: new Date().toISOString()
+                        });
+                    }
+                } catch (e) {
+                    this.showNotification('Erro ao salvar dados.', 'error');
+                }
+            }
+
+            loadData() {
+                try {
+                    const saved = localStorage.getItem('maintenance_system_v2');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        this.state = {
+                            machines: data.machines || [],
+                            preventivePlans: data.preventivePlans || [],
+                            workOrders: data.workOrders || [],
+                            technicians: data.technicians || ["Equipe Mecânica", "Equipe Elétrica", "Automação"],
+                            parts: data.parts || []
+                        };
+                    }
+
+                    // Try to load from EPQS system
+                    if (window.EPQS && typeof window.EPQS.loadData === 'function') {
+                        window.EPQS.loadData('maintenance_system', (data, error) => {
+                            if (data && !error) {
+                                this.state = {
+                                    machines: data.machines || this.state.machines,
+                                    preventivePlans: data.preventivePlans || this.state.preventivePlans,
+                                    workOrders: data.workOrders || this.state.workOrders,
+                                    technicians: data.technicians || this.state.technicians,
+                                    parts: data.parts || this.state.parts
+                                };
+                                this.renderAll();
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+
+            // UI Management
+            showTab(tabName) {
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.add('hidden');
+                });
+
+                // Show selected tab
+                const selectedTab = document.getElementById(`tab-${tabName}`);
+                if (selectedTab) {
+                    selectedTab.classList.remove('hidden');
+                }
+
+                // Update menu
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                const activeMenuItem = document.querySelector(`[data-tab="${tabName}"]`);
+                if (activeMenuItem) {
+                    activeMenuItem.classList.add('active');
+                }
+
+                // Render specific content
+                switch (tabName) {
+                    case 'dashboard':
+                        this.renderDashboard();
+                        break;
+                    case 'machines':
+                        this.renderMachines();
+                        break;
+                    case 'preventive':
+                        this.renderPreventive();
+                        break;
+                    case 'workorders':
+                        this.renderWorkOrders();
+                        break;
+                    case 'history':
+                        this.renderHistory();
+                        break;
+                    case 'kpis':
+                        this.renderKPIs();
+                        break;
+                    case 'settings':
+                        this.renderSettings();
+                        break;
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 4000);
+            }
+
+            // Utility Functions
+            formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                return new Date(dateString).toLocaleDateString('pt-BR');
+            }
+
+            formatDateTime(dateString) {
+                if (!dateString) return 'N/A';
+                return new Date(dateString).toLocaleString('pt-BR');
+            }
+
+            getStatusPill(status) {
+                const statusClass = status.toLowerCase().replace(/\s+/g, '-');
+                return `<span class="status-pill status-${statusClass}">${status}</span>`;
+            }
+
+            getPriorityClass(priority) {
+                return `priority-${priority.toLowerCase()}`;
+            }
+
+            // Event Listeners Setup
+            setupEventListeners() {
+                // Menu navigation
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const tab = item.getAttribute('data-tab');
+                        this.showTab(tab);
+                    });
+                });
+
+                // Machine form
+                document.getElementById('form-machine').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveMachine();
+                });
+
+                document.getElementById('btn-clear-machine').addEventListener('click', () => {
+                    this.clearMachineForm();
+                });
+
+                // Preventive form
+                document.getElementById('form-preventive').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.savePreventivePlan();
+                });
+
+                document.getElementById('btn-clear-plan').addEventListener('click', () => {
+                    this.clearPreventiveForm();
+                });
+
+                // Work order modal
+                document.getElementById('btn-new-workorder').addEventListener('click', () => {
+                    this.openWorkOrderModal();
+                });
+
+                document.getElementById('btn-close-modal').addEventListener('click', () => {
+                    this.closeWorkOrderModal();
+                });
+
+                document.getElementById('form-workorder').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveWorkOrder();
+                });
+
+                // Settings
+                document.getElementById('btn-add-technician').addEventListener('click', () => {
+                    this.addTechnician();
+                });
+
+                document.getElementById('btn-add-part').addEventListener('click', () => {
+                    this.addPart();
+                });
+
+                // Header actions
+                document.getElementById('btn-download-backup').addEventListener('click', () => {
+                    this.downloadBackup();
+                });
+
+                document.getElementById('btn-restore-backup').addEventListener('click', () => {
+                    this.restoreBackup();
+                });
+
+                document.getElementById('btn-archive-clear').addEventListener('click', () => {
+                    this.archiveAndClear();
+                });
+
+                // CSV Import/Export
+                document.getElementById('btn-export-machines').addEventListener('click', () => {
+                    this.exportCSV(this.state.machines, 'maquinas.csv', ['tag', 'name', 'department', 'installDate']);
+                });
+
+                document.getElementById('btn-import-machines').addEventListener('click', () => {
+                    this.importCSV('machines', ['tag', 'name', 'department', 'installDate']);
+                });
+            }
+
+            // Machine Management
+            saveMachine() {
+                const id = document.getElementById('machine_id').value;
+                const machine = {
+                    id: id ? parseInt(id) : Date.now(),
+                    tag: document.getElementById('machine_tag').value,
+                    name: document.getElementById('machine_name').value,
+                    department: document.getElementById('machine_department').value,
+                    installDate: document.getElementById('machine_install_date').value
+                };
+
+                if (id) {
+                    const index = this.state.machines.findIndex(m => m.id == id);
+                    if (index !== -1) {
+                        this.state.machines[index] = machine;
+                    }
+                } else {
+                    this.state.machines.push(machine);
+                }
+
+                this.saveData();
+                this.renderMachines();
+                this.updateStats();
+                this.clearMachineForm();
+                this.showNotification('Máquina salva com sucesso!', 'success');
+            }
+
+            clearMachineForm() {
+                document.getElementById('form-machine').reset();
+                document.getElementById('machine_id').value = '';
+            }
+
+            editMachine(id) {
+                const machine = this.state.machines.find(m => m.id == id);
+                if (machine) {
+                    document.getElementById('machine_id').value = machine.id;
+                    document.getElementById('machine_tag').value = machine.tag;
+                    document.getElementById('machine_name').value = machine.name;
+                    document.getElementById('machine_department').value = machine.department;
+                    document.getElementById('machine_install_date').value = machine.installDate;
+                    this.showTab('machines');
+                }
+            }
+
+            deleteMachine(id) {
+                if (confirm('Tem certeza que deseja excluir esta máquina?')) {
+                    this.state.machines = this.state.machines.filter(m => m.id != id);
+                    this.saveData();
+                    this.renderMachines();
+                    this.updateStats();
+                    this.showNotification('Máquina excluída com sucesso!', 'success');
+                }
+            }
+
+            // Preventive Plan Management
+            savePreventivePlan() {
+                const id = document.getElementById('plan_id').value;
+                const plan = {
+                    id: id ? parseInt(id) : Date.now(),
+                    machineName: document.getElementById('plan_machine').value,
+                    task: document.getElementById('plan_task').value,
+                    frequency: document.getElementById('plan_frequency').value,
+                    technician: document.getElementById('plan_technician').value
+                };
+
+                if (id) {
+                    const index = this.state.preventivePlans.findIndex(p => p.id == id);
+                    if (index !== -1) {
+                        this.state.preventivePlans[index] = plan;
+                    }
+                } else {
+                    this.state.preventivePlans.push(plan);
+                }
+
+                this.saveData();
+                this.renderPreventive();
+                this.updateStats();
+                this.clearPreventiveForm();
+                this.showNotification('Plano preventivo salvo com sucesso!', 'success');
+            }
+
+            clearPreventiveForm() {
+                document.getElementById('form-preventive').reset();
+                document.getElementById('plan_id').value = '';
+            }
+
+            editPreventivePlan(id) {
+                const plan = this.state.preventivePlans.find(p => p.id == id);
+                if (plan) {
+                    document.getElementById('plan_id').value = plan.id;
+                    document.getElementById('plan_machine').value = plan.machineName;
+                    document.getElementById('plan_task').value = plan.task;
+                    document.getElementById('plan_frequency').value = plan.frequency;
+                    document.getElementById('plan_technician').value = plan.technician;
+                    this.showTab('preventive');
+                }
+            }
+
+            deletePreventivePlan(id) {
+                if (confirm('Tem certeza que deseja excluir este plano preventivo?')) {
+                    this.state.preventivePlans = this.state.preventivePlans.filter(p => p.id != id);
+                    this.saveData();
+                    this.renderPreventive();
+                    this.updateStats();
+                    this.showNotification('Plano preventivo excluído com sucesso!', 'success');
+                }
+            }
+
+            generateWorkOrderFromPlan(planId) {
+                const plan = this.state.preventivePlans.find(p => p.id == planId);
+                if (plan) {
+                    const workOrder = {
+                        id: Date.now(),
+                        machineName: plan.machineName,
+                        description: `Manutenção Preventiva: ${plan.task}`,
+                        type: 'Preventiva',
+                        priority: 'Média',
+                        status: 'Aberta',
+                        technician: plan.technician,
+                        createdAt: new Date().toISOString(),
+                        startedAt: '',
+                        completedAt: '',
+                        cause: '',
+                        solution: '',
+                        partsUsed: []
+                    };
+
+                    this.state.workOrders.push(workOrder);
+                    this.saveData();
+                    this.updateStats();
+                    this.showNotification('Ordem de serviço gerada com sucesso!', 'success');
+                    this.showTab('workorders');
+                }
+            }
+
+            // Work Order Management
+            openWorkOrderModal(id = null) {
+                const modal = document.getElementById('workorder-modal');
+                const workOrder = id ? this.state.workOrders.find(wo => wo.id == id) : null;
+
+                // Update modal title
+                document.getElementById('modal-title').textContent = 
+                    workOrder ? `Ordem de Serviço #${workOrder.id}` : 'Nova Ordem de Serviço';
+
+                // Populate form
+                if (workOrder) {
+                    document.getElementById('wo_id').value = workOrder.id;
+                    document.getElementById('wo_machine').value = workOrder.machineName;
+                    document.getElementById('wo_priority').value = workOrder.priority;
+                    document.getElementById('wo_type').value = workOrder.type;
+                    document.getElementById('wo_description').value = workOrder.description;
+                    document.getElementById('wo_status').value = workOrder.status;
+                    document.getElementById('wo_technician').value = workOrder.technician;
+                    document.getElementById('wo_start_date').value = workOrder.startedAt;
+                    document.getElementById('wo_end_date').value = workOrder.completedAt;
+                    document.getElementById('wo_cause').value = workOrder.cause;
+                    document.getElementById('wo_solution').value = workOrder.solution;
+                    
+                    // Show delete button
+                    const deleteBtn = document.getElementById('btn-delete-workorder');
+                    deleteBtn.classList.remove('hidden');
+                    deleteBtn.onclick = () => this.deleteWorkOrder(workOrder.id);
+                } else {
+                    document.getElementById('form-workorder').reset();
+                    document.getElementById('wo_id').value = '';
+                    document.getElementById('btn-delete-workorder').classList.add('hidden');
+                }
+
+                // Populate technicians dropdown
+                const technicianSelect = document.getElementById('wo_technician');
+                technicianSelect.innerHTML = '<option value="">Selecione...</option>' +
+                    this.state.technicians.map(t => `<option value="${t}">${t}</option>`).join('');
+
+                // Populate parts dropdown
+                const partsSelect = document.getElementById('wo_parts');
+                partsSelect.innerHTML = this.state.parts.map(p => `<option value="${p}">${p}</option>`).join('');
+
+                // Setup autocomplete for machine
+                this.setupAutocomplete('wo_machine', 'wo-machine-autocomplete', this.state.machines);
+
+                modal.classList.add('active');
+            }
+
+            closeWorkOrderModal() {
+                document.getElementById('workorder-modal').classList.remove('active');
+            }
+
+            saveWorkOrder() {
+                const id = document.getElementById('wo_id').value;
+                const partsSelect = document.getElementById('wo_parts');
+                const selectedParts = Array.from(partsSelect.selectedOptions).map(option => option.value);
+
+                const workOrder = {
+                    id: id ? parseInt(id) : Date.now(),
+                    machineName: document.getElementById('wo_machine').value,
+                    description: document.getElementById('wo_description').value,
+                    type: document.getElementById('wo_type').value,
+                    priority: document.getElementById('wo_priority').value,
+                    status: document.getElementById('wo_status').value,
+                    technician: document.getElementById('wo_technician').value,
+                    startedAt: document.getElementById('wo_start_date').value,
+                    completedAt: document.getElementById('wo_end_date').value,
+                    cause: document.getElementById('wo_cause').value,
+                    solution: document.getElementById('wo_solution').value,
+                    partsUsed: selectedParts,
+                    createdAt: id ? this.state.workOrders.find(wo => wo.id == id)?.createdAt : new Date().toISOString()
+                };
+
+                if (id) {
+                    const index = this.state.workOrders.findIndex(wo => wo.id == id);
+                    if (index !== -1) {
+                        this.state.workOrders[index] = workOrder;
+                    }
+                } else {
+                    this.state.workOrders.push(workOrder);
+                }
+
+                this.saveData();
+                this.renderWorkOrders();
+                this.renderHistory();
+                this.updateStats();
+                this.closeWorkOrderModal();
+                this.showNotification('Ordem de serviço salva com sucesso!', 'success');
+            }
+
+            deleteWorkOrder(id) {
+                if (confirm('Tem certeza que deseja excluir esta ordem de serviço?')) {
+                    this.state.workOrders = this.state.workOrders.filter(wo => wo.id != id);
+                    this.saveData();
+                    this.renderWorkOrders();
+                    this.renderHistory();
+                    this.updateStats();
+                    this.closeWorkOrderModal();
+                    this.showNotification('Ordem de serviço excluída com sucesso!', 'success');
+                }
+            }
+
+            // Settings Management
+            addTechnician() {
+                const input = document.getElementById('new-technician');
+                const name = input.value.trim();
+                
+                if (name && !this.state.technicians.includes(name)) {
+                    this.state.technicians.push(name);
+                    this.saveData();
+                    this.renderSettings();
+                    input.value = '';
+                    this.showNotification('Técnico adicionado com sucesso!', 'success');
+                } else if (this.state.technicians.includes(name)) {
+                    this.showNotification('Este técnico já existe!', 'warning');
+                }
+            }
+
+            deleteTechnician(index) {
+                if (confirm('Tem certeza que deseja excluir este técnico?')) {
+                    this.state.technicians.splice(index, 1);
+                    this.saveData();
+                    this.renderSettings();
+                    this.showNotification('Técnico excluído com sucesso!', 'success');
+                }
+            }
+
+            addPart() {
+                const input = document.getElementById('new-part');
+                const name = input.value.trim();
+                
+                if (name && !this.state.parts.includes(name)) {
+                    this.state.parts.push(name);
+                    this.saveData();
+                    this.renderSettings();
+                    input.value = '';
+                    this.showNotification('Peça adicionada com sucesso!', 'success');
+                } else if (this.state.parts.includes(name)) {
+                    this.showNotification('Esta peça já existe!', 'warning');
+                }
+            }
+
+            deletePart(index) {
+                if (confirm('Tem certeza que deseja excluir esta peça?')) {
+                    this.state.parts.splice(index, 1);
+                    this.saveData();
+                    this.renderSettings();
+                    this.showNotification('Peça excluída com sucesso!', 'success');
+                }
+            }
+
+            // Autocomplete Setup
+            setupAutocomplete(inputId, listId, dataArray) {
+                const input = document.getElementById(inputId);
+                const list = document.getElementById(listId);
+
+                input.addEventListener('input', () => {
+                    const value = input.value.toLowerCase();
+                    list.innerHTML = '';
+
+                    if (value.length > 0) {
+                        const matches = dataArray.filter(item => 
+                            item.name.toLowerCase().includes(value) || 
+                            item.tag?.toLowerCase().includes(value)
+                        );
+
+                        matches.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'autocomplete-item';
+                            div.textContent = `${item.tag || ''} - ${item.name}`;
+                            div.addEventListener('click', () => {
+                                input.value = item.name;
+                                list.classList.remove('show');
+                            });
+                            list.appendChild(div);
+                        });
+
+                        list.classList.toggle('show', matches.length > 0);
+                    } else {
+                        list.classList.remove('show');
+                    }
+                });
+
+                input.addEventListener('blur', () => {
+                    setTimeout(() => list.classList.remove('show'), 200);
+                });
+            }
+
+            // CSV Import/Export
+            exportCSV(data, filename, headers) {
+                if (!data || data.length === 0) {
+                    this.showNotification('Não há dados para exportar.', 'info');
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += headers.join(',') + '\r\n';
+
+                data.forEach(item => {
+                    const row = headers.map(header => `"${item[header] || ''}"`).join(',');
+                    csvContent += row + '\r\n';
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                this.showNotification('Dados exportados com sucesso!', 'success');
+            }
+
+            importCSV(stateKey, expectedHeaders) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.csv';
+                
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = (event) => {
+                        if (!confirm(`Isso irá ADICIONAR os dados do CSV à lista atual. Deseja continuar?`)) return;
+                        
+                        try {
+                            const text = event.target.result;
+                            const lines = text.trim().split(/\r\n|\n/);
+                            const headerLine = lines.shift().split(',').map(h => h.trim().replace(/"/g, ''));
+
+                            if (JSON.stringify(headerLine) !== JSON.stringify(expectedHeaders)) {
+                                this.showNotification(`Erro: Cabeçalho inválido. Esperado: ${expectedHeaders.join(',')}`, 'error');
+                                return;
+                            }
+
+                            let importedCount = 0;
+                            lines.forEach(line => {
+                                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                                if (values.length === 0 || (values.length === 1 && values[0] === '')) return;
+
+                                const obj = { id: Date.now() + importedCount };
+                                expectedHeaders.forEach((header, index) => {
+                                    obj[header] = values[index] || '';
+                                });
+                                
+                                this.state[stateKey].push(obj);
+                                importedCount++;
+                            });
+
+                            this.saveData();
+                            this.renderAll();
+                            this.showNotification(`${importedCount} itens importados com sucesso!`, 'success');
+                        } catch (err) {
+                            this.showNotification('Erro ao processar o arquivo CSV.', 'error');
+                            console.error(err);
+                        }
+                    };
+                    
+                    reader.readAsText(file);
+                };
+                
+                input.click();
+            }
+
+            // Backup Management
+            downloadBackup() {
+                const backup = {
+                    ...this.state,
+                    exportDate: new Date().toISOString(),
+                    version: '2.0'
+                };
+
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `backup-manutencao-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                this.showNotification('Backup baixado com sucesso!', 'success');
+            }
+
+            restoreBackup() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = (event) => {
+                        if (!confirm('Isso irá SUBSTITUIR todos os dados atuais. Deseja continuar?')) return;
+                        
+                        try {
+                            const backup = JSON.parse(event.target.result);
+                            this.state = {
+                                machines: backup.machines || [],
+                                preventivePlans: backup.preventivePlans || [],
+                                workOrders: backup.workOrders || [],
+                                technicians: backup.technicians || ["Equipe Mecânica", "Equipe Elétrica", "Automação"],
+                                parts: backup.parts || []
+                            };
+                            
+                            this.saveData();
+                            this.renderAll();
+                            this.showNotification('Backup restaurado com sucesso!', 'success');
+                        } catch (err) {
+                            this.showNotification('Erro ao processar o arquivo de backup.', 'error');
+                            console.error(err);
+                        }
+                    };
+                    
+                    reader.readAsText(file);
+                };
+                
+                input.click();
+            }
+
+            archiveAndClear() {
+                if (!confirm('Isso irá fazer um backup e limpar todos os dados. Deseja continuar?')) return;
+                
+                this.downloadBackup();
+                
+                setTimeout(() => {
+                    this.state = {
+                        machines: [],
+                        preventivePlans: [],
+                        workOrders: [],
+                        technicians: ["Equipe Mecânica", "Equipe Elétrica", "Automação"],
+                        parts: []
+                    };
+                    
+                    this.saveData();
+                    this.renderAll();
+                    this.showNotification('Dados arquivados e sistema limpo!', 'success');
+                }, 1000);
+            }
+
+            // Statistics Update
+            updateStats() {
+                document.getElementById('stat-machines').textContent = this.state.machines.length;
+                document.getElementById('stat-open-os').textContent = 
+                    this.state.workOrders.filter(wo => wo.status === 'Aberta' || wo.status === 'Em Andamento').length;
+                document.getElementById('stat-preventive').textContent = this.state.preventivePlans.length;
+            }
+
+            // Render Methods
+            renderAll() {
+                this.updateStats();
+                this.renderMachines();
+                this.renderPreventive();
+                this.renderWorkOrders();
+                this.renderHistory();
+                this.renderSettings();
+            }
+
+            renderDashboard() {
+                const openOrders = this.state.workOrders.filter(wo => wo.status === 'Aberta').length;
+                const inProgressOrders = this.state.workOrders.filter(wo => wo.status === 'Em Andamento').length;
+                const completedLast7Days = this.state.workOrders.filter(wo => 
+                    wo.status === 'Concluída' && 
+                    new Date(wo.completedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                ).length;
+
+                const totalCompleted = this.state.workOrders.filter(wo => wo.status === 'Concluída').length;
+                const preventiveCompleted = this.state.workOrders.filter(wo => 
+                    wo.status === 'Concluída' && wo.type === 'Preventiva'
+                ).length;
+                const efficiency = totalCompleted > 0 ? Math.round((preventiveCompleted / totalCompleted) * 100) : 0;
+
+                document.getElementById('kpi-open').textContent = openOrders;
+                document.getElementById('kpi-progress').textContent = inProgressOrders;
+                document.getElementById('kpi-completed').textContent = completedLast7Days;
+                document.getElementById('kpi-efficiency').textContent = `${efficiency}%`;
+
+                this.renderDashboardChart();
+            }
+
+            renderDashboardChart() {
+                const ctx = document.getElementById('dashboard-chart');
+                if (!ctx) return;
+
+                if (this.charts.dashboard) {
+                    this.charts.dashboard.destroy();
+                }
+
+                const last30Days = [];
+                for (let i = 29; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    last30Days.push(date.toISOString().split('T')[0]);
+                }
+
+                const osByDay = {};
+                last30Days.forEach(date => osByDay[date] = 0);
+
+                this.state.workOrders.forEach(wo => {
+                    const date = new Date(wo.createdAt).toISOString().split('T')[0];
+                    if (osByDay.hasOwnProperty(date)) {
+                        osByDay[date]++;
+                    }
+                });
+
+                this.charts.dashboard = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: last30Days,
+                        datasets: [{
+                            label: 'Ordens de Serviço Criadas',
+                            data: last30Days.map(date => osByDay[date]),
+                            borderColor: '#22d3ee',
+                            backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e5e7eb' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#374151' }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#374151' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderMachines() {
+                const tbody = document.getElementById('machines-table-body');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+                this.state.machines.forEach(machine => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${machine.tag}</td>
+                        <td>${machine.name}</td>
+                        <td>${machine.department}</td>
+                        <td>${this.formatDate(machine.installDate)}</td>
+                        <td>
+                            <button class="btn btn-small btn-secondary" onclick="maintenanceSystem.editMachine(${machine.id})">
+                                <i class="ph ph-pencil"></i> Editar
+                            </button>
+                            <button class="btn btn-small btn-danger" onclick="maintenanceSystem.deleteMachine(${machine.id})">
+                                <i class="ph ph-trash"></i> Excluir
+                            </button>
+                        </td>
+                    `;
+                });
+
+                // Setup autocomplete for preventive plan form
+                this.setupAutocomplete('plan_machine', 'plan-machine-autocomplete', this.state.machines);
+            }
+
+            renderPreventive() {
+                const tbody = document.getElementById('preventive-table-body');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+                this.state.preventivePlans.forEach(plan => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${plan.machineName}</td>
+                        <td>${plan.task}</td>
+                        <td>${plan.frequency}</td>
+                        <td>${plan.technician}</td>
+                        <td>
+                            <button class="btn btn-small btn-primary" onclick="maintenanceSystem.generateWorkOrderFromPlan(${plan.id})">
+                                <i class="ph ph-plus"></i> Gerar OS
+                            </button>
+                            <button class="btn btn-small btn-secondary" onclick="maintenanceSystem.editPreventivePlan(${plan.id})">
+                                <i class="ph ph-pencil"></i> Editar
+                            </button>
+                            <button class="btn btn-small btn-danger" onclick="maintenanceSystem.deletePreventivePlan(${plan.id})">
+                                <i class="ph ph-trash"></i> Excluir
+                            </button>
+                        </td>
+                    `;
+                });
+
+                // Populate technician dropdown
+                const technicianSelect = document.getElementById('plan_technician');
+                if (technicianSelect) {
+                    technicianSelect.innerHTML = '<option value="">Selecione...</option>' +
+                        this.state.technicians.map(t => `<option value="${t}">${t}</option>`).join('');
+                }
+            }
+
+            renderWorkOrders() {
+                const tbody = document.getElementById('workorders-table-body');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+                const openOrders = this.state.workOrders.filter(wo => 
+                    wo.status !== 'Concluída' && wo.status !== 'Cancelada'
+                );
+
+                openOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                openOrders.forEach(wo => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${wo.id}</td>
+                        <td>${wo.machineName}</td>
+                        <td>${wo.description}</td>
+                        <td>${wo.type}</td>
+                        <td><span class="${this.getPriorityClass(wo.priority)}">${wo.priority}</span></td>
+                        <td>${this.getStatusPill(wo.status)}</td>
+                        <td>${this.formatDateTime(wo.createdAt)}</td>
+                        <td>
+                            <button class="btn btn-small btn-secondary" onclick="maintenanceSystem.openWorkOrderModal(${wo.id})">
+                                <i class="ph ph-eye"></i> Ver/Editar
+                            </button>
+                        </td>
+                    `;
+                });
+            }
+
+            renderHistory() {
+                const tbody = document.getElementById('history-table-body');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+                const closedOrders = this.state.workOrders.filter(wo => 
+                    wo.status === 'Concluída' || wo.status === 'Cancelada'
+                );
+
+                closedOrders.sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt));
+
+                closedOrders.forEach(wo => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${wo.id}</td>
+                        <td>${wo.machineName}</td>
+                        <td>${wo.description}</td>
+                        <td>${wo.type}</td>
+                        <td>${this.getStatusPill(wo.status)}</td>
+                        <td>${this.formatDateTime(wo.createdAt)}</td>
+                        <td>${this.formatDateTime(wo.completedAt)}</td>
+                        <td>
+                            <button class="btn btn-small btn-secondary" onclick="maintenanceSystem.openWorkOrderModal(${wo.id})">
+                                <i class="ph ph-eye"></i> Ver
+                            </button>
+                        </td>
+                    `;
+                });
+            }
+
+            renderKPIs() {
+                this.calculateKPIs();
+                this.renderKPIChart();
+            }
+
+            calculateKPIs() {
+                const completedOrders = this.state.workOrders.filter(wo => 
+                    wo.status === 'Concluída' && wo.startedAt && wo.completedAt
+                );
+
+                // MTTR (Mean Time To Repair)
+                let totalRepairTime = 0;
+                completedOrders.forEach(wo => {
+                    const start = new Date(wo.startedAt);
+                    const end = new Date(wo.completedAt);
+                    totalRepairTime += (end - start);
+                });
+
+                const mttrMs = completedOrders.length > 0 ? totalRepairTime / completedOrders.length : 0;
+                const mttrHours = (mttrMs / (1000 * 60 * 60)).toFixed(1);
+                document.getElementById('kpi-mttr').textContent = `${mttrHours}h`;
+
+                // MTBF (Mean Time Between Failures) - simplified calculation
+                const correctiveOrders = completedOrders.filter(wo => wo.type === 'Corretiva');
+                const mtbfHours = correctiveOrders.length > 0 ? (24 * 30 / correctiveOrders.length).toFixed(1) : '∞';
+                document.getElementById('kpi-mtbf').textContent = `${mtbfHours}h`;
+
+                // Availability
+                const availability = mttrMs > 0 ? Math.max(0, 100 - (mttrHours / 24 * 100)).toFixed(1) : 100;
+                document.getElementById('kpi-availability').textContent = `${availability}%`;
+
+                // Average Cost (placeholder)
+                document.getElementById('kpi-cost').textContent = 'R$ 0';
+            }
+
+            renderKPIChart() {
+                const ctx = document.getElementById('kpi-chart');
+                if (!ctx) return;
+
+                if (this.charts.kpi) {
+                    this.charts.kpi.destroy();
+                }
+
+                const last6Months = [];
+                for (let i = 5; i >= 0; i--) {
+                    const date = new Date();
+                    date.setMonth(date.getMonth() - i);
+                    last6Months.push(date.toISOString().slice(0, 7));
+                }
+
+                const correctiveByMonth = {};
+                const preventiveByMonth = {};
+                last6Months.forEach(month => {
+                    correctiveByMonth[month] = 0;
+                    preventiveByMonth[month] = 0;
+                });
+
+                this.state.workOrders.filter(wo => wo.status === 'Concluída').forEach(wo => {
+                    const month = new Date(wo.completedAt || wo.createdAt).toISOString().slice(0, 7);
+                    if (correctiveByMonth.hasOwnProperty(month)) {
+                        if (wo.type === 'Corretiva') {
+                            correctiveByMonth[month]++;
+                        } else if (wo.type === 'Preventiva') {
+                            preventiveByMonth[month]++;
+                        }
+                    }
+                });
+
+                this.charts.kpi = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: last6Months.map(month => {
+                            const date = new Date(month + '-01');
+                            return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+                        }),
+                        datasets: [
+                            {
+                                label: 'Corretivas',
+                                data: last6Months.map(month => correctiveByMonth[month]),
+                                backgroundColor: '#ef4444'
+                            },
+                            {
+                                label: 'Preventivas',
+                                data: last6Months.map(month => preventiveByMonth[month]),
+                                backgroundColor: '#10b981'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e5e7eb' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#374151' }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#374151' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderSettings() {
+                // Render technicians
+                const techniciansTbody = document.getElementById('technicians-table-body');
+                if (techniciansTbody) {
+                    techniciansTbody.innerHTML = '';
+                    this.state.technicians.forEach((technician, index) => {
+                        const row = techniciansTbody.insertRow();
+                        row.innerHTML = `
+                            <td>${technician}</td>
+                            <td>
+                                <button class="btn btn-small btn-danger" onclick="maintenanceSystem.deleteTechnician(${index})">
+                                    <i class="ph ph-trash"></i> Excluir
+                                </button>
+                            </td>
+                        `;
+                    });
+                }
+
+                // Render parts
+                const partsTbody = document.getElementById('parts-table-body');
+                if (partsTbody) {
+                    partsTbody.innerHTML = '';
+                    this.state.parts.forEach((part, index) => {
+                        const row = partsTbody.insertRow();
+                        row.innerHTML = `
+                            <td>${part}</td>
+                            <td>
+                                <button class="btn btn-small btn-danger" onclick="maintenanceSystem.deletePart(${index})">
+                                    <i class="ph ph-trash"></i> Excluir
+                                </button>
+                            </td>
+                        `;
+                    });
+                }
+            }
+        }
+
+        // Initialize the system when DOM is loaded
+        let maintenanceSystem;
+        document.addEventListener('DOMContentLoaded', () => {
+            maintenanceSystem = new MaintenanceSystem();
+        });
+    </script>
+</body>
+</html>

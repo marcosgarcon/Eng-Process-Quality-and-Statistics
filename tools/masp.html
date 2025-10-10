@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Gerenciador MASP</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{
+        --bg:#0f172a; --panel:#111827; --muted:#1f2937; --card:#0b1220; --text:#e5e7eb; --accent:#22d3ee; --accent2:#a78bfa; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+        --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial; background:linear-gradient(120deg,#0b1020,#0a1328); color:var(--text); display:grid; grid-template-columns:280px 1fr; grid-template-rows:auto 1fr; gap:0; }
+      header{grid-column:1/3; display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:linear-gradient(90deg,#0b1020,#0a1a35); border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:5}
+      .header-title h1 { margin: 0; font-size: 20px; letter-spacing: .4px; color: var(--text); }
+      .header-title .subtitle { margin: 4px 0 0 0; font-size: 14px; font-weight: normal; color: var(--accent); }
+      .header-title .dev-credit { margin: 4px 0 0 0; font-size: 11px; font-weight: normal; color: #64748b; }
+      header .actions{display:flex; flex-wrap: wrap; gap:8px}
+      button, .btn{background:var(--muted); color:var(--text); border:1px solid #243041; border-radius:12px; padding:10px 14px; cursor:pointer; box-shadow:var(--shadow); transition:.2s; font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px); border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb); border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent; border-color:#334155}
+      aside{border-right:1px solid #1f2937; background:linear-gradient(180deg,#0b1020,#0a1328); padding:16px; display:flex; flex-direction:column; gap:24px; justify-content: space-between;}
+      .menu a{display:flex; gap:10px; align-items:center; text-decoration:none; color:#cbd5e1; padding:10px 12px; border:1px solid #1e293b; border-radius:12px; background:rgba(255,255,255,.02); cursor:pointer;}
+      .menu a.active,.menu a:hover{border-color:#334155; background:rgba(34,211,238,.08); color:#e2e8f0}
+      main{padding:18px; overflow:auto}
+      .hidden { display: none !important; }
+      section{background:rgba(255,255,255,.03); border:1px solid #1f2937; border-radius:var(--radius); padding:16px; margin-bottom:18px; box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0; color: var(--accent);}
+      h4{color:var(--accent2)}
+      .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
+      .field{display:flex; flex-direction:column; gap:6px}
+      label{font-size:12px; color:#93c5fd}
+      input, select, textarea{background:#0b1220; border:1px solid #243041; color:var(--text); padding:10px 12px; border-radius:10px; outline:none; font-family:inherit; font-size:14px; min-height:44px}
+      textarea{min-height:120px; resize:vertical}
+      table { width: 100%; border-collapse: collapse; } th, td { padding: 10px 12px; border-bottom: 1px solid var(--muted); text-align: left; font-size: 14px; vertical-align: middle;} th { background: rgba(255,255,255,.05); font-size: 12px; color: #94a3b8; }
+      .status-pill { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: bold; color: white; text-align: center; display: inline-block;}
+      .progress-bar-container { background: var(--muted); border-radius: 99px; height: 10px; width: 100%; overflow: hidden; } .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.3s; }
+      .masp-tabs { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
+      .masp-tab { flex: 1; padding: 10px; background: var(--muted); border: 1px solid #243041; border-radius: 8px; cursor: pointer; text-align: center; font-size: 13px; font-weight:600; }
+      .masp-tab.active { background: linear-gradient(180deg,#0ea5e9,#2563eb); border-color: transparent; }
+      .masp-tab-content { padding-top:15px; border-top: 1px solid var(--muted); }
+      .action-item-block { padding: 12px; border: 1px solid var(--muted); border-radius: 12px; background: var(--card); position: relative; margin-top: 10px; }
+      .remove-action-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; color: #fca5a5; font-size: 1.5rem; cursor: pointer;}
+      .attachments-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--muted);}
+      .attachment-drop-zone { padding: 10px; font-size: 12px; margin-top: 5px; border: 2px dashed var(--muted); text-align: center; cursor: pointer; border-radius: 8px;}
+      .attachment-preview-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+      .attachment-item { width: 80px; height: 80px; position: relative; }
+      .attachment-item img, .attachment-item .file-icon { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+      .attachment-item .file-icon { background: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 11px; padding: 5px; overflow: hidden; word-break: break-all; }
+      .attachment-item .remove-attachment { position: absolute; top: -5px; right: -5px; background: var(--bad); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+      #record-counter { background:rgba(255,255,255,.02); border:1px solid #1e293b; border-radius: 12px; padding: 12px;} #record-counter p { margin: 8px 0; color: #cbd5e1; display: flex; justify-content: space-between; } #record-counter span { font-weight: bold; color: var(--accent); }
+      #toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+      .toast { padding: 12px 18px; border-radius: 12px; color: white; font-weight: 600; font-size: 14px; box-shadow: var(--shadow); opacity: 0; transform: translateX(100%); transition: all 0.4s ease; }
+      .toast.show { opacity: 1; transform: translateX(0); }
+      .toast.success { background: linear-gradient(90deg, #22c55e, #16a34a); } .toast.error { background: linear-gradient(90deg, #ef4444, #dc2626); } .toast.info { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+      @media print { body { grid-template-columns: 1fr; color: #000; background: #fff; } header, aside, .hidden-print, .btn, .masp-tabs, .remove-action-btn, .remove-attachment { display: none !important; } .masp-tab-content { display: block !important; border-top: none; padding-top: 0; } main { padding: 0; } section { border: 1px solid #ccc; box-shadow: none; background: #fff; page-break-inside: avoid; } h2,h3,h4,label{color:black} }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Gerenciador de Projetos MASP</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div id="record-counter"><h4>Registros</h4><p>MASPs Salvos: <span id="masp-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container">
+            <section>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Projetos MASP</h2>
+                    <button id="btn-new-masp" class="btn primary">+ Novo MASP</button>
+                </div>
+                <table id="masp-list-table">
+                    <thead><tr><th>Título do Problema</th><th>Status</th><th>Progresso</th><th>Data de Início</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="hidden">
+            <section>
+                <form id="masp-form">
+                    <input type="hidden" id="masp-id">
+                    <div style="text-align: right; margin-bottom: 5px; font-size: 14px;"><span id="progress-summary">0/8</span></div>
+                    <div class="progress-bar-container"><div id="progress-bar" class="progress-bar"></div></div>
+                    
+                    <section>
+                        <h4>Informações Gerais</h4>
+                        <div class="grid">
+                           <div class="field" style="grid-column: span 6;"><label for="masp-title">Título do Problema</label><input type="text" id="masp-title" required></div>
+                           <div class="field" style="grid-column: span 3;"><label for="masp-start-date">Data de Início</label><input type="date" id="masp-start-date"></div>
+                           <div class="field" style="grid-column: span 3;"><label for="masp-status">Status Geral</label><select id="masp-status"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+                           <div class="field" style="grid-column: span 12;"><label for="masp-team">Equipe Envolvida (nomes separados por vírgula)</label><input type="text" id="masp-team"></div>
+                        </div>
+                    </section>
+                    
+                    <nav class="masp-tabs"></nav>
+                    <div id="masp-steps-container"></div>
+                    
+                    <div style="margin-top: 16px; display: flex; gap: 10px;" class="hidden-print">
+                        <button type="submit" class="btn primary">Salvar MASP</button>
+                        <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <template id="masp-step-template">
+        <div class="masp-tab-content">
+            <div class="field">
+                <label></label>
+                <textarea rows="6"></textarea>
+            </div>
+            <div class="attachments-section"></div>
+        </div>
+    </template>
+    
+    <template id="attachment-ui-template"><div class="field"><input type="file" class="attachments-input hidden" multiple><div class="attachment-drop-zone">Arraste ou clique para adicionar arquivos (máx 5MB)</div><div class="attachment-preview-grid"></div></div></template>
+    <template id="action-plan-form-template">
+        <div class="action-item-block"><button type="button" class="remove-action-btn hidden-print">&times;</button><div class="grid">
+            <div class="field" style="grid-column: span 12;"><label>Ação / Pendência</label><textarea class="action-input" rows="2"></textarea></div>
+            <div class="field" style="grid-column: span 3;"><label>Responsável</label><input type="text" class="responsible-input"></div>
+            <div class="field" style="grid-column: span 3;"><label>Status</label><select class="status-input"><option value="aberto">Aberto</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></div>
+            <div class="field" style="grid-column: span 3;"><label>Data Início</label><input type="date" class="start-date-input"></div>
+            <div class="field" style="grid-column: span 3;"><label>Data Final</label><input type="date" class="end-date-input"></div>
+            <div class="field" style="grid-column: span 12; border-top: 1px solid var(--muted); padding-top: 12px; margin-top: 6px;"><label>Anexos</label><div class="attachments-section" style="border-top: none; padding-top: 0; margin-top: 0;"></div></div>
+        </div></div>
+    </template>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let masps = [];
+        const DB_KEY = 'mg_masps_v1';
+        const MASP_STEPS = ["1. Identificação", "2. Observação", "3. Análise", "4. Plano de Ação", "5. Ação", "6. Verificação", "7. Padronização", "8. Conclusão"];
+        const MASP_PROMPTS = [
+            "Descreva o problema de forma clara e objetiva. Qual o impacto? Onde ocorre? Quem está envolvido? Quando foi identificado?",
+            "Investigue as características do problema no local. Colete dados, fatos e evidências. O que foi observado?",
+            "Identifique as causas raiz do problema. Utilize ferramentas como 5 Porquês ou Diagrama de Ishikawa.",
+            "Esta seção utiliza o gerenciador de planos de ação. Defina o que será feito, quem fará, quando, onde e como.",
+            "Execute as ações planejadas. Descreva o andamento e quaisquer desvios ou dificuldades encontradas.",
+            "Verifique se as ações foram eficazes. Compare os resultados com os dados coletados na etapa de Observação. A meta foi atingida?",
+            "Se a solução foi eficaz, crie ou atualize procedimentos, instruções de trabalho e treinamentos para evitar a recorrência do problema.",
+            "Reflita sobre o processo. Quais foram as lições aprendidas? O que pode ser melhorado em futuras análulas MASP?"
+        ];
+        
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const form = document.getElementById('masp-form');
+        const btnNewMasp = document.getElementById('btn-new-masp');
+        const btnCancel = document.getElementById('btn-cancel');
+        const maspListContainer = document.querySelector('#masp-list-table tbody');
+        const maspCountSpan = document.getElementById('masp-count');
+        const maspTabsContainer = document.querySelector('.masp-tabs');
+        const maspStepsContainer = document.getElementById('masp-steps-container');
+        
+        const stepTemplate = document.getElementById('masp-step-template');
+        const attachmentUiTemplate = document.getElementById('attachment-ui-template');
+        const actionPlanFormTemplate = document.getElementById('action-plan-form-template');
+
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(masps)); } catch (e) { showToast('Erro ao salvar.', 'error'); } };
+        const loadData = () => { masps = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        const showForm = () => { dashboardContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); };
+        const showDashboard = () => { form.reset(); formContainer.classList.add('hidden'); dashboardContainer.classList.remove('hidden'); renderMaspList(); };
+        const updateProgress = () => {
+            const textareas = maspStepsContainer.querySelectorAll('textarea');
+            const filledCount = Array.from(textareas).filter(t => t.value.trim() !== '').length;
+            const progress = (filledCount / MASP_STEPS.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-summary').textContent = `${filledCount}/${MASP_STEPS.length}`;
+        };
+
+        const renderMaspList = () => {
+            maspListContainer.innerHTML = '';
+            if (masps.length === 0) { maspListContainer.innerHTML = '<tr><td colspan="5">Nenhum projeto MASP salvo.</td></tr>'; } 
+            else {
+                masps.sort((a, b) => b.id - a.id).forEach(masp => {
+                    const filledSteps = (masp.steps || []).filter(s => (s.content && s.content.trim() !== '') || (s.actionPlans && s.actionPlans.length > 0)).length;
+                    const progress = (filledSteps / MASP_STEPS.length) * 100;
+                    const row = maspListContainer.insertRow();
+                    row.innerHTML = `<td>${masp.title || 'N/A'}</td><td><span class="status-pill">${masp.status || 'N/A'}</span></td><td><div class="progress-bar-container" title="${progress.toFixed(0)}%"><div class="progress-bar" style="width: ${progress}%;"></div></div></td><td>${masp.startDate ? new Date(masp.startDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td class="hidden-print"><div style="display:flex; gap: 5px;"><button class="btn ghost btn-edit" data-id="${masp.id}">Editar</button><button class="btn ghost btn-delete" data-id="${masp.id}">Excluir</button></div></td>`;
+                });
+            }
+            maspCountSpan.textContent = masps.length;
+        };
+        
+        const createFormTabsAndSteps = () => {
+            maspTabsContainer.innerHTML = ''; maspStepsContainer.innerHTML = '';
+            MASP_STEPS.forEach((name, index) => {
+                const tab = document.createElement('div');
+                tab.className = 'masp-tab'; tab.textContent = name; tab.dataset.index = index;
+                if (index === 0) tab.classList.add('active');
+                maspTabsContainer.appendChild(tab);
+
+                const clone = stepTemplate.content.cloneNode(true);
+                const contentDiv = clone.querySelector('.masp-tab-content');
+                const label = clone.querySelector('label');
+                const textarea = clone.querySelector('textarea');
+                
+                label.textContent = name;
+                textarea.placeholder = MASP_PROMPTS[index];
+                contentDiv.dataset.index = index;
+                if (index !== 0) contentDiv.classList.add('hidden');
+
+                if (index === 3) {
+                    textarea.classList.add('hidden');
+                    label.classList.add('hidden');
+                    const actionPlanContainer = document.createElement('div');
+                    actionPlanContainer.className = 'action-plan-container';
+                    const addActionButton = document.createElement('button');
+                    addActionButton.type = 'button';
+                    addActionButton.className = 'btn ghost btn-add-action-plan';
+                    addActionButton.textContent = '+ Adicionar Ação';
+                    addActionButton.style.width = '100%';
+                    contentDiv.appendChild(actionPlanContainer);
+                    contentDiv.appendChild(addActionButton);
+                }
+                
+                const attachmentsContainer = contentDiv.querySelector('.attachments-section');
+                attachmentsContainer.appendChild(attachmentUiTemplate.content.cloneNode(true));
+                maspStepsContainer.appendChild(clone);
+            });
+        };
+
+        const addAttachmentPreview = (grid, data) => { const item = document.createElement('div'); item.className = 'attachment-item'; item.dataset.fileName = data.name; item.dataset.fileData = data.data; item.dataset.fileType = data.type; item.innerHTML = `${data.type.startsWith('image/') ? `<img src="${data.data}" title="${data.name}">` : `<div class="file-icon" title="${data.name}"><span>📄</span>${data.name}</div>`}<button type="button" class="remove-attachment hidden-print">&times;</button>`; grid.appendChild(item); };
+        const handleFiles = (files, container) => { const grid = container.querySelector('.attachment-preview-grid'); for (const file of files) { if (file.size > 5 * 1024 * 1024) { showToast(`Arquivo "${file.name}" > 5MB.`, 'error'); continue; } const reader = new FileReader(); reader.onload = (e) => addAttachmentPreview(grid, { name: file.name, type: file.type, data: e.target.result }); reader.readAsDataURL(file); }};
+        const getAttachmentsFromContainer = (container) => { const atts = []; container.querySelectorAll('.attachment-item').forEach(item => atts.push({ name: item.dataset.fileName, type: item.dataset.fileType, data: item.dataset.fileData })); return atts; };
+        const renderActionPlans = (container, plans = []) => { container.innerHTML = ''; if (!plans) return; plans.forEach(plan => { const clone = actionPlanFormTemplate.content.cloneNode(true); const block = clone.querySelector('.action-item-block'); block.querySelector('.action-input').value = plan.action || ''; block.querySelector('.responsible-input').value = plan.responsible || ''; block.querySelector('.status-input').value = plan.status || 'aberto'; block.querySelector('.start-date-input').value = plan.startDate || ''; block.querySelector('.end-date-input').value = plan.endDate || ''; const attsContainer = block.querySelector('.attachments-section'); attsContainer.appendChild(attachmentUiTemplate.content.cloneNode(true)); if (plan.attachments) { const grid = attsContainer.querySelector('.attachment-preview-grid'); plan.attachments.forEach(att => addAttachmentPreview(grid, att)); } container.appendChild(clone); }); };
+
+        btnNewMasp.addEventListener('click', () => { form.reset(); document.getElementById('masp-id').value = ''; document.getElementById('masp-start-date').value = new Date().toISOString().slice(0, 10); createFormTabsAndSteps(); updateProgress(); showForm(); });
+        btnCancel.addEventListener('click', showDashboard);
+        
+        maspTabsContainer.addEventListener('click', e => {
+            if (e.target.classList.contains('masp-tab')) {
+                const index = e.target.dataset.index;
+                maspTabsContainer.querySelectorAll('.masp-tab').forEach(t => t.classList.remove('active'));
+                maspStepsContainer.querySelectorAll('.masp-tab-content').forEach(c => c.classList.add('hidden'));
+                e.target.classList.add('active');
+                maspStepsContainer.querySelector(`.masp-tab-content[data-index="${index}"]`).classList.remove('hidden');
+            }
+        });
+
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if (target.classList.contains('btn-edit')) {
+                const masp = masps.find(m => m.id == target.dataset.id);
+                if(masp){
+                    form.reset(); createFormTabsAndSteps();
+                    document.getElementById('masp-id').value = masp.id;
+                    document.getElementById('masp-title').value = masp.title || '';
+                    document.getElementById('masp-start-date').value = masp.startDate || '';
+                    document.getElementById('masp-status').value = masp.status || 'aberto';
+                    document.getElementById('masp-team').value = masp.team || '';
+                    (masp.steps || []).forEach((step, index) => {
+                        const contentDiv = maspStepsContainer.querySelector(`.masp-tab-content[data-index="${index}"]`);
+                        if(contentDiv) {
+                            if (index === 3) { renderActionPlans(contentDiv.querySelector('.action-plan-container'), step.actionPlans); }
+                            else { contentDiv.querySelector('textarea').value = step.content || ''; }
+                            const grid = contentDiv.querySelector('.attachment-preview-grid');
+                            (step.attachments || []).forEach(att => addAttachmentPreview(grid, att));
+                        }
+                    });
+                    updateProgress(); showForm();
+                }
+            }
+            if (target.classList.contains('btn-delete')){ if(confirm('Tem certeza?')) { masps = masps.filter(m => m.id != target.dataset.id); saveData(); renderMaspList(); } }
+            if (target.classList.contains('btn-add-action-plan')) { const container = target.previousElementSibling; const clone = actionPlanFormTemplate.content.cloneNode(true); clone.querySelector('.attachments-section').appendChild(attachmentUiTemplate.content.cloneNode(true)); container.appendChild(clone); }
+            if (target.classList.contains('remove-action-btn')) { target.closest('.action-item-block').remove(); }
+            if (target.classList.contains('attachment-drop-zone')) { target.previousElementSibling.click(); }
+            if (target.classList.contains('remove-attachment')) { target.closest('.attachment-item').remove(); }
+        });
+
+        main.addEventListener('change', e => { if (e.target.classList.contains('attachments-input')) { handleFiles(e.target.files, e.target.closest('.field, .attachments-section')); }});
+        form.addEventListener('input', updateProgress);
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const id = document.getElementById('masp-id').value;
+            const maspData = {
+                id: id ? parseInt(id) : Date.now(),
+                title: document.getElementById('masp-title').value,
+                startDate: document.getElementById('masp-start-date').value,
+                status: document.getElementById('masp-status').value,
+                team: document.getElementById('masp-team').value,
+                steps: []
+            };
+            maspStepsContainer.querySelectorAll('.masp-tab-content').forEach((contentDiv, index) => {
+                const stepData = { attachments: getAttachmentsFromContainer(contentDiv.querySelector('.attachments-section')) };
+                if (index === 3) {
+                    stepData.actionPlans = [];
+                    contentDiv.querySelectorAll('.action-item-block').forEach(block => {
+                        stepData.actionPlans.push({ action: block.querySelector('.action-input').value, responsible: block.querySelector('.responsible-input').value, status: block.querySelector('.status-input').value, startDate: block.querySelector('.start-date-input').value, endDate: block.querySelector('.end-date-input').value, attachments: getAttachmentsFromContainer(block.querySelector('.attachments-section')) });
+                    });
+                } else {
+                    stepData.content = contentDiv.querySelector('textarea').value;
+                }
+                maspData.steps.push(stepData);
+            });
+            
+            if (id) { const index = masps.findIndex(m => m.id == id); if (index > -1) { masps[index] = maspData; } } 
+            else { masps.push(maspData); }
+            saveData(); showToast('MASP salvo com sucesso!', 'success'); showDashboard();
+        });
+        
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra um MASP para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(masps, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`masp_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){masps=d;saveData();renderMaspList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        loadData();
+        showDashboard();
+    });
+    </script>
+</body>
+</html>

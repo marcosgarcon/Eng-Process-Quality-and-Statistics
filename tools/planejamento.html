@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Planejamento de Auditorias</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+        
+        header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+        .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+        header .actions{display:flex;flex-wrap:wrap;gap:8px}
+        
+        button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+        button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+        button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+        button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+        
+        aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+        .menu{display:flex;flex-direction:column;gap:8px}
+        .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+        .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+        
+        main{padding:18px;overflow:auto}
+        .hidden, .tab-content.hidden{display:none !important}
+        section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
+        h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+        .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));}
+        .field{display:flex;flex-direction:column;gap:6px}
+        label{font-size:12px;color:#93c5fd}
+        input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;min-height:44px}
+        table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+        .kpi-card{background:var(--card);border-radius:var(--radius);padding:16px;text-align:center;}
+        .kpi-card h3{font-size:12px;color:var(--accent2);margin:0 0 8px 0;font-weight:normal;text-transform:uppercase;}
+        .kpi-card .kpi-value{font-size:2rem;font-weight:bold;color:var(--accent);}
+        #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+        .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+        .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+        .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+        .filter-controls { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: flex-end;}
+        .filter-controls .field { flex: 1; min-width: 150px; }
+        @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn{display:none!important;}main{padding:0;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label,p{color:black;}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title">
+            <h1>Eng Process & Quality</h1>
+            <p class="subtitle">Planejamento de Auditorias</p>
+            <p class="dev-credit">Desenvolvido por Marcos Garçon</p>
+        </div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup"><i class="ph-bold ph-upload"></i> Restaurar Dados</button>
+            <button class="btn ghost" id="btn-download-backup"><i class="ph-bold ph-download"></i> Baixar Backup</button>
+            <button class="btn ghost" id="btn-clear-all-data" style="color:var(--warn);"><i class="ph-bold ph-trash"></i> Limpar Tudo</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'auditorias-container')"><i class="ph-bold ph-calendar-check"></i> Gerenciar Auditorias</a>
+            </div>
+        </div>
+        <div id="record-counter"><p>Auditorias Planejadas: <span id="audit-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <h2>Dashboard de Planejamento de Auditorias</h2>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="kpi-card"><h3>Total de Auditorias Planejadas</h3><p id="kpi-total-audits" class="kpi-value">0</p></div>
+                    <div class="kpi-card"><h3>Auditorias Concluídas</h3><p id="kpi-completed-audits" class="kpi-value">0</p></div>
+                    <div class="kpi-card"><h3>Auditorias Pendentes</h3><p id="kpi-pending-audits" class="kpi-value">0</p></div>
+                    <div class="kpi-card"><h3>Próxima Auditoria</h3><p id="kpi-next-audit" class="kpi-value" style="font-size: 1.5rem;">-</p></div>
+                    <div class="kpi-card"><h3>Auditor Líder Mais Ativo</h3><p id="kpi-top-leader" class="kpi-value" style="font-size: 1.5rem;">-</p></div>
+                    <div class="kpi-card"><h3>Tipo de Auditoria Mais Comum</h3><p id="kpi-top-type" class="kpi-value" style="font-size: 1.5rem;">-</p></div>
+                </div>
+            </section>
+            <section>
+                <h4>Auditorias por Status</h4>
+                <div style="position: relative; min-height: 300px; width: 100%;">
+                    <canvas id="audits-by-status-chart"></canvas>
+                </div>
+            </section>
+            <section>
+                <h4>Auditorias por Tipo</h4>
+                <div style="position: relative; min-height: 300px; width: 100%;">
+                    <canvas id="audits-by-type-chart"></canvas>
+                </div>
+            </section>
+            <section>
+                <h4>Auditorias Planejadas por Mês</h4>
+                <div style="position: relative; min-height: 300px; width: 100%;">
+                    <canvas id="audits-by-month-chart"></canvas>
+                </div>
+            </section>
+        </div>
+
+        <div id="auditorias-container" class="tab-content hidden">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h2>Auditorias Planejadas</h2>
+                    <button id="btn-new-audit" class="btn primary">Nova Auditoria</button>
+                </div>
+
+                <div class="filter-controls">
+                    <div class="field">
+                        <label for="filter-text">Pesquisar (Processo/Líder)</label>
+                        <input type="text" id="filter-text" placeholder="Pesquisar...">
+                    </div>
+                    <div class="field">
+                        <label for="filter-status">Status</label>
+                        <select id="filter-status">
+                            <option value="">Todos</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Concluída">Concluída</option>
+                            <option value="Cancelada">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="filter-type">Tipo</label>
+                        <select id="filter-type">
+                            <option value="">Todos</option>
+                            <option value="Interna">Interna</option>
+                            <option value="Externa">Externa</option>
+                            <option value="Fornecedor">Fornecedor</option>
+                        </select>
+                    </div>
+                    <button class="btn ghost" id="clear-filters-btn" style="min-width: unset; margin-left: auto;">Limpar Filtros</button>
+                </div>
+
+                <table id="audit-list-table">
+                    <thead><tr><th>Processo/Área</th><th>Auditor Líder</th><th>Data Prevista</th><th>Status</th><th>Tipo</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+
+        <div id="form-container" class="tab-content hidden">
+            <form id="audit-form">
+                <input type="hidden" id="audit-id">
+                <section>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <h2 id="form-title">Nova Auditoria</h2>
+                        <button type="button" id="btn-back-to-list" class="btn ghost">Voltar à Lista</button>
+                    </div>
+                    <div class="grid">
+                        <div class="field" style="grid-column: span 2;"><label for="audit-process">Processo/Área Auditada</label><input type="text" id="audit-process" placeholder="Ex: Produção, Qualidade, Expedição" required></div>
+                        <div class="field"><label for="audit-leader">Auditor Líder</label><input type="text" id="audit-leader" placeholder="Nome do Auditor Líder" required></div>
+                        <div class="field"><label for="audit-date">Data Prevista</label><input type="date" id="audit-date" required></div>
+                        <div class="field"><label for="audit-type">Tipo de Auditoria</label>
+                            <select id="audit-type" required>
+                                <option value="">Selecione</option>
+                                <option value="Interna">Interna</option>
+                                <option value="Externa">Externa</option>
+                                <option value="Fornecedor">Fornecedor</option>
+                            </select>
+                        </div>
+                        <div class="field"><label for="audit-standard">Padrão da Auditoria</label><input type="text" id="audit-standard" placeholder="Ex: ISO 9001, Cliente X"></div>
+                        <div class="field"><label for="audit-status">Status</label>
+                            <select id="audit-status" required>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Concluída">Concluída</option>
+                                <option value="Cancelada">Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="field" style="grid-column: span 2;"><label for="audit-notes">Observações</label><textarea id="audit-notes" rows="3" placeholder="Detalhes adicionais ou resultados breves"></textarea></div>
+                    </div>
+                </section>
+                <div class="hidden-print" style="display:flex;justify-content:flex-end;margin-top:20px;">
+                    <button type="submit" class="btn primary">Salvar Auditoria</button>
+                </div>
+            </form>
+        </div>
+    </main>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const DB_KEY = 'mg_planejamento_records_v1';
+        let auditRecords = [];
+        let auditsByStatusChart = null;
+        let auditsByTypeChart = null;
+        let auditsByMonthChart = null;
+
+        const auditListBody = document.querySelector('#audit-list-table tbody');
+        const auditCountSpan = document.getElementById('audit-count');
+        const auditForm = document.getElementById('audit-form');
+
+        const filterText = document.getElementById('filter-text');
+        const filterStatus = document.getElementById('filter-status');
+        const filterType = document.getElementById('filter-type');
+        const clearFiltersBtn = document.getElementById('clear-filters-btn');
+
+        const showToast = (message, type = 'info') => { 
+            const c=document.getElementById('toast-container');
+            const t=document.createElement('div');
+            t.className=`toast ${type}`;
+            t.textContent=message;
+            c.appendChild(t);
+            setTimeout(()=>t.classList.add('show'),10);
+            setTimeout(()=>{t.classList.remove('show');t.addEventListener('transitionend',()=>t.remove())},4000);
+        };
+
+        const saveData = () => { 
+            try { 
+                localStorage.setItem(DB_KEY, JSON.stringify(auditRecords)); 
+            } catch (e) { 
+                showToast('Erro ao salvar os dados de auditoria.', 'error'); 
+            } 
+        };
+        const loadData = () => { auditRecords = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
+            } else { 
+                const link = document.querySelector(`.menu a[onclick*="${tabId}"]`);
+                if (link) link.classList.add('active');
+            }
+            if (tabId === 'dashboard-container') renderDashboard();
+            if (tabId === 'auditorias-container') renderAuditList();
+        };
+
+        const renderAuditList = () => {
+            auditListBody.innerHTML = '';
+            auditCountSpan.textContent = auditRecords.length;
+            
+            let filteredAudits = auditRecords;
+            const searchText = filterText.value.toLowerCase();
+            const selectedStatus = filterStatus.value;
+            const selectedType = filterType.value;
+
+            if (searchText) {
+                filteredAudits = filteredAudits.filter(record => 
+                    record.process.toLowerCase().includes(searchText) || 
+                    (record.leader && record.leader.toLowerCase().includes(searchText))
+                );
+            }
+            if (selectedStatus) {
+                filteredAudits = filteredAudits.filter(record => record.status === selectedStatus);
+            }
+            if (selectedType) {
+                filteredAudits = filteredAudits.filter(record => record.type === selectedType);
+            }
+
+            if (filteredAudits.length === 0) {
+                auditListBody.innerHTML = '<tr><td colspan="6">Nenhuma auditoria encontrada.</td></tr>';
+                return;
+            }
+            filteredAudits.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(record => {
+                const row = auditListBody.insertRow();
+                row.innerHTML = `
+                    <td>${record.process}</td><td>${record.leader || 'N/A'}</td>
+                    <td>${new Date(record.date + 'T00:00:00').toLocaleDateString()}</td>
+                    <td>${record.status}</td>
+                    <td>${record.type || 'N/A'}</td>
+                    <td class="hidden-print">
+                        <button class="btn ghost btn-edit" data-id="${record.id}" style="padding:5px 10px">Editar</button>
+                        <button class="btn ghost btn-delete" data-id="${record.id}" style="padding:5px 10px">Excluir</button>
+                    </td>
+                `;
+            });
+        };
+
+        const renderDashboard = () => {
+            const totalAudits = auditRecords.length;
+            const completedAudits = auditRecords.filter(r => r.status === 'Concluída').length;
+            const pendingAudits = auditRecords.filter(r => r.status === 'Pendente').length;
+            
+            const today = new Date().toISOString().slice(0, 10);
+            const nextAudit = auditRecords
+                .filter(r => r.status === 'Pendente' && r.date >= today)
+                .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+            
+            document.getElementById('kpi-total-audits').textContent = totalAudits;
+            document.getElementById('kpi-completed-audits').textContent = completedAudits;
+            document.getElementById('kpi-pending-audits').textContent = pendingAudits;
+            document.getElementById('kpi-next-audit').textContent = nextAudit ? `${nextAudit.process} (${new Date(nextAudit.date + 'T00:00:00').toLocaleDateString()})` : 'Nenhuma';
+
+            const leaderCounts = auditRecords.reduce((acc, r) => { if (r.leader) acc[r.leader] = (acc[r.leader] || 0) + 1; return acc; }, {});
+            const topLeader = Object.keys(leaderCounts).length > 0 ? Object.entries(leaderCounts).sort((a,b) => b[1] - a[1])[0][0] : '-';
+            document.getElementById('kpi-top-leader').textContent = topLeader;
+
+            const typeCounts = auditRecords.reduce((acc, r) => { if (r.type) acc[r.type] = (acc[r.type] || 0) + 1; return acc; }, {});
+            const topType = Object.keys(typeCounts).length > 0 ? Object.entries(typeCounts).sort((a,b) => b[1] - a[1])[0][0] : '-';
+            document.getElementById('kpi-top-type').textContent = topType;
+
+            renderAuditsByStatusChart();
+            renderAuditsByTypeChart();
+            renderAuditsByMonthChart();
+        };
+
+        const renderAuditsByStatusChart = () => {
+            if (auditsByStatusChart) auditsByStatusChart.destroy();
+            const statusCounts = auditRecords.reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {});
+            const labels = Object.keys(statusCounts); const data = Object.values(statusCounts);
+            const backgroundColors = labels.map(status => ({ 'Concluída': 'rgba(34, 197, 94, 0.8)', 'Pendente': 'rgba(251, 191, 36, 0.8)', 'Cancelada': 'rgba(239, 68, 68, 0.8)' }[status] || 'rgba(100, 116, 139, 0.8)'));
+            const ctx = document.getElementById('audits-by-status-chart').getContext('2d');
+            auditsByStatusChart = new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: backgroundColors, borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#e5e7eb' } }, title: { display: true, text: 'Distribuição de Auditorias por Status', color: '#e5e7eb' } } } });
+        };
+
+        const renderAuditsByTypeChart = () => {
+            if (auditsByTypeChart) auditsByTypeChart.destroy();
+            const typeCounts = auditRecords.reduce((acc, r) => { acc[r.type] = (acc[r.type] || 0) + 1; return acc; }, {});
+            const labels = Object.keys(typeCounts); const data = Object.values(typeCounts);
+            const backgroundColors = ['rgba(59, 130, 246, 0.8)', 'rgba(167, 139, 250, 0.8)', 'rgba(245, 158, 11, 0.8)'];
+            const ctx = document.getElementById('audits-by-type-chart').getContext('2d');
+            auditsByTypeChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Número de Auditorias', data, backgroundColor: backgroundColors, borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#e5e7eb' } }, x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#e5e7eb' } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Auditorias por Tipo', color: '#e5e7eb' } } } });
+        };
+
+        const renderAuditsByMonthChart = () => {
+            if (auditsByMonthChart) auditsByMonthChart.destroy();
+            const monthlyData = auditRecords.reduce((acc, r) => { const date = new Date(r.date + 'T00:00:00'); const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`; acc[monthYear] = (acc[monthYear] || 0) + 1; return acc; }, {});
+            const sortedMonths = Object.keys(monthlyData).sort((a, b) => { const [mA, yA] = a.split('/').map(Number); const [mB, yB] = b.split('/').map(Number); return (yA - yB) * 12 + (mA - mB); });
+            const labels = sortedMonths; const data = sortedMonths.map(month => monthlyData[month]);
+            const ctx = document.getElementById('audits-by-month-chart').getContext('2d');
+            auditsByMonthChart = new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: 'Número de Auditorias Planejadas', data, backgroundColor: 'rgba(34, 211, 238, 0.4)', borderColor: 'rgba(34, 211, 238, 1)', borderWidth: 2, fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#e5e7eb' } }, x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#e5e7eb' } } }, plugins: { legend: { labels: { color: '#e5e7eb' } }, title: { display: true, text: 'Auditorias Planejadas por Mês', color: '#e5e7eb' } } } });
+        };
+
+        const populateForm = (record = {}) => {
+            auditForm.reset();
+            document.getElementById('audit-id').value = record.id || '';
+            document.getElementById('audit-process').value = record.process || '';
+            document.getElementById('audit-leader').value = record.leader || '';
+            document.getElementById('audit-date').value = record.date || new Date().toISOString().slice(0, 10);
+            document.getElementById('audit-type').value = record.type || '';
+            document.getElementById('audit-standard').value = record.standard || '';
+            document.getElementById('audit-status').value = record.status || 'Pendente';
+            document.getElementById('audit-notes').value = record.notes || '';
+            document.getElementById('form-title').textContent = record.id ? 'Editar Auditoria' : 'Nova Auditoria';
+            openTab(null, 'form-container');
+        };
+
+        // --- Event Listeners ---
+        document.getElementById('btn-new-audit').addEventListener('click', () => populateForm());
+        document.getElementById('btn-back-to-list').addEventListener('click', () => openTab(null, 'auditorias-container'));
+
+        filterText.addEventListener('input', renderAuditList);
+        filterStatus.addEventListener('change', renderAuditList);
+        filterType.addEventListener('change', renderAuditList);
+        clearFiltersBtn.addEventListener('click', () => { filterText.value = ''; filterStatus.value = ''; filterType.value = ''; renderAuditList(); });
+
+        auditForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const id = document.getElementById('audit-id').value;
+            const recordData = {
+                id: id ? parseInt(id) : Date.now(),
+                process: document.getElementById('audit-process').value,
+                leader: document.getElementById('audit-leader').value,
+                date: document.getElementById('audit-date').value,
+                type: document.getElementById('audit-type').value,
+                standard: document.getElementById('audit-standard').value,
+                status: document.getElementById('audit-status').value,
+                notes: document.getElementById('audit-notes').value
+            };
+            const index = auditRecords.findIndex(r => r.id == recordData.id);
+            if (index > -1) { auditRecords[index] = recordData; } else { auditRecords.push(recordData); }
+            saveData(); showToast('Auditoria salva com sucesso!', 'success'); openTab(null, 'auditorias-container');
+        });
+
+        auditListBody.addEventListener('click', e => {
+            const editBtn = e.target.closest('.btn-edit');
+            const deleteBtn = e.target.closest('.btn-delete');
+            if(editBtn) { const record = auditRecords.find(r => r.id == editBtn.dataset.id); if(record) populateForm(record); }
+            if(deleteBtn) { if(confirm('Tem certeza?')) { auditRecords = auditRecords.filter(r => r.id != deleteBtn.dataset.id); saveData(); renderAuditList(); showToast('Auditoria excluída.', 'info'); }}
+        });
+
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { 
+            const currentTab = document.querySelector('.tab-content:not(.hidden)').id;
+            if (currentTab === 'form-container') { showToast('Finalize ou volte para o dashboard/lista para exportar.', 'info'); return; }
+            window.print(); 
+        });
+
+        // --- Funções de Backup/Restauração/Limpeza ---
+        document.getElementById('btn-download-backup').addEventListener('click', () => {
+            if (auditRecords.length === 0) { showToast('Não há dados para baixar.', 'info'); return; }
+            const blob = new Blob([JSON.stringify(auditRecords, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_planejamento_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+            showToast('Backup baixado!', 'success');
+        });
+
+        document.getElementById('btn-restore-backup').addEventListener('click', () => {
+            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    if (!confirm('Restaurar este backup substituirá os dados atuais. Deseja continuar?')) return;
+                    try {
+                        const restoredData = JSON.parse(ev.target.result);
+                        if (Array.isArray(restoredData)) { 
+                            auditRecords = restoredData; saveData(); showToast('Dados restaurados!', 'success'); openTab(null, 'dashboard-container'); 
+                        } else { throw new Error('Formato inválido.'); }
+                    } catch (error) { showToast(`Erro ao restaurar: ${error.message}`, 'error'); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        document.getElementById('btn-clear-all-data').addEventListener('click', () => {
+            if (confirm("ATENÇÃO: Isso APAGARÁ TODOS os dados salvos. Deseja continuar?")) {
+                localStorage.removeItem(DB_KEY);
+                auditRecords = []; 
+                showToast("Dados limpos.", "info");
+                window.location.reload(); 
+            }
+        });
+
+        // --- Inicialização da Aplicação ---
+        const initApp = () => {
+            loadData();
+            openTab(null, 'dashboard-container'); 
+        };
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eng Process & Quality - Gerenciador de Projetos APQP</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;--status-pendente:#6c757d;--status-andamento:#0d6efd;--status-concluido:#22c55e;--status-atrasado:#ef4444;--status-na:#495057;}
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial;background:linear-gradient(120deg,#0b1020,#0a1328);color:var(--text);display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;gap:0;}
+      header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(90deg,#0b1020,#0a1a35);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:5}
+      .header-title h1{margin:0;font-size:20px;letter-spacing:.4px;color:var(--text);}.header-title .subtitle{margin:4px 0 0 0;font-size:14px;font-weight:normal;color:var(--accent);}.header-title .dev-credit{margin:4px 0 0 0;font-size:11px;font-weight:normal;color:#64748b;}
+      header .actions{display:flex;flex-wrap:wrap;gap:8px}
+      button, .btn{background:var(--muted);color:var(--text);border:1px solid #243041;border-radius:12px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);transition:.2s;font-weight:600}
+      button:hover, .btn:hover{transform:translateY(-1px);border-color:#334155}
+      button.primary, .btn.primary{background:linear-gradient(180deg,#0ea5e9,#2563eb);border-color:transparent}
+      button.ghost, .btn.ghost{background:transparent;border-color:#334155}
+      aside{border-right:1px solid #1f2937;background:linear-gradient(180deg,#0b1020,#0a1328);padding:16px;display:flex;flex-direction:column;gap:24px;justify-content:space-between;}
+      .menu{display:flex;flex-direction:column;gap:8px}
+      .menu a{display:flex;gap:10px;align-items:center;text-decoration:none;color:#cbd5e1;padding:10px 12px;border:1px solid #1e293b;border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer;}
+      .menu a.active, .menu a:hover{border-color:#334155;background:rgba(34,211,238,.08);color:#e2e8f0}
+      main{padding:18px;overflow:auto}
+      .hidden{display:none !important}
+      .tab-content.hidden{display:none !important}
+      section{background:rgba(255,255,255,.03);border:1px solid #1f2937;border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+      h2, h3, h4{margin:0 0 12px 0;color:var(--accent);} h4{color:var(--accent2)}
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+      .field{display:flex;flex-direction:column;gap:6px}
+      label{font-size:12px;color:#93c5fd}
+      input, select, textarea{background:#0b1220;border:1px solid #243041;color:var(--text);padding:8px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:14px;}
+      table{width:100%;border-collapse:collapse;} th, td{padding:10px 12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px;vertical-align:middle;} th{background:rgba(255,255,255,.05);font-size:12px;color:#94a3b8;}
+      .progress-bar-container{background:var(--muted);border-radius:99px;height:10px;width:100%;overflow:hidden;}.progress-bar{background:var(--accent);height:100%;width:0%;transition:width 0.3s;}
+      .accordion-item{border:1px solid var(--muted);border-radius:12px;margin-bottom:10px;overflow:hidden;}.accordion-header{background:rgba(255,255,255,.02);padding:12px 15px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}.accordion-header h4{margin:0;color:var(--accent2);}.accordion-content{padding:15px;display:none;}.accordion-item.active .accordion-content{display:block;}
+      .task-table input, .task-table select{padding:6px 8px;font-size:13px;}
+      .status-select{font-weight:bold;}.status-pendente{background-color:var(--status-pendente);color:white;}.status-andamento{background-color:var(--status-andamento);color:white;}.status-concluido{background-color:var(--status-concluido);color:white;}.status-atrasado{background-color:var(--status-atrasado);color:white;}.status-na{background-color:var(--status-na);color:white;}
+      .attachments-section{margin-top:15px;padding-top:15px;border-top:1px dashed var(--muted);}.attachment-drop-zone{padding:10px;font-size:12px;margin-top:5px;border:2px dashed var(--muted);text-align:center;cursor:pointer;border-radius:8px;}.attachment-preview-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}.attachment-item{width:60px;height:60px;position:relative;}.attachment-item img, .attachment-item .file-icon{width:100%;height:100%;object-fit:cover;border-radius:8px;}.attachment-item .file-icon{background:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:10px;padding:5px;overflow:hidden;word-break:break-all;}.attachment-item .remove-attachment{position:absolute;top:-5px;right:-5px;background:var(--bad);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+      .timeline{position:relative;padding:10px 0;margin-top:10px;font-size:12px;}.timeline-bg{position:absolute;left:0;top:50%;height:4px;width:100%;background:var(--muted);transform:translateY(-50%);}.phase-bar{position:absolute;top:50%;height:12px;transform:translateY(-50%);border-radius:6px;cursor:pointer;}.phase-label{position:absolute;bottom:100%;margin-bottom:8px;white-space:nowrap;background:var(--card);padding:2px 6px;border-radius:4px;transform:translateX(-50%);}
+      #record-counter{background:rgba(255,255,255,.02);border:1px solid #1e293b;border-radius:12px;padding:12px;} #record-counter p{margin:8px 0;color:#cbd5e1;display:flex;justify-content:space-between;} #record-counter span{font-weight:bold;color:var(--accent);}
+      .toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+      .toast{padding:12px 18px;border-radius:12px;color:white;font-weight:600;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(100%);transition:all 0.4s ease;}
+      .toast.show{opacity:1;transform:translateX(0);}.toast.success{background:linear-gradient(90deg,#22c55e,#16a34a);}.toast.error{background:linear-gradient(90deg,#ef4444,#dc2626);}.toast.info{background:linear-gradient(90deg,#3b82f6,#2563eb);}
+      .help-content h3{color:var(--accent2);margin-top:24px;margin-bottom:10px;border-bottom:1px solid var(--muted);padding-bottom:5px;font-size:16px;}.help-content p, .help-content li{line-height:1.6;color:var(--text);}.help-content ul{list-style-position:inside;padding-left:10px;}.help-content code{background-color:var(--muted);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);}
+      @media print{body{grid-template-columns:1fr;color:#000;background:#fff;}header,aside,.hidden-print,.btn{display:none !important;}main{padding:0;}section{border:1px solid #ccc;box-shadow:none;background:#fff;page-break-inside:avoid;}h2,h3,h4,label{color:black}.accordion-content{display:block !important;}.accordion-header{background:#eee;}}
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="header-title"><h1>Eng Process & Quality</h1><p class="subtitle">Gerenciador de Projetos APQP</p><p class="dev-credit">Desenvolvido por Marcos Garçon</p></div>
+        <div class="actions">
+            <button class="btn ghost" id="btn-restore-backup">Restaurar Backup</button>
+            <button class="btn ghost" id="btn-download-backup">Baixar Backup (.json)</button>
+            <button class="btn ghost" id="btn-archive-and-clear" style="color:var(--warn);">Arquivar e Limpar</button>
+            <button class="btn primary" id="btn-export-pdf">Exportar PDF</button>
+        </div>
+    </header>
+    <aside>
+        <div>
+            <div class="menu">
+                <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Dashboard</a>
+                <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
+            </div>
+        </div>
+        <div id="record-counter"><h4>Registros</h4><p>Projetos APQP: <span id="apqp-count">0</span></p></div>
+    </aside>
+    <main>
+        <div id="dashboard-container" class="tab-content">
+            <section>
+                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>Projetos APQP</h2><button id="btn-new-apqp" class="btn primary">+ Novo Projeto</button></div>
+                <table id="apqp-list-table">
+                    <thead><tr><th>Nome do Projeto</th><th>Cliente</th><th>Progresso Geral</th><th>Data Alvo (PPAP)</th><th class="hidden-print">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+        <div id="form-container" class="tab-content hidden">
+            <form id="apqp-form">
+                <input type="hidden" id="apqp-id">
+                <section>
+                    <h4>Informações Gerais do Projeto</h4>
+                    <div class="grid">
+                        <div class="field" style="grid-column:span 6;"><label for="project-name">Nome do Projeto / Peça</label><input type="text" id="project-name" required></div>
+                        <div class="field" style="grid-column:span 6;"><label for="part-number">Nº da Peça</label><input type="text" id="part-number"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="customer-name">Cliente</label><input type="text" id="customer-name"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="project-lead">Líder do Projeto</label><input type="text" id="project-lead"></div>
+                        <div class="field" style="grid-column:span 4;"><label for="target-ppap-date">Data Alvo do PPAP</label><input type="date" id="target-ppap-date"></div>
+                    </div>
+                </section>
+                <section>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <h4>Cronograma e Progresso Geral</h4>
+                        <span id="overall-progress-text">0%</span>
+                    </div>
+                    <div class="progress-bar-container"><div id="overall-progress-bar" class="progress-bar"></div></div>
+                    <div id="timeline-container" class="timeline"><div class="timeline-bg"></div></div>
+                </section>
+                <section>
+                    <h4>Fases do APQP</h4>
+                    <div id="apqp-phases-accordion"></div>
+                </section>
+                <div style="margin-top:16px;display:flex;gap:10px;" class="hidden-print">
+                    <button type="button" id="btn-save-apqp" class="btn primary">Salvar Projeto</button>
+                    <button type="button" id="btn-cancel" class="btn ghost">Voltar ao Dashboard</button>
+                </div>
+            </form>
+        </div>
+        <div id="help-container" class="tab-content hidden">
+            <section class="help-content">
+                <h2>Guia de Utilização - Gerenciador de Projetos APQP</h2>
+                <p>Esta ferramenta foi desenvolvida para ser um gerenciador de projetos completo, focado nas 5 fases do Planejamento Avançado da Qualidade do Produto (APQP).</p>
+                <h3>Tela Principal (Dashboard)</h3>
+                <p>Esta é a primeira tela que você vê. Ela resume todos os projetos APQP que você salvou.</p>
+                <ul>
+                    <li>Para iniciar um novo projeto, clique no botão <code>+ Novo Projeto</code>.</li>
+                    <li>A barra de progresso de cada projeto na lista oferece uma visão rápida do seu andamento geral.</li>
+                    <li>Você pode <code>Editar</code> para abrir e continuar trabalhando em um projeto ou <code>Excluir</code> para removê-lo permanentemente.</li>
+                </ul>
+                <h3>Gerenciando um Projeto</h3>
+                <p>Ao criar ou editar um projeto, você entra na tela de gerenciamento detalhado.</p>
+                <h3>Cronograma Visual (Timeline)</h3>
+                <p>No topo, um cronograma visual (similar a um gráfico de Gantt) mostra a duração planejada de cada uma das 5 fases. Este gráfico é gerado automaticamente com base nas datas de início e fim que você define para as tarefas dentro de cada fase.</p>
+                <h3>Fases do APQP (Acordeão)</h3>
+                <p>O corpo principal do projeto é dividido nas 5 fases. Clique no título de uma fase para expandir ou recolher seu conteúdo.</p>
+                <ul>
+                    <li>Dentro de cada fase, há uma tabela para as tarefas (ou entregáveis) daquela etapa.</li>
+                    <li>Use o botão <code>+ Adicionar Tarefa</code> para incluir novos itens que sejam específicos do seu projeto.</li>
+                </ul>
+                <h3>Trabalhando com Tarefas</h3>
+                <p>Cada tarefa na tabela possui campos detalhados para um gerenciamento eficaz:</p>
+                <ul>
+                    <li><strong>Responsável:</strong> Defina quem é o dono da tarefa.</li>
+                    <li><strong>Data Início e Fim:</strong> Essencial para o cálculo do cronograma visual.</li>
+                    <li><strong>Status:</strong> O coração do acompanhamento. O status <code>Concluído</code> atualiza as barras de progresso. Se a data fim de uma tarefa passar e ela não estiver como 'Concluído', seu status será automaticamente mudado para <code>Atrasado</code>.</li>
+                    <li><strong>Anexos:</strong> Clique no botão <code>Anexos</code> para abrir uma área de upload. Você pode anexar múltiplos arquivos (relatórios, FMEAs, planilhas, etc.) como evidência para cada tarefa.</li>
+                </ul>
+                <h3>Funcionalidades Gerais</h3>
+                <ul>
+                    <li><strong>Salvar Projeto:</strong> Suas alterações são salvas ao clicar neste botão.</li>
+                    <li><strong>Backup e Restauração:</strong> Use os botões no cabeçalho para baixar um arquivo <code>.json</code> com todos os seus projetos ou restaurar a partir de um backup. Faça backups regularmente!</li>
+                    <li><strong>Exportar PDF:</strong> Com um projeto aberto, clique em "Exportar PDF" para gerar uma versão para impressão ou para salvar como PDF.</li>
+                </ul>
+                <p><strong>Aviso Importante:</strong> Todos os dados são salvos no seu navegador. Limpar o cache ou os dados de site irá apagar seus projetos. Utilize a função de backup com frequência.</p>
+            </section>
+        </div>
+    </main>
+    <template id="attachment-ui-template"><div class="field"><input type="file" class="attachments-input hidden" multiple><div class="attachment-drop-zone">Arraste ou clique para adicionar arquivos</div><div class="attachment-preview-grid"></div></div></template>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE, DBs & CONSTANTS ---
+        let apqpProjects = [];
+        const DB_KEY = 'mg_apqp_projects_v1';
+        const APQP_PHASES = [
+            { name: "Fase 1: Planejamento e Definição", color: "#3b82f6", tasks: ["Voz do Cliente (VOC)", "Plano de Negócio e Metas", "Metas de Produto/Processo", "Lista Preliminar de Características Especiais"] },
+            { name: "Fase 2: Projeto e Desenvolvimento do Produto", color: "#a78bfa", tasks: ["DFMEA", "Análise de Manufaturabilidade", "Verificação e Revisão do Projeto", "Desenhos e Especificações"] },
+            { name: "Fase 3: Projeto e Desenvolvimento do Processo", color: "#f59e0b", tasks: ["Fluxograma de Processo", "Layout da Planta", "PFMEA", "Plano de Controle de Pré-Lançamento"] },
+            { name: "Fase 4: Validação do Produto e Processo", color: "#ef4444", tasks: ["Try-out de Produção", "Estudo de MSA", "Estudo de Capabilidade (CEP)", "Submissão do PPAP", "Validação de Embalagem"] },
+            { name: "Fase 5: Feedback, Avaliação e Ação Corretiva", color: "#22c55e", tasks: ["Redução da Variação", "Satisfação do Cliente", "Entrega e Serviço", "Lições Aprendidas"] }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const main = document.querySelector('main');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const formContainer = document.getElementById('form-container');
+        const helpContainer = document.getElementById('help-container');
+        const btnNewApqp = document.getElementById('btn-new-apqp');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnSaveApqp = document.getElementById('btn-save-apqp');
+        const apqpListContainer = document.querySelector('#apqp-list-table tbody');
+        const apqpCountSpan = document.getElementById('apqp-count');
+        const accordionContainer = document.getElementById('apqp-phases-accordion');
+        const attachmentUiTemplate = document.getElementById('attachment-ui-template');
+
+        // --- HELPERS ---
+        const showToast = (message, type = 'info') => { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); t.addEventListener('transitionend', () => t.remove()); }, 4000); };
+        const saveData = () => { try { localStorage.setItem(DB_KEY, JSON.stringify(apqpProjects)); } catch (e) { showToast('Erro ao salvar. Verifique o espaço de armazenamento.', 'error'); } };
+        const loadData = () => { apqpProjects = JSON.parse(localStorage.getItem(DB_KEY)) || []; };
+        
+        // --- NAVIGATION ---
+        window.openTab = (evt, tabId) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            if(tabId !== 'form-container') document.getElementById('form-container').classList.add('hidden');
+        };
+
+        const showForm = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            formContainer.classList.remove('hidden');
+            document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+        };
+
+        const showDashboard = () => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            dashboardContainer.classList.remove('hidden');
+            const dashboardLink = document.querySelector('.menu a[onclick*="dashboard-container"]');
+            if (dashboardLink) {
+                document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+                dashboardLink.classList.add('active');
+            }
+            renderApqpList();
+        };
+
+        // --- RENDER FUNCTIONS ---
+        const renderApqpList = () => {
+            apqpListContainer.innerHTML = '';
+            if (apqpProjects.length === 0) { apqpListContainer.innerHTML = '<tr><td colspan="5">Nenhum projeto salvo.</td></tr>'; }
+            else {
+                apqpProjects.sort((a, b) => b.id - a.id).forEach(proj => {
+                    const { overallProgress } = calculateProgress(proj);
+                    const row = apqpListContainer.insertRow();
+                    row.innerHTML = `<td>${proj.projectName || 'N/A'}</td><td>${proj.customerName || 'N/A'}</td><td><div class="progress-bar-container" title="${overallProgress.toFixed(0)}%"><div class="progress-bar" style="width:${overallProgress}%;"></div></div></td><td>${proj.targetPpapDate ? new Date(proj.targetPpapDate + 'T00:00:00').toLocaleDateString() : 'N/A'}</td><td class="hidden-print"><div style="display:flex;gap:5px;"><button class="btn ghost btn-edit" data-id="${proj.id}">Editar</button><button class="btn ghost btn-delete" data-id="${proj.id}">Excluir</button></div></td>`;
+                });
+            }
+            apqpCountSpan.textContent = apqpProjects.length;
+        };
+
+        const createPhaseAccordionItem = (phase, index, projectData = {}) => {
+            const phaseData = (projectData.phases && projectData.phases[index]) ? projectData.phases[index] : { tasks: phase.tasks.map(t => ({ taskName: t, status: 'pendente' })) };
+            const item = document.createElement('div'); item.className = 'accordion-item';
+            item.innerHTML = `<div class="accordion-header"><h4>${phase.name}</h4><div style="display:flex;align-items:center;gap:10px;"><span class="phase-progress-text">0%</span><div class="progress-bar-container" style="width:100px;"><div class="progress-bar phase-progress-bar"></div></div></div></div><div class="accordion-content"><table class="task-table"><thead><tr><th>Tarefa / Entregável</th><th>Responsável</th><th>Data Início</th><th>Data Fim</th><th>Status</th><th class="hidden-print">Anexos</th><th class="hidden-print"></th></tr></thead><tbody></tbody></table><button type="button" class="btn ghost btn-add-task" style="width:100%;margin-top:10px;">+ Adicionar Tarefa</button><div class="field" style="margin-top:15px;border-top:1px solid var(--muted);padding-top:10px;"><label>Gate Review (Aprovação da Fase)</label><div class="grid" style="grid-template-columns:1fr 1fr;"><input type="date" class="gate-date" value="${phaseData.gateDate || ''}"><select class="gate-status"><option value="pendente" ${phaseData.gateStatus === 'pendente' ? 'selected' : ''}>Pendente</option><option value="aprovado" ${phaseData.gateStatus === 'aprovado' ? 'selected' : ''}>Aprovado</option><option value="reprovado" ${phaseData.gateStatus === 'reprovado' ? 'selected' : ''}>Reprovado</option></select></div></div></div>`;
+            const tbody = item.querySelector('tbody');
+            (phaseData.tasks || []).forEach(task => tbody.appendChild(createTaskRow(task)));
+            accordionContainer.appendChild(item);
+        };
+
+        const createTaskRow = (task = {}) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td><input type="text" class="task-name" value="${task.taskName || ''}"></td><td><input type="text" class="task-responsible" value="${task.responsible || ''}"></td><td><input type="date" class="task-start-date" value="${task.startDate || ''}"></td><td><input type="date" class="task-due-date" value="${task.dueDate || ''}"></td><td><select class="status-select"><option value="pendente">Pendente</option><option value="andamento">Em Andamento</option><option value="concluido">Concluído</option><option value="atrasado">Atrasado</option><option value="na">N/A</option></select></td><td class="hidden-print"><button type="button" class="btn ghost btn-toggle-attachments" style="font-size:12px;padding:5px;">Anexos</button><div class="attachments-section hidden"></div></td><td class="hidden-print"><button type="button" class="btn ghost btn-remove-task" style="color:var(--bad);">&times;</button></td>`;
+            const statusSelect = row.querySelector('.status-select');
+            statusSelect.value = task.status || 'pendente';
+            statusSelect.className = `status-select status-${statusSelect.value}`;
+            const attachmentsContainer = row.querySelector('.attachments-section');
+            attachmentsContainer.appendChild(attachmentUiTemplate.content.cloneNode(true));
+            if(task.attachments) task.attachments.forEach(att => addAttachmentPreview(attachmentsContainer.querySelector('.attachment-preview-grid'), att));
+            return row;
+        };
+        
+        // --- PROGRESS & TIMELINE ---
+        const calculateProgress = (project) => {
+            let totalTasks = 0, completedTasks = 0; const phaseProgress = [];
+            (project.phases || []).forEach(phase => { const applicableTasks = (phase.tasks || []).filter(t => t.status !== 'na'); const phaseCompleted = applicableTasks.filter(t => t.status === 'concluido').length; totalTasks += applicableTasks.length; completedTasks += phaseCompleted; phaseProgress.push(applicableTasks.length > 0 ? (phaseCompleted / applicableTasks.length) * 100 : 100); });
+            const overallProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            return { overallProgress, phaseProgress };
+        };
+
+        const updateAllProgressBars = () => {
+            const proj = gatherFormData(false); const { overallProgress, phaseProgress } = calculateProgress(proj);
+            document.getElementById('overall-progress-bar').style.width = `${overallProgress}%`;
+            document.getElementById('overall-progress-text').textContent = `${overallProgress.toFixed(0)}%`;
+            document.querySelectorAll('.accordion-item').forEach((item, index) => { item.querySelector('.phase-progress-bar').style.width = `${phaseProgress[index]}%`; item.querySelector('.phase-progress-text').textContent = `${phaseProgress[index].toFixed(0)}%`; });
+            updateTimeline(proj);
+        };
+        
+        const updateTimeline = (project) => {
+            const container = document.getElementById('timeline-container'); container.innerHTML = '<div class="timeline-bg"></div>'; const ppapDateStr = project.targetPpapDate; if(!ppapDateStr) return;
+            const totalEndDate = new Date(ppapDateStr + 'T00:00:00'); let overallStartDate = totalEndDate;
+            (project.phases || []).forEach(phase => (phase.tasks || []).forEach(task => { if(task.startDate) { const d = new Date(task.startDate + 'T00:00:00'); if(d < overallStartDate) overallStartDate = d;} }));
+            const totalDuration = (totalEndDate - overallStartDate) / 86400000; if(totalDuration <= 0) return;
+            (project.phases || []).forEach((phase, index) => {
+                let phaseStart, phaseEnd;
+                (phase.tasks || []).forEach(task => { if (task.startDate) { const d = new Date(task.startDate + 'T00:00:00'); if (!phaseStart || d < phaseStart) phaseStart = d; } if (task.dueDate) { const d = new Date(task.dueDate + 'T00:00:00'); if (!phaseEnd || d > phaseEnd) phaseEnd = d; } });
+                if(!phaseStart || !phaseEnd) return;
+                const startOffset = (((phaseStart - overallStartDate) / 86400000) / totalDuration) * 100; const durationWidth = (((phaseEnd - phaseStart) / 86400000) / totalDuration) * 100;
+                const bar = document.createElement('div'); bar.className = 'phase-bar'; bar.style.left = `${startOffset}%`; bar.style.width = `${durationWidth}%`; bar.style.background = APQP_PHASES[index].color; bar.title = `${phase.phaseName}: ${phaseStart.toLocaleDateString()} - ${phaseEnd.toLocaleDateString()}`; bar.innerHTML = `<span class="phase-label">${APQP_PHASES[index].name.split(':')[0]}</span>`; container.appendChild(bar);
+            });
+        };
+
+        // --- DATA GATHERING ---
+        const gatherFormData = (includeId = true) => {
+            const project = { projectName: document.getElementById('project-name').value, partNumber: document.getElementById('part-number').value, customerName: document.getElementById('customer-name').value, projectLead: document.getElementById('project-lead').value, targetPpapDate: document.getElementById('target-ppap-date').value, phases: [] };
+            if(includeId) project.id = document.getElementById('apqp-id').value ? parseInt(document.getElementById('apqp-id').value) : Date.now();
+            document.querySelectorAll('.accordion-item').forEach((item, index) => {
+                const phaseData = { phaseName: APQP_PHASES[index].name, tasks: [], gateDate: item.querySelector('.gate-date').value, gateStatus: item.querySelector('.gate-status').value };
+                item.querySelectorAll('tbody tr').forEach(row => { phaseData.tasks.push({ taskName: row.querySelector('.task-name').value, responsible: row.querySelector('.task-responsible').value, startDate: row.querySelector('.task-start-date').value, dueDate: row.querySelector('.task-due-date').value, status: row.querySelector('.status-select').value, attachments: getAttachmentsFromContainer(row.querySelector('.attachments-section')) }); });
+                project.phases.push(phaseData);
+            });
+            return project;
+        };
+        
+        // --- ATTACHMENT LOGIC ---
+        const addAttachmentPreview = (grid, data) => { const item = document.createElement('div'); item.className = 'attachment-item'; item.dataset.fileName = data.name; item.dataset.fileData = data.data; item.dataset.fileType = data.type; item.innerHTML = `${data.type.startsWith('image/') ? `<img src="${data.data}" title="${data.name}">` : `<div class="file-icon" title="${data.name}">📄</div>`}<button type="button" class="remove-attachment hidden-print">&times;</button>`; grid.appendChild(item); };
+        const handleFiles = (files, container) => { const grid = container.querySelector('.attachment-preview-grid'); for (const file of files) { if (file.size > 5 * 1024 * 1024) { showToast(`Arquivo "${file.name}" > 5MB.`, 'error'); continue; } const reader = new FileReader(); reader.onload = (e) => addAttachmentPreview(grid, { name: file.name, type: file.type, data: e.target.result }); reader.readAsDataURL(file); }};
+        const getAttachmentsFromContainer = (container) => { const atts = []; container.querySelectorAll('.attachment-item').forEach(item => atts.push({ name: item.dataset.fileName, type: item.dataset.fileType, data: item.dataset.fileData })); return atts; };
+
+        // --- EVENT LISTENERS ---
+        btnNewApqp.addEventListener('click', () => {
+            document.getElementById('apqp-form').reset(); document.getElementById('apqp-id').value = ''; accordionContainer.innerHTML = '';
+            APQP_PHASES.forEach((phase, index) => createPhaseAccordionItem(phase, index));
+            updateAllProgressBars(); showForm();
+        });
+
+        btnSaveApqp.addEventListener('click', () => {
+            const projectData = gatherFormData(); const index = apqpProjects.findIndex(p => p.id == projectData.id);
+            if (index > -1) { apqpProjects[index] = projectData; } else { apqpProjects.push(projectData); }
+            saveData(); showToast('Projeto salvo com sucesso!', 'success'); showDashboard();
+        });
+
+        main.addEventListener('click', e => {
+            const target = e.target;
+            if(target.closest('.accordion-header')) { target.closest('.accordion-item').classList.toggle('active'); }
+            if(target.classList.contains('btn-add-task')) { target.previousElementSibling.querySelector('tbody').appendChild(createTaskRow()); }
+            if(target.classList.contains('btn-remove-task')) { target.closest('tr').remove(); updateAllProgressBars(); }
+            if(target.classList.contains('btn-toggle-attachments')) { target.nextElementSibling.classList.toggle('hidden'); }
+            if(target.classList.contains('remove-attachment')) { target.closest('.attachment-item').remove(); }
+            if(target.classList.contains('attachment-drop-zone')) { target.previousElementSibling.click(); }
+            if (target.classList.contains('btn-edit')) {
+                const project = apqpProjects.find(p => p.id == target.dataset.id);
+                if (project) {
+                    document.getElementById('apqp-form').reset(); document.getElementById('apqp-id').value = project.id; document.getElementById('project-name').value = project.projectName || ''; document.getElementById('part-number').value = project.partNumber || ''; document.getElementById('customer-name').value = project.customerName || ''; document.getElementById('project-lead').value = project.projectLead || ''; document.getElementById('target-ppap-date').value = project.targetPpapDate || '';
+                    accordionContainer.innerHTML = ''; APQP_PHASES.forEach((phase, index) => createPhaseAccordionItem(phase, index, project));
+                    updateAllProgressBars(); showForm();
+                }
+            }
+            if (target.classList.contains('btn-delete')){ if(confirm('Tem certeza?')) { apqpProjects = apqpProjects.filter(p => p.id != target.dataset.id); saveData(); renderApqpList(); } }
+        });
+
+        main.addEventListener('change', e => {
+            if (e.target.classList.contains('status-select')) {
+                e.target.className = `status-select status-${e.target.value}`;
+                const dueDateEl = e.target.closest('tr').querySelector('.task-due-date');
+                if (e.target.value !== 'concluido' && dueDateEl.value && new Date(dueDateEl.value) < new Date().setHours(0,0,0,0)) { e.target.value = 'atrasado'; e.target.className = `status-select status-atrasado`; }
+                updateAllProgressBars();
+            }
+            if(e.target.classList.contains('attachments-input')) { handleFiles(e.target.files, e.target.closest('.field, .attachments-section')); }
+        });
+        main.addEventListener('input', e => { if (e.target.matches('.task-start-date, .task-due-date, #target-ppap-date')) { updateAllProgressBars(); } });
+
+        // --- INITIALIZATION ---
+        const initApp = () => {
+            loadData();
+            showDashboard();
+        };
+
+        btnCancel.addEventListener('click', showDashboard);
+        document.getElementById('btn-export-pdf').addEventListener('click', () => { if (formContainer.classList.contains('hidden')) { showToast('Abra um projeto para exportar.', 'info'); return; } window.print(); });
+        document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(apqpProjects, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`apqp_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
+        document.getElementById('btn-restore-backup').addEventListener('click', () => { const i=document.createElement('input'); i.type='file';i.accept='.json';i.onchange=e=>{const r=new FileReader();r.onload=ev=>{if(!confirm('Restaurar um backup substituirá TODOS os dados atuais. Continuar?'))return;try{const d=JSON.parse(ev.target.result);if(Array.isArray(d)){apqpProjects=d;saveData();renderApqpList();showToast('Backup restaurado!');}else{throw new Error('Formato inválido.');}}catch(err){showToast('Erro: Arquivo de backup inválido.','error');}};r.readAsText(e.target.files[0]);};i.click();});
+        document.getElementById('btn-archive-and-clear').addEventListener('click', () => { if (confirm("ATENÇÃO: Isso irá baixar um backup e APAGAR os dados do navegador. Deseja continuar?")) { document.getElementById('btn-download-backup').click(); localStorage.removeItem(DB_KEY); showToast("Dados arquivados e limpos.", "info"); setTimeout(() => window.location.reload(), 2000); } });
+        
+        initApp();
+    });
+    </script>
+</body>
+</html>
