@@ -415,19 +415,6 @@
             document.getElementById(id).addEventListener('input', updateAll);
         });
         
-        const initApp = () => {
-            loadData();
-            const savedUser = localStorage.getItem(USER_KEY);
-            if (savedUser) { 
-                setCurrentUser(savedUser);
-            } else {
-                const loginModalContent = `<div class="modal-content"><h3>Bem-vindo!</h3><p>Identifique-se para continuar.</p><form id="login-form" style="margin-top:12px;"><div class="field"><label style="text-align:left;">Seu Nome</label><input id="analyst-name-input" required></div><button type="submit" class="btn primary" style="margin-top:16px;width:100%;">Entrar</button></form></div>`;
-                loginModal.innerHTML = loginModalContent;
-                loginModal.classList.remove('hidden');
-                document.getElementById('login-form').addEventListener('submit', e => { e.preventDefault(); const name = document.getElementById('analyst-name-input').value.trim(); if (name) { setCurrentUser(name); showToast(`Bem-vindo, ${name}!`, "success"); showDashboard(); } });
-            }
-            showDashboard();
-        };
         
         btnCancel.addEventListener('click', showDashboard);
         document.getElementById('btn-download-backup').addEventListener('click', () => { const blob = new Blob([JSON.stringify(analyses, null, 2)],{type:'application/json'}); const l=document.createElement("a");l.href=URL.createObjectURL(blob);l.download=`histogram_backup_${new Date().toISOString().slice(0,10)}.json`;l.click();URL.revokeObjectURL(l.href);showToast("Backup baixado!","success"); });
@@ -442,4 +429,5 @@
 </body>
 </html>
 }
+
 
