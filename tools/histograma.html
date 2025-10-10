@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eng Process & Quality - Análise de Histograma</title>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation/dist/chartjs-plugin-annotation.min.js"></script>
     <style>
       :root{--bg:#0f172a;--panel:#111827;--muted:#1f2937;--card:#0b1220;--text:#e5e7eb;--accent:#22d3ee;--accent2:#a78bfa;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:16px;}
       *{box-sizing:border-box}
@@ -60,7 +57,6 @@
     <aside>
         <div>
             <div class="menu">
-                <a href="./painel.html" style="border-color:var(--accent2);color:var(--accent2);background:rgba(167,139,250,.05);"><i class="ph-bold ph-arrow-left"></i> Voltar ao Painel</a>
                 <a class="tab-link active" onclick="openTab(event, 'dashboard-container')"><i class="ph-bold ph-columns"></i> Análises Salvas</a>
                 <a class="tab-link" onclick="openTab(event, 'help-container')"><i class="ph-bold ph-question"></i> Ajuda</a>
             </div>
@@ -155,15 +151,7 @@
                     <li><strong>Histograma Visual:</strong> O gráfico mostra a frequência dos seus dados. A <strong>Curva Normal</strong> (linha azul) ajuda a verificar a normalidade da distribuição, e as <strong>Linhas de Especificação</strong> (vermelhas) mostram se o processo está operando dentro das tolerâncias.</li>
                 </ul>
             </section>
-        </div>
-        <div id="login-modal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Bem-vindo!</h3><p>Identifique-se para continuar.</p>
-                <form id="login-form" style="margin-top:12px;">
-                    <div class="field"><label style="text-align:left;">Seu Nome</label><input id="analyst-name-input" required></div>
-                    <button type="submit" class="btn primary" style="margin-top:16px;width:100%;">Entrar</button>
-                </form>
-            </div>
+        </div>        
         </div>
     </main>
     <script>
