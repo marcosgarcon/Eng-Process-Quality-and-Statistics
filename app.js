@@ -710,3 +710,5 @@ window.addEventListener('appinstalled', () => {
     console.log('App was installed');
     deferredPrompt = null;
 });
+
+
