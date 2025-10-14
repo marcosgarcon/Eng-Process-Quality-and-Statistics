@@ -1,892 +1,909 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CEP e Análise de Capabilidade</title>
+// User Management System for EPQS
+// Desenvolvido por Marcos Garçon
+// Versão Aprimorada
+
+class UserManagement {
+    constructor() {
+        this.users = [];
+        this.currentUser = null;
+        this.userProfiles = ['admin', 'user', 'viewer'];
+        this.permissions = {
+            admin: ['read', 'write', 'delete', 'export', 'manage_users', 'system_config', 'view_logs'],
+            user: ['read', 'write', 'export'],
+            viewer: ['read']
+        };
+        this.init();
+    }
+
+    init() {
+        this.loadUsers();
+        this.setupDefaultUsers();
+    }
+
+    // User CRUD Operations
+    createUser(userData) {
+        try {
+            // Validate required fields
+            if (!userData.username || !userData.password || !userData.profile) {
+                throw new Error('Campos obrigatórios: username, password, profile');
+            }
+
+            // Check if username already exists
+            if (this.users.find(user => user.username.toLowerCase() === userData.username.toLowerCase())) {
+                throw new Error('Nome de usuário já existe');
+            }
+
+            // Validate password strength
+            const passwordValidation = this.validatePasswordStrength(userData.password);
+            if (!passwordValidation.isValid) {
+                throw new Error(passwordValidation.message);
+            }
+
+            // Create new user
+            const newUser = {
+                id: this.generateUserId(),
+                username: userData.username,
+                password: this.hashPassword(userData.password),
+                profile: userData.profile,
+                fullName: userData.fullName || userData.username,
+                email: userData.email || '',
+                department: userData.department || '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                lastLogin: null,
+                isActive: true,
+                forcePasswordChange: userData.forcePasswordChange || false,
+                preferences: this.getDefaultPreferences(),
+                permissions: this.permissions[userData.profile] || this.permissions.viewer
+            };
+
+            this.users.push(newUser);
+            this.saveUsers();
+            
+            this.logActivity('user_created', `Usuário ${newUser.username} criado`, { userId: newUser.id });
+            return { success: true, user: this.sanitizeUser(newUser) };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    updateUser(userId, updateData) {
+        try {
+            const userIndex = this.users.findIndex(user => user.id === userId);
+            if (userIndex === -1) {
+                throw new Error('Usuário não encontrado');
+            }
+
+            const user = this.users[userIndex];
+            const originalUser = { ...user };
+            
+            // Update allowed fields
+            if (updateData.fullName !== undefined) user.fullName = updateData.fullName;
+            if (updateData.email !== undefined) user.email = updateData.email;
+            if (updateData.department !== undefined) user.department = updateData.department;
+            if (updateData.profile !== undefined) {
+                user.profile = updateData.profile;
+                user.permissions = this.permissions[updateData.profile] || this.permissions.viewer;
+            }
+            if (updateData.isActive !== undefined) user.isActive = updateData.isActive;
+            if (updateData.forcePasswordChange !== undefined) user.forcePasswordChange = updateData.forcePasswordChange;
+            
+            // Update password if provided
+            if (updateData.password) {
+                const passwordValidation = this.validatePasswordStrength(updateData.password);
+                if (!passwordValidation.isValid) {
+                    throw new Error(passwordValidation.message);
+                }
+                user.password = this.hashPassword(updateData.password);
+            }
+
+            user.updatedAt = new Date().toISOString();
+            this.saveUsers();
+            
+            const changes = this.getChanges(originalUser, user);
+            this.logActivity('user_updated', `Usuário ${user.username} atualizado. Alterações: ${changes}`, { userId: user.id });
+            return { success: true, user: this.sanitizeUser(user) };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    deleteUser(userId) {
+        try {
+            const userIndex = this.users.findIndex(user => user.id === userId);
+            if (userIndex === -1) {
+                throw new Error('Usuário não encontrado');
+            }
+
+            const user = this.users[userIndex];
+            
+            // Prevent deletion of admin users if it's the last one
+            const adminUsers = this.users.filter(u => u.profile === 'admin' && u.isActive);
+            if (user.profile === 'admin' && adminUsers.length <= 1) {
+                throw new Error('Não é possível excluir o último administrador ativo.');
+            }
+
+            this.users.splice(userIndex, 1);
+            this.saveUsers();
+            
+            // Clean user data
+            this.cleanUserData(userId);
+            
+            this.logActivity('user_deleted', `Usuário ${user.username} (ID: ${user.id}) foi excluído.`);
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    getUsers(filter = {}) {
+        let filteredUsers = [...this.users];
+        if (filter.searchTerm) {
+            const searchTerm = filter.searchTerm.toLowerCase();
+            filteredUsers = filteredUsers.filter(user => 
+                user.username.toLowerCase().includes(searchTerm) ||
+                user.fullName.toLowerCase().includes(searchTerm) ||
+                (user.email && user.email.toLowerCase().includes(searchTerm))
+            );
+        }
+        return filteredUsers.map(user => this.sanitizeUser(user));
+    }
+
+    getUserById(userId) {
+        const user = this.users.find(user => user.id === userId);
+        return user ? this.sanitizeUser(user) : null;
+    }
+
+    getUserByUsername(username) {
+        const user = this.users.find(user => user.username === username);
+        return user ? this.sanitizeUser(user) : null;
+    }
+
+    // Authentication
+    authenticate(username, password) {
+        try {
+            const user = this.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.isActive);
+            if (!user) {
+                throw new Error('Usuário não encontrado ou inativo');
+            }
+
+            if (!this.verifyPassword(password, user.password)) {
+                throw new Error('Senha incorreta');
+            }
+
+            // Update last login
+            user.lastLogin = new Date().toISOString();
+            this.saveUsers();
+            
+            this.logActivity('user_login', `Usuário ${username} fez login`, { userId: user.id });
+            return { success: true, user: this.sanitizeUser(user) };
+        } catch (error) {
+            this.logActivity('login_failed', `Falha de login para ${username}: ${error.message}`);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Password Management
+    hashPassword(password) {
+        // Simple hash for demo purposes - in production, use bcrypt or similar
+        const salt = this.generateSalt();
+        return btoa(salt + password + salt);
+    }
+
+    verifyPassword(password, hashedPassword) {
+        try {
+            const decoded = atob(hashedPassword);
+            const salt = decoded.substring(0, 8);
+            const originalPassword = decoded.substring(8, decoded.length - 8);
+            return password === originalPassword;
+        } catch {
+            return false;
+        }
+    }
+
+    validatePasswordStrength(password) {
+        const minLength = 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d]/.test(password);
+        const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+        if (password.length < minLength) {
+            return { isValid: false, message: `A senha deve ter no mínimo ${minLength} caracteres.` };
+        }
+        if (!hasUpperCase) {
+            return { isValid: false, message: 'A senha deve conter pelo menos uma letra maiúscula.' };
+        }
+        if (!hasLowerCase) {
+            return { isValid: false, message: 'A senha deve conter pelo menos uma letra minúscula.' };
+        }
+        if (!hasNumbers) {
+            return { isValid: false, message: 'A senha deve conter pelo menos um número.' };
+        }
+        if (!hasSpecialChars) {
+            return { isValid: false, message: 'A senha deve conter pelo menos um caractere especial.' };
+        }
+        return { isValid: true };
+    }
+
+    generateSalt() {
+        return Math.random().toString(36).substring(2, 10);
+    }
+
+    // User Preferences
+    updateUserPreferences(userId, preferences) {
+        const user = this.users.find(u => u.id === userId);
+        if (user) {
+            user.preferences = { ...user.preferences, ...preferences };
+            this.saveUsers();
+            return { success: true };
+        }
+        return { success: false, error: 'Usuário não encontrado' };
+    }
+
+    getUserPreferences(userId) {
+        const user = this.users.find(u => u.id === userId);
+        return user ? user.preferences : this.getDefaultPreferences();
+    }
+
+    getDefaultPreferences() {
+        return {
+            theme: 'dark',
+            language: 'pt-BR',
+            autoSave: true,
+            notifications: true,
+            dashboardLayout: 'grid',
+            itemsPerPage: 10
+        };
+    }
+
+    // Data Management
+    saveUsers() {
+        try {
+            localStorage.setItem('epqs_users', JSON.stringify(this.users));
+        } catch (error) {
+            console.error('Error saving users:', error);
+        }
+    }
+
+    loadUsers() {
+        try {
+            const saved = localStorage.getItem('epqs_users');
+            if (saved) {
+                this.users = JSON.parse(saved);
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            this.users = [];
+        }
+    }
+
+    setupDefaultUsers() {
+        // Create default admin user if no users exist
+        if (this.users.length === 0) {
+            this.createUser({
+                username: 'admin',
+                password: 'Admin@123',
+                profile: 'admin',
+                fullName: 'Administrador',
+                email: 'admin@epqs.com',
+                department: 'TI'
+            });
+
+            this.createUser({
+                username: 'marcos',
+                password: 'Garcon@123',
+                profile: 'admin',
+                fullName: 'Marcos Garçon',
+                email: 'marcos@epqs.com',
+                department: 'Engenharia'
+            });
+
+            this.createUser({
+                username: 'user',
+                password: 'User@123',
+                profile: 'user',
+                fullName: 'Usuário Padrão',
+                email: 'user@epqs.com',
+                department: 'Produção'
+            });
+        }
+    }
+
+    // User Data Isolation
+    getUserData(userId, dataKey) {
+        try {
+            const userDataKey = `epqs_user_${userId}_${dataKey}`;
+            const data = localStorage.getItem(userDataKey);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            return null;
+        }
+    }
+
+    saveUserData(userId, dataKey, data) {
+        try {
+            const userDataKey = `epqs_user_${userId}_${dataKey}`;
+            localStorage.setItem(userDataKey, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Error saving user data:', error);
+            return false;
+        }
+    }
+
+    cleanUserData(userId) {
+        try {
+            const keys = Object.keys(localStorage);
+            const userKeys = keys.filter(key => key.startsWith(`epqs_user_${userId}_`));
+            userKeys.forEach(key => localStorage.removeItem(key));
+        } catch (error) {
+            console.error('Error cleaning user data:', error);
+        }
+    }
+
+    // Activity Logging
+    logActivity(action, description, details = {}) {
+        try {
+            const activity = {
+                id: Date.now(),
+                action: action,
+                description: description,
+                details: details,
+                userId: this.currentUser ? this.currentUser.id : null,
+                username: this.currentUser ? this.currentUser.username : 'System',
+                timestamp: new Date().toISOString(),
+            };
+
+            const activities = this.getActivities();
+            activities.unshift(activity);
+            
+            if (activities.length > 1000) {
+                activities.splice(1000);
+            }
+
+            localStorage.setItem('epqs_activities', JSON.stringify(activities));
+        } catch (error) {
+            console.error('Error logging activity:', error);
+        }
+    }
+
+    getActivities(limit = null) {
+        try {
+            const activities = JSON.parse(localStorage.getItem('epqs_activities') || '[]');
+            return limit ? activities.slice(0, limit) : activities;
+        } catch (error) {
+            console.error('Error loading activities:', error);
+            return [];
+        }
+    }
+
+    // Statistics
+    getUserStatistics() {
+        return {
+            totalUsers: this.users.length,
+            activeUsers: this.users.filter(u => u.isActive).length,
+            inactiveUsers: this.users.filter(u => !u.isActive).length,
+            adminUsers: this.users.filter(u => u.profile === 'admin').length,
+            regularUsers: this.users.filter(u => u.profile === 'user').length,
+            viewerUsers: this.users.filter(u => u.profile === 'viewer').length,
+            recentLogins: this.users.filter(u => {
+                if (!u.lastLogin) return false;
+                const loginDate = new Date(u.lastLogin);
+                const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                return loginDate > dayAgo;
+            }).length
+        };
+    }
+
+    // Utility Functions
+    generateUserId() {
+        return 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    }
+
+    sanitizeUser(user) {
+        const { password, ...sanitized } = user;
+        return sanitized;
+    }
+
+    hasPermission(userId, permission) {
+        const user = this.users.find(u => u.id === userId);
+        return user ? user.permissions.includes(permission) : false;
+    }
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/css/phosphor.css">
+    getChanges(original, updated) {
+        const changes = [];
+        for (const key in updated) {
+            if (key !== 'password' && key !== 'updatedAt' && original[key] !== updated[key]) {
+                changes.push(`${key}: de '${original[key]}' para '${updated[key]}'`);
+            }
+        }
+        return changes.join(', ') || 'Nenhuma alteração de dados.';
+    }
 
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --muted: #334155;
-            --card: #0b1220;
-            --text: #e5e7eb;
-            --accent: #22d3ee;
-            --accent2: #a78bfa;
-            --ok: #22c55e;
-            --warn: #f59e0b;
-            --bad: #ef4444;
-            --shadow: 0 10px 30px rgba(0,0,0,.35);
-            --radius: 12px;
+    // Export/Import
+    exportUsers(format = 'json') {
+       if (format === 'json') {
+            const exportData = {
+                users: this.users.map(user => this.sanitizeUser(user)),
+                exportDate: new Date().toISOString(),
+                version: '1.1'
+            };
+            return JSON.stringify(exportData, null, 2);
         }
+        // Could add CSV export here later
+    }
 
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+    exportActivities(format = 'csv') {
+        const activities = this.getActivities();
+        if (format === 'csv') {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Timestamp,Username,Action,Description,Details\r\n";
+            activities.forEach(log => {
+                const row = [
+                    `"${new Date(log.timestamp).toLocaleString('pt-BR')}"`,
+                    `"${log.username}"`,
+                    `"${log.action}"`,
+                    `"${log.description}"`,
+                    `"${JSON.stringify(log.details).replace(/"/g, '""')}"`
+                ].join(',');
+                csvContent += row + "\r\n";
+            });
+            return encodeURI(csvContent);
         }
+    }
+}
 
-        .container {
-            max-width: 1400px;
-            margin: auto;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
+// User Management UI
+class UserManagementUI {
+    constructor(userManagement) {
+        this.userManagement = userManagement;
+        this.currentView = 'list';
+        this.selectedUser = null;
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+        this.searchTerm = '';
+    }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--muted);
-        }
+    render() {
+        const container = document.getElementById('userManagementView');
+        if (!container) return;
 
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        container.innerHTML = `
+            <div class="user-management-container">
+                <div class="user-management-header">
+                    <h2 class="section-title">
+                        <i class="ph ph-users"></i>
+                        Gerenciamento de Usuários
+                    </h2>
+                    <div class="header-actions">
+                        <button class.="btn btn-primary" id="btn-new-user" title="Adicionar novo usuário">
+                            <i class="ph ph-plus"></i> Novo Usuário
+                        </button>
+                        <button class="btn btn-secondary" id="btn-show-stats" title="Ver estatísticas de usuários">
+                            <i class="ph ph-chart-bar"></i> Estatísticas
+                        </button>
+                        <button class="btn btn-secondary" id="btn-show-activities" title="Ver logs de atividade">
+                            <i class="ph ph-list-checks"></i> Atividades
+                        </button>
+                        <button class="btn btn-secondary" id="btn-export-users" title="Exportar lista de usuários">
+                            <i class="ph ph-download-simple"></i> Exportar Usuários
+                        </button>
+                    </div>
+                </div>
 
-        .header-actions button {
-            background: var(--muted);
-            color: var(--text);
-            border: 1px solid #243041;
-            border-radius: 8px;
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .header-actions button:hover {
-            border-color: var(--accent);
-            transform: translateY(-1px);
-        }
-
-        .header-actions button.primary {
-            background: linear-gradient(180deg, #0ea5e9, #2563eb);
-            border-color: transparent;
-        }
-        
-        .header-actions button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .card {
-            background-color: var(--panel);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--muted);
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab-button {
-            padding: 10px 20px;
-            cursor: pointer;
-            background: none;
-            border: 1px solid var(--muted);
-            color: var(--text);
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        
-        .tab-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .tab-button.active {
-            background-color: var(--accent);
-            color: var(--bg);
-            border-color: var(--accent);
-        }
-        
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.5s; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 8px; font-size: 14px; color: #93c5fd; }
-        .form-group input, .form-group select {
-            width: 100%;
-            background: #0b1220;
-            border: 1px solid #243041;
-            color: var(--text);
-            padding: 10px;
-            border-radius: 8px;
-            outline: none;
-            box-sizing: border-box;
-        }
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--accent);
-        }
-        
-        #data-input-grid {
-            display: grid;
-            gap: 8px;
-            margin-top: 15px;
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 10px;
-            background: #0b1220;
-            border-radius: 8px;
-        }
-        #data-input-grid input { text-align: center; padding: 8px; }
-
-        .data-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .results-dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .stat-card {
-            background: #0b1220;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--muted);
-            text-align: center;
-        }
-
-        .stat-card h4 {
-            margin: 0 0 5px 0;
-            font-size: 14px;
-            color: var(--accent2);
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .stat-card p {
-            margin: 0;
-            font-size: 22px;
-            font-weight: bold;
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 400px;
-            width: 100%;
-            margin-top: 20px;
-        }
-        
-        .interpretation-box {
-            background: #0b1220;
-            border: 1px solid var(--muted);
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 8px;
-            line-height: 1.6;
-        }
-        .interpretation-box h3 { margin: 0 0 10px 0; color: var(--accent); }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-content {
-            background-color: var(--panel);
-            padding: 30px;
-            border-radius: var(--radius);
-            border: 1px solid var(--muted);
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .modal-header h2 { margin: 0; color: var(--accent); }
-        .modal-close-btn { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
-        .saved-analysis-list { list-style: none; padding: 0; margin: 0; }
-        .saved-analysis-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: #0b1220;
-            border: 1px solid var(--muted);
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        .saved-analysis-item:hover { border-color: var(--accent2); }
-        .analysis-name { font-weight: bold; }
-        .analysis-date { font-size: 12px; color: #94a3b8; }
-        .analysis-actions button {
-            background: var(--muted);
-            color: var(--text);
-            border: 1px solid #243041;
-            border-radius: 6px;
-            padding: 6px 10px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-         .analysis-actions button.btn-danger { background: var(--bad); color: var(--text); }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="header">
-        <h1><i class="ph ph-chart-line-up"></i> CEP e Análise de Capabilidade</h1>
-        <div class="header-actions">
-            <button id="new-analysis-btn" title="Limpar tudo e começar uma nova análise"><i class="ph ph-file-plus"></i> Nova Análise</button>
-            <button id="save-analysis-btn" title="Salvar estudo atual no navegador"><i class="ph ph-floppy-disk"></i> Salvar Análise</button>
-            <button id="load-analysis-btn" title="Carregar um estudo salvo"><i class="ph ph-folder-open"></i> Carregar Análise</button>
-            <button id="export-pdf-btn" class="primary" title="Exportar um relatório completo em PDF" disabled><i class="ph ph-file-pdf"></i> Exportar Relatório PDF</button>
-        </div>
-    </div>
-
-    <div id="report-content">
-        <div class="card">
-            <div class="tabs">
-                <button class="tab-button active" data-tab="data-input">1. Entrada de Dados</button>
-                <button class="tab-button" data-tab="control-charts" disabled>2. Gráficos de Controle</button>
-                <button class="tab-button" data-tab="capability" disabled>3. Análise de Capabilidade</button>
-                <button class="tab-button" data-tab="histogram" disabled>4. Histograma</button>
+                <div class="user-management-content">
+                    <div id="user-list-view" class="view-content"></div>
+                    <div id="user-form-view" class="view-content" style="display: none;"></div>
+                    <div id="user-details-view" class="view-content" style="display: none;"></div>
+                    <div id="user-statistics-view" class="view-content" style="display: none;"></div>
+                    <div id="user-activities-view" class="view-content" style="display: none;"></div>
+                </div>
             </div>
 
-            <div id="data-input-tab" class="tab-content active">
-                <form id="params-form">
-                    <h3>Parâmetros do Processo</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="process-name">Nome do Processo/Peça</label>
-                            <input type="text" id="process-name" placeholder="Ex: Diâmetro do Eixo AB-123">
-                        </div>
-                        <div class="form-group">
-                            <label for="spec-lower">Limite de Espec. Inferior (LIE)</label>
-                            <input type="number" step="any" id="spec-lower" placeholder="Ex: 9.8">
-                        </div>
-                        <div class="form-group">
-                            <label for="spec-upper">Limite de Espec. Superior (LSE)</label>
-                            <input type="number" step="any" id="spec-upper" placeholder="Ex: 10.2">
-                        </div>
-                        <div class="form-group">
-                            <label for="target-value">Valor Alvo (Opcional)</label>
-                            <input type="number" step="any" id="target-value" placeholder="Ex: 10.0">
-                        </div>
-                    </div>
+            <style>
+                .user-management-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+                .user-management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 16px; }
+                .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+                .list-controls { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+                .search-bar { position: relative; }
+                .search-bar input { background: #0b1220; border: 1px solid #243041; color: var(--text); padding: 10px 16px 10px 40px; border-radius: 10px; outline: none; font-family: inherit; font-size: 14px; min-width: 300px; }
+                .search-bar i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; }
+                .user-table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; border: 1px solid #334155; }
+                .user-table th, .user-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #334155; }
+                .user-table th { background: #374151; font-weight: 600; color: #f1f5f9; }
+                .user-table tbody tr:hover { background: #374151; cursor: pointer; }
+                .user-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+                .user-status.active { background: #10b981; color: #ffffff; }
+                .user-status.inactive { background: #ef4444; color: #ffffff; }
+                .user-profile { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+                .user-profile.admin { background: #3b82f6; color: #ffffff; }
+                .user-profile.user { background: #a78bfa; color: #ffffff; }
+                .user-profile.viewer { background: #6b7280; color: #ffffff; }
+                .user-form { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; max-width: 800px; margin: auto; }
+                .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .form-group.full-width { grid-column: 1 / -1; }
+                .password-strength { font-size: 12px; margin-top: 8px; }
+                .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+                .stat-card { background: #374151; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #4b5563; }
+                .stat-card h3 { font-size: 0.9rem; color: #a78bfa; margin-bottom: 12px; text-transform: uppercase; }
+                .stat-value { font-size: 2.5rem; font-weight: 700; color: #22d3ee; }
+                .activity-item { background: #374151; border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid #4b5563; }
+                .pagination { display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 8px; }
+                .pagination button { background: var(--muted); border: 1px solid #243041; color: var(--text); padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+                .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+                .pagination button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+            </style>
+        `;
+        this.attachEventListeners();
+        this.showUserList();
+    }
 
-                    <h3>Configuração da Amostragem</h3>
+    attachEventListeners() {
+        document.getElementById('btn-new-user').addEventListener('click', () => this.showCreateUser());
+        document.getElementById('btn-show-stats').addEventListener('click', () => this.showStatistics());
+        document.getElementById('btn-show-activities').addEventListener('click', () => this.showActivities());
+        document.getElementById('btn-export-users').addEventListener('click', () => this.exportUsers());
+    }
+    
+    switchView(viewId) {
+        document.querySelectorAll('.view-content').forEach(view => view.style.display = 'none');
+        document.getElementById(viewId).style.display = 'block';
+    }
+
+    // LIST VIEW
+    showUserList() {
+        this.currentView = 'list';
+        this.selectedUser = null;
+        this.switchView('user-list-view');
+        this.renderUserList();
+    }
+
+    renderUserList() {
+        const users = this.userManagement.getUsers({ searchTerm: this.searchTerm });
+        const totalPages = Math.ceil(users.length / this.itemsPerPage);
+        this.currentPage = Math.min(this.currentPage, totalPages || 1);
+        const paginatedUsers = users.slice((this.currentPage - 1) * this.itemsPerPage, this.currentPage * this.itemsPerPage);
+
+        const view = document.getElementById('user-list-view');
+        view.innerHTML = `
+            <div class="list-controls">
+                <div class="search-bar">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" id="user-search" placeholder="Buscar por nome, usuário ou email..." value="${this.searchTerm}">
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Nome Completo</th>
+                            <th>Perfil</th>
+                            <th>Status</th>
+                            <th>Último Login</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${paginatedUsers.length > 0 ? paginatedUsers.map(user => this.renderUserRow(user)).join('') : '<tr><td colspan="6" style="text-align:center; padding: 20px;">Nenhum usuário encontrado.</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+            ${this.renderPagination(totalPages, users.length)}
+        `;
+        document.getElementById('user-search').addEventListener('input', (e) => this.handleSearch(e));
+    }
+
+    renderUserRow(user) {
+        return `
+            <tr data-user-id="${user.id}" title="Clique para ver detalhes">
+                <td><strong>${user.username}</strong></td>
+                <td>${user.fullName}</td>
+                <td><span class="user-profile ${user.profile}">${user.profile}</span></td>
+                <td><span class="user-status ${user.isActive ? 'active' : 'inactive'}">${user.isActive ? 'Ativo' : 'Inativo'}</span></td>
+                <td>${user.lastLogin ? new Date(user.lastLogin).toLocaleString('pt-BR') : 'Nunca'}</td>
+                <td class="actions-cell">
+                    <button class="btn btn-small" onclick="event.stopPropagation(); userManagementUI.editUser('${user.id}')" title="Editar"><i class="ph ph-pencil"></i></button>
+                    <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); userManagementUI.deleteUser('${user.id}')" title="Excluir"><i class="ph ph-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }
+
+    handleSearch(event) {
+        this.searchTerm = event.target.value;
+        this.currentPage = 1;
+        this.renderUserList();
+    }
+
+    renderPagination(totalPages, totalItems) {
+        if (totalItems <= this.itemsPerPage) return '';
+        let paginationHtml = `<div class="pagination"><button id="prev-page" ${this.currentPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHtml += `<button class="page-btn ${i === this.currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        }
+        paginationHtml += `<button id="next-page" ${this.currentPage === totalPages ? 'disabled' : ''}>&raquo;</button></div>`;
+        
+        // Attach event listeners after rendering
+        setTimeout(() => {
+            document.getElementById('prev-page')?.addEventListener('click', () => { this.currentPage--; this.renderUserList(); });
+            document.getElementById('next-page')?.addEventListener('click', () => { this.currentPage++; this.renderUserList(); });
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => { this.currentPage = parseInt(e.target.dataset.page); this.renderUserList(); });
+            });
+        }, 0);
+
+        return paginationHtml;
+    }
+
+    // FORM VIEW (Create/Edit)
+    showCreateUser() {
+        this.selectedUser = null;
+        this.switchView('user-form-view');
+        this.renderUserForm();
+    }
+
+    editUser(userId) {
+        this.selectedUser = userId;
+        this.switchView('user-form-view');
+        this.renderUserForm();
+    }
+
+    renderUserForm() {
+        const isEdit = this.selectedUser !== null;
+        const user = isEdit ? this.userManagement.getUserById(this.selectedUser) : {};
+        
+        const view = document.getElementById('user-form-view');
+        view.innerHTML = `
+            <div class="user-form">
+                <h3 class="section-subtitle">
+                    <i class="ph ph-${isEdit ? 'pencil' : 'plus'}"></i>
+                    ${isEdit ? 'Editar Usuário' : 'Novo Usuário'}
+                </h3>
+                
+                <form id="user-form">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="num-subgroups">Número de Subgrupos</label>
-                            <input type="number" id="num-subgroups" value="25" min="2" max="100">
+                            <label class="form-label" for="form-username">Nome de Usuário *</label>
+                            <input type="text" class="form-input" id="form-username" value="${user.username || ''}" ${isEdit ? 'readonly' : ''} required>
                         </div>
                         <div class="form-group">
-                            <label for="subgroup-size">Tamanho do Subgrupo (n)</label>
-                            <input type="number" id="subgroup-size" value="5" min="1" max="25">
+                            <label class="form-label" for="form-fullname">Nome Completo *</label>
+                            <input type="text" class="form-input" id="form-fullname" value="${user.fullName || ''}" required>
                         </div>
                         <div class="form-group">
-                            <label for="chart-type">Tipo de Gráfico</label>
-                            <select id="chart-type">
-                                <option value="xbar-r" selected>X-barra R (Variáveis, n >= 2)</option>
-                                <option value="i-mr">I-AM (Individual, n = 1)</option>
+                            <label class="form-label" for="form-email">Email</label>
+                            <input type="email" class="form-input" id="form-email" value="${user.email || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="form-department">Departamento</label>
+                            <input type="text" class="form-input" id="form-department" value="${user.department || ''}">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" for="form-profile">Perfil *</label>
+                            <select class="form-select" id="form-profile" required>
+                                <option value="viewer" ${user.profile === 'viewer' ? 'selected' : ''}>Visualizador</option>
+                                <option value="user" ${user.profile === 'user' ? 'selected' : ''}>Usuário</option>
+                                <option value="admin" ${user.profile === 'admin' ? 'selected' : ''}>Administrador</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label" for="form-password">${isEdit ? 'Nova Senha (deixe em branco para manter)' : 'Senha *'}</label>
+                            <input type="password" class="form-input" id="form-password" ${!isEdit ? 'required' : ''}>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="form-password-confirm">${isEdit ? 'Confirmar Nova Senha' : 'Confirmar Senha *'}</label>
+                            <input type="password" class="form-input" id="form-password-confirm" ${!isEdit ? 'required' : ''}>
+                        </div>
+                        <div class="form-group full-width">
+                            <div id="password-strength-indicator" class="password-strength"></div>
+                        </div>
+
+                        ${isEdit ? `
+                        <div class="form-group">
+                            <label class="form-label" for="form-active">Status</label>
+                            <select class="form-select" id="form-active">
+                                <option value="true" ${user.isActive ? 'selected' : ''}>Ativo</option>
+                                <option value="false" ${!user.isActive ? 'selected' : ''}>Inativo</option>
+                            </select>
+                        </div>
+                        ` : ''}
+                        <div class="form-group">
+                            <label class="form-label" for="force-password-change">
+                                <input type="checkbox" id="force-password-change" ${user.forcePasswordChange ? 'checked' : ''}>
+                                Forçar alteração de senha no próximo login
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> ${isEdit ? 'Atualizar' : 'Criar'}</button>
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-form"><i class="ph ph-x"></i> Cancelar</button>
                     </div>
                 </form>
-
-                <div id="data-input-container">
-                    <p>Insira as medições abaixo (use Enter para pular para o próximo campo), cole de uma planilha ou importe de um arquivo CSV.</p>
-                    <div id="data-input-grid"></div>
-                </div>
-
-                <div class="data-actions">
-                    <button id="process-data-btn" class="primary"><i class="ph ph-calculator"></i> Processar Dados</button>
-                    <button id="import-csv-btn"><i class="ph ph-file-csv"></i> Importar CSV</button>
-                    <input type="file" id="csv-file-input" style="display: none;" accept=".csv, text/csv">
-                </div>
             </div>
-
-            <div id="control-charts-tab" class="tab-content">
-                <h3>Gráficos de Controle</h3>
-                <div class="chart-container"><canvas id="xBarChart"></canvas></div>
-                <div class="chart-container"><canvas id="rChart"></canvas></div>
-                <div class="interpretation-box">
-                    <h3><i class="ph ph-magnifying-glass"></i> Interpretação dos Gráficos</h3>
-                    <p id="chart-interpretation">Aguardando processamento...</p>
-                </div>
-            </div>
-
-            <div id="capability-tab" class="tab-content">
-                <h3>Análise de Capabilidade do Processo</h3>
-                <div class="results-dashboard" id="capability-dashboard"></div>
-                <div class="interpretation-box">
-                    <h3><i class="ph ph-magnifying-glass"></i> Interpretação da Capabilidade</h3>
-                    <p id="capability-interpretation">Aguardando processamento...</p>
-                </div>
-            </div>
-
-            <div id="histogram-tab" class="tab-content">
-                <h3>Histograma de Frequência</h3>
-                <div class="chart-container"><canvas id="histogramChart"></canvas></div>
-                <div class="interpretation-box">
-                    <h3><i class="ph ph-magnifying-glass"></i> Interpretação do Histograma</h3>
-                    <p id="histogram-interpretation">Aguardando processamento...</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="card" id="results-card" style="display: none;">
-             <h2><i class="ph ph-gauge"></i> Dashboard de Resultados</h2>
-            <div class="results-dashboard" id="main-results-dashboard">
-                <div class="stat-card"><h4>Status do Processo</h4><p id="process-status">-</p></div>
-                <div class="stat-card"><h4>Média Geral (X&#773;&#773;)</h4><p id="grand-average">-</p></div>
-                <div class="stat-card"><h4>Amplitude Média (R&#773;)</h4><p id="average-range">-</p></div>
-                <div class="stat-card"><h4>Desvio Padrão (σ)</h4><p id="std-dev">-</p></div>
-                <div class="stat-card"><h4>Cp</h4><p id="cp-index">-</p></div>
-                <div class="stat-card"><h4>Cpk</h4><p id="cpk-index">-</p></div>
-                <div class="stat-card"><h4>Pp</h4><p id="pp-index">-</p></div>
-                <div class="stat-card"><h4>Ppk</h4><p id="ppk-index">-</p></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="load-modal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2><i class="ph ph-folder-open"></i> Histórico de Análises</h2>
-            <button id="modal-close-btn" class="modal-close-btn"><i class="ph ph-x"></i></button>
-        </div>
-        <div id="saved-analyses-container">
-            <ul id="saved-analysis-list" class="saved-analysis-list"></ul>
-        </div>
-    </div>
-</div>
-
-<script>
-// Motor de Lógica e Cálculos para a Ferramenta de CEP
-const spcEngine = {
-    controlChartConstants: {
-        2: { A2: 1.880, D3: 0, D4: 3.267, d2: 1.128 }, 3: { A2: 1.023, D3: 0, D4: 2.574, d2: 1.693 },
-        4: { A2: 0.729, D3: 0, D4: 2.282, d2: 2.059 }, 5: { A2: 0.577, D3: 0, D4: 2.114, d2: 2.326 },
-        6: { A2: 0.483, D3: 0, D4: 2.004, d2: 2.534 }, 7: { A2: 0.419, D3: 0.076, D4: 1.924, d2: 2.704 },
-        8: { A2: 0.373, D3: 0.136, D4: 1.864, d2: 2.847 }, 9: { A2: 0.337, D3: 0.184, D4: 1.816, d2: 2.970 },
-        10: { A2: 0.308, D3: 0.223, D4: 1.777, d2: 3.078 }, 11: { A2: 0.285, D3: 0.256, D4: 1.744, d2: 3.173 },
-        12: { A2: 0.266, D3: 0.283, D4: 1.717, d2: 3.258 }, 13: { A2: 0.249, D3: 0.307, D4: 1.693, d2: 3.336 },
-        14: { A2: 0.235, D3: 0.328, D4: 1.672, d2: 3.407 }, 15: { A2: 0.223, D3: 0.347, D4: 1.653, d2: 3.472 },
-        16: { A2: 0.212, D3: 0.363, D4: 1.637, d2: 3.532 }, 17: { A2: 0.203, D3: 0.378, D4: 1.622, d2: 3.588 },
-        18: { A2: 0.194, D3: 0.391, D4: 1.609, d2: 3.640 }, 19: { A2: 0.187, D3: 0.403, D4: 1.597, d2: 3.689 },
-        20: { A2: 0.180, D3: 0.415, D4: 1.585, d2: 3.735 }, 21: { A2: 0.173, D3: 0.425, D4: 1.575, d2: 3.778 },
-        22: { A2: 0.167, D3: 0.434, D4: 1.566, d2: 3.819 }, 23: { A2: 0.162, D3: 0.443, D4: 1.557, d2: 3.858 },
-        24: { A2: 0.157, D3: 0.451, D4: 1.549, d2: 3.895 }, 25: { A2: 0.153, D3: 0.459, D4: 1.541, d2: 3.931 },
-    },
-    calculate(data, n, chartType, specs) {
-        if (chartType === 'xbar-r') return this.calculateXbarR(data, n, specs);
-        return null;
-    },
-    calculateXbarR(data, n, specs) {
-        const { lse, lie } = specs;
-        const constants = this.controlChartConstants[n];
-        if (!constants) return { error: `Constantes para n=${n} não disponíveis.` };
-
-        const subgroupAverages = data.map(sg => sg.reduce((a, b) => a + b, 0) / n);
-        const subgroupRanges = data.map(sg => Math.max(...sg) - Math.min(...sg));
-        const allReadings = data.flat();
-
-        const grandAverage = subgroupAverages.reduce((a, b) => a + b, 0) / subgroupAverages.length;
-        const averageRange = subgroupRanges.reduce((a, b) => a + b, 0) / subgroupRanges.length;
-
-        const xBarUCL = grandAverage + (constants.A2 * averageRange);
-        const xBarLCL = grandAverage - (constants.A2 * averageRange);
-        const rUCL = constants.D4 * averageRange;
-        const rLCL = constants.D3 * averageRange;
-        
-        const stdDevWithin = averageRange / constants.d2;
-        const overallStdDev = allReadings.length > 1 ? Math.sqrt(allReadings.reduce((s, v) => s + Math.pow(v - grandAverage, 2), 0) / (allReadings.length - 1)) : 0;
-
-        let cp = null, cpk = null, pp = null, ppk = null;
-        if (lse !== null && lie !== null) {
-            if (stdDevWithin > 0) {
-                cp = (lse - lie) / (6 * stdDevWithin);
-                cpk = Math.min((lse - grandAverage) / (3 * stdDevWithin), (grandAverage - lie) / (3 * stdDevWithin));
-            }
-            if (overallStdDev > 0) {
-                pp = (lse - lie) / (6 * overallStdDev);
-                ppk = Math.min((lse - grandAverage) / (3 * overallStdDev), (grandAverage - lie) / (3 * overallStdDev));
-            }
-        }
-        return {
-            grandAverage, averageRange, stdDevWithin, overallStdDev,
-            subgroupAverages, subgroupRanges, allReadings,
-            xBar: { ucl: xBarUCL, lcl: xBarLCL, centerLine: grandAverage },
-            r: { ucl: rUCL, lcl: rLCL, centerLine: averageRange },
-            capability: { cp, cpk, pp, ppk }
-        };
-    }
-};
-
-class CEPToolUI {
-    constructor() {
-        this.charts = {};
-        this.results = null;
-        this.storageKey = 'cepAnalyses_v1';
-        this.initialize();
+        `;
+        document.getElementById('user-form').addEventListener('submit', (e) => this.saveUser(e));
+        document.getElementById('btn-cancel-form').addEventListener('click', () => this.showUserList());
+        document.getElementById('form-password').addEventListener('input', (e) => this.checkPasswordStrength(e.target.value));
     }
 
-    initialize() {
-        this.bindEvents();
-        this.updateGrid();
-    }
-
-    bindEvents() {
-        document.querySelectorAll('.tab-button').forEach(btn => btn.addEventListener('click', () => this.switchTab(btn.dataset.tab)));
-        document.getElementById('num-subgroups').addEventListener('change', () => this.updateGrid());
-        document.getElementById('subgroup-size').addEventListener('change', () => this.updateGrid());
-        document.getElementById('process-data-btn').addEventListener('click', () => this.processData());
-        document.getElementById('import-csv-btn').addEventListener('click', () => document.getElementById('csv-file-input').click());
-        document.getElementById('csv-file-input').addEventListener('change', e => this.handleCSVImport(e));
-        document.getElementById('new-analysis-btn').addEventListener('click', () => this.clearData());
-        document.getElementById('export-pdf-btn').addEventListener('click', () => this.exportToPDF());
-        
-        const dataGrid = document.getElementById('data-input-grid');
-        dataGrid.addEventListener('paste', e => this.handlePaste(e));
-        dataGrid.addEventListener('keydown', e => this.handleGridNavigation(e));
-
-        document.getElementById('save-analysis-btn').addEventListener('click', () => this.saveAnalysis());
-        document.getElementById('load-analysis-btn').addEventListener('click', () => this.showLoadModal());
-        document.getElementById('modal-close-btn').addEventListener('click', () => this.hideLoadModal());
-        document.getElementById('load-modal').addEventListener('click', e => {
-            if (e.target.id === 'load-modal') this.hideLoadModal();
-        });
-    }
-
-    switchTab(tabId) {
-        if (document.querySelector(`.tab-button[data-tab="${tabId}"]`).disabled) return;
-        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        document.getElementById(`${tabId}-tab`).classList.add('active');
-    }
-
-    updateGrid() {
-        const numSubgroups = parseInt(document.getElementById('num-subgroups').value) || 25;
-        const subgroupSize = parseInt(document.getElementById('subgroup-size').value) || 5;
-        const grid = document.getElementById('data-input-grid');
-        grid.innerHTML = '';
-        grid.style.gridTemplateColumns = `repeat(${subgroupSize}, 1fr)`;
-        for (let i = 0; i < numSubgroups * subgroupSize; i++) {
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.step = 'any';
-            input.placeholder = `-`;
-            grid.appendChild(input);
-        }
-    }
-    
-    collectData(raw = false) {
-        const numSubgroups = parseInt(document.getElementById('num-subgroups').value);
-        const subgroupSize = parseInt(document.getElementById('subgroup-size').value);
-        const data = [];
-        const inputs = Array.from(document.querySelectorAll('#data-input-grid input'));
-        for (let i = 0; i < numSubgroups; i++) {
-            const subgroup = [];
-            let hasValue = false;
-            for (let j = 0; j < subgroupSize; j++) {
-                const input = inputs[i * subgroupSize + j];
-                const value = input.value;
-                if (value !== '') {
-                    subgroup.push(parseFloat(value));
-                    hasValue = true;
-                } else {
-                    subgroup.push(raw ? null : '');
-                }
-            }
-            if (raw || (hasValue && !subgroup.includes(''))) {
-                data.push(subgroup);
-            }
-        }
-        return data;
-    }
-    
-    processData() {
-        const data = this.collectData();
-        if (data.length < 2) {
-            alert('Por favor, insira dados para pelo menos 2 subgrupos completos.');
+    checkPasswordStrength(password) {
+        const indicator = document.getElementById('password-strength-indicator');
+        if (!indicator) return;
+        const result = this.userManagement.validatePasswordStrength(password);
+        if (password.length === 0) {
+            indicator.innerHTML = '';
             return;
         }
-
-        const subgroupSize = parseInt(document.getElementById('subgroup-size').value);
-        const chartType = document.getElementById('chart-type').value;
-        const specs = {
-            lse: document.getElementById('spec-upper').value !== '' ? parseFloat(document.getElementById('spec-upper').value) : null,
-            lie: document.getElementById('spec-lower').value !== '' ? parseFloat(document.getElementById('spec-lower').value) : null,
-        };
-
-        this.results = spcEngine.calculate(data, subgroupSize, chartType, specs);
-        
-        if (!this.results || this.results.error) {
-            alert(`Erro ao processar: ${this.results?.error || 'Verifique os dados e parâmetros.'}`);
-            return;
-        }
-        
-        this.updateAllUI();
-        document.getElementById('export-pdf-btn').disabled = false;
-        document.querySelectorAll('.tab-button').forEach(btn => btn.disabled = false);
-        document.getElementById('results-card').style.display = 'block';
-        this.switchTab('control-charts');
-        this.showNotification('Dados processados com sucesso!', 'success');
-    }
-
-    updateAllUI() {
-        if (!this.results) return;
-        this.updateDashboard();
-        this.renderCharts();
-        this.updateInterpretations();
-    }
-    
-    updateDashboard() {
-        const { grandAverage, averageRange, stdDevWithin, capability } = this.results;
-        document.getElementById('grand-average').textContent = grandAverage.toFixed(4);
-        document.getElementById('average-range').textContent = averageRange.toFixed(4);
-        document.getElementById('std-dev').textContent = stdDevWithin.toFixed(4);
-        document.getElementById('cp-index').textContent = capability.cp?.toFixed(2) || '-';
-        document.getElementById('cpk-index').textContent = capability.cpk?.toFixed(2) || '-';
-        document.getElementById('pp-index').textContent = capability.pp?.toFixed(2) || '-';
-        document.getElementById('ppk-index').textContent = capability.ppk?.toFixed(2) || '-';
-    }
-
-    renderCharts() {
-        if (!this.results) return;
-        const { subgroupAverages, subgroupRanges, xBar, r } = this.results;
-        const labels = Array.from({ length: subgroupAverages.length }, (_, i) => `Subg. ${i + 1}`);
-
-        if (this.charts.xBar) this.charts.xBar.destroy();
-        if (this.charts.r) this.charts.r.destroy();
-
-        const xBarCtx = document.getElementById('xBarChart').getContext('2d');
-        this.charts.xBar = new Chart(xBarCtx, this.getChartConfig('Médias (X-barra)', labels, subgroupAverages, xBar));
-        
-        const rCtx = document.getElementById('rChart').getContext('2d');
-        this.charts.r = new Chart(rCtx, this.getChartConfig('Amplitudes (R)', labels, subgroupRanges, r));
-    }
-
-    getChartConfig(title, labels, data, limits) {
-        return {
-            type: 'line', data: { labels, datasets: [{ label: title, data, borderColor: 'var(--accent)', borderWidth: 2, pointRadius: 4, pointBackgroundColor: 'var(--accent)' }] },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    title: { display: true, text: `Gráfico de ${title}`, color: 'var(--text)', font: { size: 16 } },
-                    legend: { display: false },
-                    tooltip: { mode: 'index', intersect: false },
-                    annotation: {
-                        annotations: {
-                            ucl: { type: 'line', yMin: limits.ucl, yMax: limits.ucl, borderColor: 'var(--bad)', borderWidth: 2, label: { content: `LSC = ${limits.ucl.toFixed(3)}`, enabled: true, position: 'end', color: 'var(--bad)', backgroundColor: 'rgba(15, 23, 42, 0.7)' } },
-                            lcl: { type: 'line', yMin: limits.lcl, yMax: limits.lcl, borderColor: 'var(--bad)', borderWidth: 2, label: { content: `LIC = ${limits.lcl.toFixed(3)}`, enabled: true, position: 'end', color: 'var(--bad)', backgroundColor: 'rgba(15, 23, 42, 0.7)' } },
-                            center: { type: 'line', yMin: limits.centerLine, yMax: limits.centerLine, borderColor: 'var(--ok)', borderWidth: 2, borderDash: [6, 6], label: { content: `LC = ${limits.centerLine.toFixed(3)}`, enabled: true, position: 'end', color: 'var(--ok)', backgroundColor: 'rgba(15, 23, 42, 0.7)' } }
-                        }
-                    }
-                },
-                scales: { x: { ticks: { color: 'var(--text)' }, grid: { color: 'var(--muted)' } }, y: { ticks: { color: 'var(--text)' }, grid: { color: 'var(--muted)' } } }
-            }
-        };
-    }
-
-    updateInterpretations() {
-        if (!this.results) return;
-        const { subgroupAverages, subgroupRanges, xBar, r } = this.results;
-        
-        const xBarOutOfControl = subgroupAverages.some(p => p > xBar.ucl || p < xBar.lcl);
-        const rOutOfControl = subgroupRanges.some(p => p > r.ucl || p < r.lcl);
-        
-        let interpretation = '';
-        if (xBarOutOfControl || rOutOfControl) {
-            interpretation = 'O processo está FORA DE CONTROLE estatístico. Causas especiais podem estar atuando. Ações corretivas são necessárias antes de avaliar a capabilidade.';
-            document.getElementById('process-status').innerHTML = `<span style="color: var(--bad);">Instável</span>`;
+        if (result.isValid) {
+            indicator.innerHTML = '<span style="color: var(--ok);">Força da senha: Forte</span>';
         } else {
-            interpretation = 'O processo está SOB CONTROLE estatístico. Não há evidências de causas especiais. A análise de capabilidade pode ser realizada.';
-            document.getElementById('process-status').innerHTML = `<span style="color: var(--ok);">Estável</span>`;
+            indicator.innerHTML = `<span style="color: var(--warn);">Força da senha: Fraca (${result.message})</span>`;
         }
-        document.getElementById('chart-interpretation').textContent = interpretation;
     }
-    
-    handleGridNavigation(event) {
-        if (event.key !== 'Enter') return;
+
+    saveUser(event) {
         event.preventDefault();
         
-        const currentInput = event.target;
-        const allInputs = Array.from(document.querySelectorAll('#data-input-grid input'));
-        const currentIndex = allInputs.indexOf(currentInput);
-        
-        if (currentIndex > -1 && currentIndex < allInputs.length - 1) {
-            const nextInput = allInputs[currentIndex + 1];
-            nextInput.focus();
-            nextInput.select();
-        }
-    }
-    
-    handleCSVImport(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        Papa.parse(file, {
-            complete: (results) => this.fillGridWithData(results.data),
-            error: (err) => alert(`Erro ao ler o arquivo CSV: ${err.message}`)
-        });
-        event.target.value = '';
-    }
-    
-    fillGridWithData(data) {
-        const flatData = data.flat().map(cell => typeof cell === 'string' ? cell.trim().replace(',', '.') : cell).filter(cell => cell !== '');
-        const inputs = document.querySelectorAll('#data-input-grid input');
-        
-        inputs.forEach((input, i) => {
-            input.value = (i < flatData.length) ? flatData[i] : '';
-        });
-        this.showNotification('Dados importados com sucesso!', 'success');
-    }
+        const password = document.getElementById('form-password').value;
+        const passwordConfirm = document.getElementById('form-password-confirm').value;
 
-    handlePaste(event) {
-        event.preventDefault();
-        const pasteData = (event.clipboardData || window.clipboardData).getData('text');
-        this.fillGridWithData(pasteData.split(/\s+/).map(line => line.split('\t')));
-        this.showNotification('Dados colados com sucesso!', 'success');
-    }
-
-    clearData() {
-        if (!confirm('Tem certeza que deseja limpar todos os dados para uma nova análise?')) return;
-        
-        document.getElementById('params-form').reset();
-        this.updateGrid();
-        
-        this.results = null;
-        if (this.charts.xBar) this.charts.xBar.destroy();
-        if (this.charts.r) this.charts.r.destroy();
-        
-        document.getElementById('results-card').style.display = 'none';
-        document.querySelectorAll('.results-dashboard p').forEach(p => p.textContent = '-');
-        document.getElementById('process-status').innerHTML = '-';
-        document.querySelectorAll('.interpretation-box p').forEach(p => p.textContent = 'Aguardando processamento...');
-        
-        document.getElementById('export-pdf-btn').disabled = true;
-        document.querySelectorAll('.tab-button').forEach((btn, index) => { 
-            if (index > 0) btn.disabled = true;
-            btn.classList.remove('active');
-        });
-        document.querySelector('.tab-button[data-tab="data-input"]').classList.add('active');
-        this.switchTab('data-input');
-        
-        this.showNotification('Pronto para uma nova análise.', 'info');
-    }
-    
-    async exportToPDF() {
-        // Implementação do exportToPDF
-    }
-
-    getCurrentState() {
-        return {
-            processName: document.getElementById('process-name').value,
-            specLower: document.getElementById('spec-lower').value,
-            specUpper: document.getElementById('spec-upper').value,
-            targetValue: document.getElementById('target-value').value,
-            numSubgroups: document.getElementById('num-subgroups').value,
-            subgroupSize: document.getElementById('subgroup-size').value,
-            chartType: document.getElementById('chart-type').value,
-            data: this.collectData(true),
-            savedAt: new Date().toISOString()
-        };
-    }
-
-    saveAnalysis() {
-        const processName = document.getElementById('process-name').value;
-        if (!processName) {
-            alert("Por favor, dê um nome ao processo/peça antes de salvar.");
+        if (password !== passwordConfirm) {
+            this.showNotification('As senhas não coincidem.', 'error');
             return;
         }
 
-        const newName = prompt("Salvar análise como:", processName);
-        if (!newName) return;
+        const formData = {
+            username: document.getElementById('form-username').value,
+            fullName: document.getElementById('form-fullname').value,
+            email: document.getElementById('form-email').value,
+            department: document.getElementById('form-department').value,
+            profile: document.getElementById('form-profile').value,
+            forcePasswordChange: document.getElementById('force-password-change').checked,
+            password: password,
+        };
 
-        const analyses = this.getSavedAnalyses();
-        if (analyses.some(a => a.name === newName)) {
-            if (!confirm(`Uma análise com o nome "${newName}" já existe. Deseja sobrescrevê-la?`)) {
-                return;
+        if (this.selectedUser) {
+            formData.isActive = document.getElementById('form-active').value === 'true';
+        }
+
+        const result = this.selectedUser 
+            ? this.userManagement.updateUser(this.selectedUser, formData)
+            : this.userManagement.createUser(formData);
+
+        if (result.success) {
+            this.showNotification(`Usuário ${this.selectedUser ? 'atualizado' : 'criado'} com sucesso!`, 'success');
+            this.showUserList();
+        } else {
+            this.showNotification(result.error, 'error');
+        }
+    }
+
+    deleteUser(userId) {
+        const user = this.userManagement.getUserById(userId);
+        if (!user) return;
+
+        if (confirm(`Tem certeza que deseja excluir o usuário "${user.username}"?\n\nEsta ação não pode ser desfeita.`)) {
+            const result = this.userManagement.deleteUser(userId);
+            
+            if (result.success) {
+                this.showNotification('Usuário excluído com sucesso!', 'success');
+                this.showUserList();
+            } else {
+                this.showNotification(result.error, 'error');
             }
         }
-        
-        const state = this.getCurrentState();
-        const saveData = { name: newName, ...state };
-        
-        const otherAnalyses = analyses.filter(a => a.name !== newName);
-        localStorage.setItem(this.storageKey, JSON.stringify([saveData, ...otherAnalyses]));
-        
-        this.showNotification(`Análise "${newName}" salva com sucesso!`, 'success');
     }
 
-    getSavedAnalyses() {
-        return JSON.parse(localStorage.getItem(this.storageKey) || '[]').sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
+    // STATISTICS VIEW
+    showStatistics() {
+        this.switchView('user-statistics-view');
+        this.renderStatistics();
     }
 
-    showLoadModal() {
-        const analyses = this.getSavedAnalyses();
-        const listEl = document.getElementById('saved-analysis-list');
-        listEl.innerHTML = '';
+    renderStatistics() {
+        const stats = this.userManagement.getUserStatistics();
+        document.getElementById('user-statistics-view').innerHTML = `
+            <h3 class="section-subtitle"><i class="ph ph-chart-bar"></i> Estatísticas de Usuários</h3>
+            <div class="stats-grid">
+                ${this.renderStatCard('Total de Usuários', stats.totalUsers)}
+                ${this.renderStatCard('Usuários Ativos', stats.activeUsers)}
+                ${this.renderStatCard('Usuários Inativos', stats.inactiveUsers)}
+                ${this.renderStatCard('Administradores', stats.adminUsers)}
+                ${this.renderStatCard('Usuários Padrão', stats.regularUsers)}
+                ${this.renderStatCard('Visualizadores', stats.viewerUsers)}
+            </div>
+            <button class="btn btn-secondary" id="back-to-list-stats"><i class="ph ph-arrow-left"></i> Voltar</button>
+        `;
+        document.getElementById('back-to-list-stats').addEventListener('click', () => this.showUserList());
+    }
+    
+    renderStatCard(title, value) {
+        return `
+            <div class="stat-card">
+                <h3>${title}</h3>
+                <div class="stat-value">${value}</div>
+            </div>
+        `;
+    }
 
-        if (analyses.length === 0) {
-            listEl.innerHTML = '<p>Nenhuma análise salva encontrada.</p>';
-        } else {
-            analyses.forEach(analysis => {
-                const item = document.createElement('li');
-                item.className = 'saved-analysis-item';
-                item.innerHTML = `
-                    <div>
-                        <div class="analysis-name">${analysis.name}</div>
-                        <div class="analysis-date">Salvo em: ${new Date(analysis.savedAt).toLocaleString('pt-BR')}</div>
+    // ACTIVITIES VIEW
+    showActivities() {
+        this.switchView('user-activities-view');
+        this.renderActivities();
+    }
+    
+    renderActivities() {
+        const activities = this.userManagement.getActivities(100);
+        document.getElementById('user-activities-view').innerHTML = `
+            <div style="display:flex; justify-content: space-between; align-items: center;">
+                 <h3 class="section-subtitle"><i class="ph ph-list-checks"></i> Atividades Recentes</h3>
+                 <button class="btn btn-secondary" id="btn-export-activities"><i class="ph ph-download-simple"></i> Exportar CSV</button>
+            </div>
+            <div class="activities-list">
+                ${activities.map(act => `
+                    <div class="activity-item">
+                        <div>
+                            <strong>${act.username || 'System'}</strong> - ${this.getActionLabel(act.action)}
+                            <p style="font-size: 14px; margin: 4px 0 0; color: #cbd5e1;">${act.description}</p>
+                        </div>
+                        <small style="color: #94a3b8;">${new Date(act.timestamp).toLocaleString('pt-BR')}</small>
                     </div>
-                    <div class="analysis-actions">
-                        <button data-action="load" data-name="${analysis.name}" title="Carregar"><i class="ph ph-folder-notch-open"></i></button>
-                        <button data-action="rename" data-name="${analysis.name}" title="Renomear"><i class="ph ph-pencil-simple"></i></button>
-                        <button class="btn-danger" data-action="delete" data-name="${analysis.name}" title="Excluir"><i class="ph ph-trash"></i></button>
-                    </div>`;
-                listEl.appendChild(item);
-            });
-        }
-        
-        listEl.querySelectorAll('button').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const action = e.currentTarget.dataset.action;
-                const name = e.currentTarget.dataset.name;
-                e.stopPropagation();
-                if (action === 'load') this.loadAnalysis(name);
-                if (action === 'rename') this.renameAnalysis(name);
-                if (action === 'delete') this.deleteAnalysis(name);
-            });
-        });
-        
-        document.getElementById('load-modal').classList.add('active');
+                `).join('')}
+            </div>
+            <button class="btn btn-secondary" id="back-to-list-activities"><i class="ph ph-arrow-left"></i> Voltar</button>
+        `;
+        document.getElementById('back-to-list-activities').addEventListener('click', () => this.showUserList());
+        document.getElementById('btn-export-activities').addEventListener('click', () => this.exportActivities());
     }
 
-    hideLoadModal() {
-        document.getElementById('load-modal').classList.remove('active');
+    // EXPORT
+    exportUsers() {
+        const data = this.userManagement.exportUsers('json');
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `epqs-users-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showNotification('Dados de usuários exportados!', 'success');
     }
 
-    loadAnalysis(name) {
-        const analyses = this.getSavedAnalyses();
-        const analysisToLoad = analyses.find(a => a.name === name);
-        if (!analysisToLoad) return alert('Análise não encontrada.');
-
-        document.getElementById('process-name').value = analysisToLoad.processName || analysisToLoad.name;
-        document.getElementById('spec-lower').value = analysisToLoad.specLower || '';
-        document.getElementById('spec-upper').value = analysisToLoad.specUpper || '';
-        document.getElementById('target-value').value = analysisToLoad.targetValue || '';
-        document.getElementById('num-subgroups').value = analysisToLoad.numSubgroups || 25;
-        document.getElementById('subgroup-size').value = analysisToLoad.subgroupSize || 5;
-        document.getElementById('chart-type').value = analysisToLoad.chartType || 'xbar-r';
-
-        this.updateGrid();
-        const inputs = document.querySelectorAll('#data-input-grid input');
-        const flatData = (analysisToLoad.data || []).flat();
-        inputs.forEach((input, i) => { input.value = flatData[i] !== null && flatData[i] !== undefined ? flatData[i] : ''; });
-
-        this.hideLoadModal();
-        this.processData();
-        this.showNotification(`Análise "${name}" carregada.`, 'info');
+    exportActivities() {
+        const encodedUri = this.userManagement.exportActivities('csv');
+        const a = document.createElement('a');
+        a.href = encodedUri;
+        a.download = `epqs-activities-export-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        this.showNotification('Log de atividades exportado!', 'success');
     }
 
-    renameAnalysis(oldName) {
-        const newName = prompt(`Renomear análise "${oldName}" para:`, oldName);
-        if (!newName || newName === oldName) return;
-        
-        let analyses = this.getSavedAnalyses();
-        if (analyses.some(a => a.name === newName)) return alert(`Uma análise com o nome "${newName}" já existe.`);
-        
-        const analysisIndex = analyses.findIndex(a => a.name === oldName);
-        if (analysisIndex > -1) {
-            analyses[analysisIndex].name = newName;
-            localStorage.setItem(this.storageKey, JSON.stringify(analyses));
-            this.showLoadModal();
-        }
+    // UTILS
+    getActionLabel(action) {
+        const labels = {
+            'user_created': 'Usuário Criado', 'user_updated': 'Usuário Atualizado', 'user_deleted': 'Usuário Excluído',
+            'user_login': 'Login', 'login_failed': 'Falha de Login',
+        };
+        return labels[action] || action;
     }
 
-    deleteAnalysis(name) {
-        if (!confirm(`Tem certeza que deseja excluir a análise "${name}"?`)) return;
-        let analyses = this.getSavedAnalyses();
-        const updatedAnalyses = analyses.filter(a => a.name !== name);
-        localStorage.setItem(this.storageKey, JSON.stringify(updatedAnalyses));
-        this.showLoadModal();
-    }
-    
-    showNotification(message, type = "info") {
-        if (window.parent && window.parent.epqsApp && typeof window.parent.epqsApp.showNotification === 'function') {
-            window.parent.epqsApp.showNotification(message, type);
+    showNotification(message, type = 'info') {
+        if (window.epqsApp && typeof window.epqsApp.showNotification === 'function') {
+            window.epqsApp.showNotification(message, type);
         } else {
             alert(`${type.toUpperCase()}: ${message}`);
         }
     }
 }
 
+// Global instances
 document.addEventListener('DOMContentLoaded', () => {
-    new CEPToolUI();
+    if (!window.userManagement) {
+        window.userManagement = new UserManagement();
+        window.userManagementUI = new UserManagementUI(window.userManagement);
+    }
 });
-</script>
-
-</body>
-</html>
