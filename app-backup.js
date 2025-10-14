@@ -1,4 +1,4 @@
-// Eng Process Quality and Statistics - Main Application
+// Main Application Logic for EPQS
 // Desenvolvido por Marcos Garçon
 
 class EPQSApp {
@@ -7,6 +7,8 @@ class EPQSApp {
         this.currentTool = 'dashboard';
         this.tools = {};
         this.isLoggedIn = false;
+        this.viewHistory = [];
+        this.maxHistory = 10;
         
         this.init();
     }
@@ -14,33 +16,23 @@ class EPQSApp {
     init() {
         console.log('EPQS App: Initializing...');
         
-        // Register service worker
+        this.setupGlobalNotificationSystem();
+        this.setupGlobalModals();
         this.registerServiceWorker();
-        
-        // Check if user is already logged in
         this.checkLoginStatus();
-        
-        // Setup event listeners
         this.setupEventListeners();
-        
-        // Load tools configuration
         this.loadToolsConfig();
-        
-        // Setup responsive behavior
         this.setupResponsive();
         
         console.log("EPQS App: Initialized successfully");
-        // Validator will be run after tools config is loaded
-
     }
 
     async registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
                 const registration = await navigator.serviceWorker.register('/service-worker.js');
-                console.log('Service Worker registered successfully:', registration);
+                console.log('Service Worker registrado com sucesso:', registration);
                 
-                // Listen for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
@@ -55,11 +47,10 @@ class EPQSApp {
         }
     }
 
-    checkLoginStatus() {
+    async checkLoginStatus() {
         const savedUser = localStorage.getItem('epqs_current_user');
         const loginTime = localStorage.getItem('epqs_login_time');
         
-        // Check if login is still valid (24 hours)
         if (savedUser && loginTime) {
             const now = Date.now();
             const loginTimestamp = parseInt(loginTime);
@@ -73,27 +64,39 @@ class EPQSApp {
             }
         }
         
-        // Show login screen
+        try {
+            const response = await fetch('/api/check-session');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.is_logged_in) {
+                    this.currentUser = data.user;
+                    this.isLoggedIn = true;
+                    localStorage.setItem('epqs_current_user', JSON.stringify(this.currentUser));
+                    localStorage.setItem('epqs_login_time', Date.now().toString());
+                    this.showApp();
+                    return;
+                }
+            }
+        } catch (error) {
+            console.warn('Backend session check failed:', error);
+        }
+
         this.showLogin();
     }
 
     setupEventListeners() {
-        // Login form
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         }
 
-        // Logout button
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.handleLogout());
         }
 
-        // Mobile menu
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const mobileOverlay = document.getElementById('mobileOverlay');
-        const sidebar = document.getElementById('sidebar');
         
         if (mobileMenuBtn) {
             mobileMenuBtn.addEventListener('click', () => this.toggleMobileMenu());
@@ -103,22 +106,18 @@ class EPQSApp {
             mobileOverlay.addEventListener('click', () => this.closeMobileMenu());
         }
 
-        // Menu items
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.menu-item')) {
-                const menuItem = e.target.closest('.menu-item');
+            const menuItem = e.target.closest('.menu-item');
+            if (menuItem) {
                 const tool = menuItem.getAttribute('data-tool');
                 if (tool) {
                     this.loadTool(tool);
                     this.closeMobileMenu();
                 }
             }
-        });
 
-        // Tool cards in dashboard
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.tool-card')) {
-                const toolCard = e.target.closest('.tool-card');
+            const toolCard = e.target.closest('.tool-card');
+            if (toolCard) {
                 const tool = toolCard.getAttribute('data-tool');
                 if (tool) {
                     this.loadTool(tool);
@@ -126,25 +125,21 @@ class EPQSApp {
             }
         });
 
-        // Header buttons
         const exportBtn = document.getElementById('exportBtn');
-        const settingsBtn = document.getElementById('settingsBtn');
-        
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportData());
         }
         
+        const settingsBtn = document.getElementById('settingsBtn');
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => this.showSettings());
         }
 
-        // Handle browser back/forward
         window.addEventListener('popstate', (e) => {
             const tool = e.state?.tool || 'dashboard';
             this.loadTool(tool, false);
         });
 
-        // Handle URL parameters on load
         const urlParams = new URLSearchParams(window.location.search);
         const toolParam = urlParams.get('tool');
         if (toolParam && this.isLoggedIn) {
@@ -168,67 +163,58 @@ class EPQSApp {
         window.addEventListener('resize', checkMobile);
     }
 
-    handleLogin(e) {
+    async handleLogin(e) {
         e.preventDefault();
         
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         
-        // Simple authentication (in production, this would be more secure)
-        if (this.validateCredentials(username, password)) {
-            this.currentUser = {
-                username: username,
-                loginTime: Date.now(),
-                permissions: ['read', 'write', 'export']
-            };
-            
-            // Save login state
-            localStorage.setItem('epqs_current_user', JSON.stringify(this.currentUser));
-            localStorage.setItem('epqs_login_time', this.currentUser.loginTime.toString());
-            
-            this.isLoggedIn = true;
-            this.showApp();
-            
-            this.showNotification('Login realizado com sucesso!', 'success');
-        } else {
-            this.showNotification('Credenciais inválidas. Tente novamente.', 'error');
-        }
-    }
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
 
-    validateCredentials(username, password) {
-        // Use the user management system for authentication
-        if (window.userManagement) {
-            const result = window.userManagement.authenticate(username, password);
-            if (result.success) {
-                // Store user data for the session
-                this.currentUser = result.user;
-                return true;
+            if (response.ok) {
+                const data = await response.json();
+                this.currentUser = data.user;
+                this.isLoggedIn = true;
+                localStorage.setItem('epqs_current_user', JSON.stringify(this.currentUser));
+                localStorage.setItem('epqs_login_time', Date.now().toString());
+                this.showApp();
+                this.showNotification('Login realizado com sucesso!', 'success');
+            } else {
+                const errorData = await response.json();
+                this.showNotification(`Erro de login: ${errorData.error}`, 'error');
             }
-            return false;
+        } catch (error) {
+            console.error('Login failed:', error);
+            if (username === "admin" && password === "admin123") {
+                this.isLoggedIn = true;
+                this.currentUser = { username: "admin" };
+                localStorage.setItem('epqs_current_user', JSON.stringify(this.currentUser));
+                localStorage.setItem('epqs_login_time', Date.now().toString());
+                this.showApp();
+                this.showNotification("Login bem-sucedido (modo offline)!", "success");
+            } else {
+                this.showNotification("Credenciais inválidas (modo offline).", "error");
+            }
         }
-        
-        // Fallback to default credentials if user management is not available
-        const defaultUsers = [
-            { username: 'admin', password: 'admin123' },
-            { username: 'user', password: 'user123' },
-            { username: 'marcos', password: 'garcon123' }
-        ];
-        
-        return defaultUsers.some(user => user.username === username && user.password === password);
     }
 
-    handleLogout() {
-        // Clear login state
+    async handleLogout() {
+        try {
+            await fetch('/api/logout', { method: 'POST' });
+        } catch (error) {
+            console.error('Logout failed on server:', error);
+        }
         localStorage.removeItem('epqs_current_user');
         localStorage.removeItem('epqs_login_time');
-        
         this.currentUser = null;
         this.isLoggedIn = false;
-        
-        // Reset form
         const loginForm = document.getElementById('loginForm');
         if (loginForm) loginForm.reset();
-        
         this.showLogin();
         this.showNotification('Logout realizado com sucesso!', 'info');
     }
@@ -241,261 +227,139 @@ class EPQSApp {
     showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').classList.add('active');
-        
-        // Load dashboard by default
-        this.loadTool('dashboard', false);
+        this.loadTool(this.currentTool || 'dashboard', false);
     }
 
-    loadToolsConfig() {
+    async loadToolsConfig() {
+        try {
+            const response = await fetch('/api/tools');
+            if (!response.ok) throw new Error('API response not OK');
+            const data = await response.json();
+            this.tools = {};
+            data.tools.forEach(tool => {
+                this.tools[tool.file_path.replace('.html', '')] = {
+                    name: tool.name,
+                    description: tool.description,
+                    category: tool.category,
+                    icon: this.getIconForTool(tool.name)
+                };
+            });
+            this.addStaticTools();
+            this.renderSidebarMenu();
+            this.renderDashboardToolCards();
+        } catch (error) {
+            console.error('Error fetching tools from API, loading fallback:', error);
+            this.loadFallbackTools();
+        }
+    }
+
+    addStaticTools() {
+        this.tools['dashboard'] = { name: 'Dashboard', description: 'Painel principal do sistema', category: 'Sistema', icon: 'ph-house' };
+        this.tools['reports-dashboard'] = { name: 'Dashboard de Indicadores', description: 'Relatórios e indicadores de performance', category: 'Sistema', icon: 'ph-chart-pie' };
+        this.tools['external-integration'] = { name: 'Integração Externa', description: 'Integração com Jamovi, FreeCAD e JaamSim', category: 'Sistema', icon: 'ph-link' };
+        this.tools['user-management'] = { name: 'Gerenciar Usuários', description: 'Criação, edição e exclusão de contas', category: 'Sistema', icon: 'ph-users' };
+    }
+
+    loadFallbackTools() {
+        console.warn('Loading fallback tools configuration.');
         this.tools = {
-            'dashboard': {
-                name: 'Dashboard',
-                description: 'Painel principal do sistema',
-                category: 'Sistema',
-                icon: 'ph-house'
-            },
-            'reports-dashboard': {
-                name: 'Dashboard de Indicadores',
-                description: 'Relatórios e indicadores de performance',
-                category: 'Sistema',
-                icon: 'ph-chart-pie'
-            },
-            'external-integration': {
-                name: 'Integração Externa',
-                description: 'Integração com Jamovi, FreeCAD e JaamSim',
-                category: 'Sistema',
-                icon: 'ph-link'
-            },
-            '5_porques': {
-                name: '5 Porquês',
-                description: 'Análise de causa raiz através dos 5 porquês',
-                category: 'Análise de Problemas',
-                icon: 'ph-question'
-            },
-            '8d': {
-                name: 'Relatório 8D',
-                description: 'Metodologia 8D para resolução de problemas',
-                category: 'Análise de Problemas',
-                icon: 'ph-clipboard-text'
-            },
-            'ishikawa': {
-                name: 'Diagrama Ishikawa',
-                description: 'Diagrama de causa e efeito (espinha de peixe)',
-                category: 'Análise de Problemas',
-                icon: 'ph-tree-structure'
-            },
-            'fmea': {
-                name: 'FMEA',
-                description: 'Análise de Modo e Efeito de Falha',
-                category: 'Análise de Problemas',
-                icon: 'ph-warning'
-            },
-            'masp': {
-                name: 'MASP',
-                description: 'Método de Análise e Solução de Problemas',
-                category: 'Análise de Problemas',
-                icon: 'ph-flow-arrow'
-            },
-            '5s': {
-                name: 'Auditoria 5S',
-                description: 'Sistema de organização e limpeza 5S',
-                category: 'Qualidade e Controle',
-                icon: 'ph-broom'
-            },
-            'cep': {
-                name: 'CEP e Capabilidade',
-                description: 'Controle Estatístico de Processo',
-                category: 'Qualidade e Controle',
-                icon: 'ph-chart-line'
-            },
-            'msa': {
-                name: 'MSA',
-                description: 'Análise do Sistema de Medição',
-                category: 'Qualidade e Controle',
-                icon: 'ph-ruler'
-            },
-            'apqp': {
-                name: 'APQP',
-                description: 'Planejamento Avançado da Qualidade do Produto',
-                category: 'Qualidade e Controle',
-                icon: 'ph-calendar-check'
-            },
-            'ppap': {
-                name: 'PPAP',
-                description: 'Processo de Aprovação de Peça de Produção',
-                category: 'Qualidade e Controle',
-                icon: 'ph-certificate'
-            },
-            'pareto': {
-                name: 'Diagrama de Pareto',
-                description: 'Análise de Pareto para priorização',
-                category: 'Análise Estatística',
-                icon: 'ph-chart-bar'
-            },
-            'histograma': {
-                name: 'Histograma',
-                description: 'Análise de distribuição de dados',
-                category: 'Análise Estatística',
-                icon: 'ph-chart-bar-horizontal'
-            },
-            'diagrama-dispersao': {
-                name: 'Diagrama de Dispersão',
-                description: 'Análise de correlação entre variáveis',
-                category: 'Análise Estatística',
-                icon: 'ph-scatter-chart'
-            },
-            'folha_verificacao': {
-                name: 'Folha de Verificação',
-                description: 'Coleta estruturada de dados',
-                category: 'Análise Estatística',
-                icon: 'ph-check-square'
-            },
-            'kaizen': {
-                name: 'Kaizen',
-                description: 'Melhoria contínua de processos',
-                category: 'Processos e Melhoria',
-                icon: 'ph-trend-up'
-            },
-            'dmaic': {
-                name: 'DMAIC',
-                description: 'Metodologia Six Sigma DMAIC',
-                category: 'Processos e Melhoria',
-                icon: 'ph-cycle'
-            },
-            'vsm': {
-                name: 'VSM',
-                description: 'Mapeamento do Fluxo de Valor',
-                category: 'Processos e Melhoria',
-                icon: 'ph-map-trifold'
-            },
-            'mapeamento-de-processos': {
-                name: 'Mapeamento de Processos',
-                description: 'Documentação e análise de processos',
-                category: 'Processos e Melhoria',
-                icon: 'ph-flow-arrow'
-            },
-            'cronoanalise': {
-                name: 'Cronoanálise MTM',
-                description: 'Análise de tempos e métodos',
-                category: 'Processos e Melhoria',
-                icon: 'ph-timer'
-            },
-            'smed': {
-                name: 'SMED',
-                description: 'Troca Rápida de Ferramentas (Single-Minute Exchange of Die)',
-                category: 'Processos e Melhoria',
-                icon: 'ph-timer'
-            },
-            'gap-analysis': {
-                name: 'Gap Analysis',
-                description: 'Análise de Lacunas entre Estado Atual e Desejado',
-                category: 'Análise de Problemas',
-                icon: 'ph-chart-line-up'
-            },
-            'root-cause-analysis': {
-                name: 'Análise de Causa Raiz',
-                description: 'RCA Avançada com 5 Porquês, Ishikawa e Timeline',
-                category: 'Análise de Problemas',
-                icon: 'ph-tree-structure'
-            },
-            'planejamento': {
-                name: 'Planejamento',
-                description: 'Ferramentas de planejamento estratégico',
-                category: 'Gestão e Planejamento',
-                icon: 'ph-calendar'
-            },
-            'treinamento': {
-                name: 'Treinamento',
-                description: 'Gestão de treinamentos e capacitação',
-                category: 'Gestão e Planejamento',
-                icon: 'ph-graduation-cap'
-            },
-            'manutencao': {
-                name: 'Manutenção',
-                description: 'Gestão de manutenção preventiva e corretiva',
-                category: 'Gestão e Planejamento',
-                icon: 'ph-wrench'
-            },
-            'swot': {
-                name: 'Análise SWOT',
-                description: 'Análise de forças, fraquezas, oportunidades e ameaças',
-                category: 'Análise Estratégica',
-                icon: 'ph-target'
-            },
-            'matriz-gut': {
-                name: 'Matriz GUT',
-                description: 'Priorização por Gravidade, Urgência e Tendência',
-                category: 'Análise Estratégica',
-                icon: 'ph-matrix-logo'
-            },
-            'matriz-esforco-impacto': {
-                name: 'Matriz Esforço x Impacto',
-                description: 'Priorização de ações por esforço e impacto',
-                category: 'Análise Estratégica',
-                icon: 'ph-chart-scatter'
-            },
-            'controle_injecao': {
-                name: 'Controle de Injeção',
-                description: 'Controle de processo de injeção de plásticos',
-                category: 'Controle de Produção',
-                icon: 'ph-factory'
-            },
-            'estamparia': {
-                name: 'Estamparia',
-                description: 'Controle de processo de estamparia',
-                category: 'Controle de Produção',
-                icon: 'ph-hammer'
-            },
-            'sucata': {
-                name: 'Controle de Sucata',
-                description: 'Gestão e controle de sucata e rejeitos',
-                category: 'Controle de Produção',
-                icon: 'ph-trash'
-            },
-            'relatorio-a3': {
-                name: 'Relatório A3',
-                description: 'Relatório estruturado em formato A3',
-                category: 'Relatórios e Dashboards',
-                icon: 'ph-file-text'
-            },
-            'DashboarddeIndicadores': {
-                name: 'Dashboard de Indicadores',
-                description: 'Painel de indicadores de performance',
-                category: 'Relatórios e Dashboards',
-                icon: 'ph-chart-pie'
-            },
-            'GerenciadordeDashboards': {
-                name: 'Gerenciador de Dashboards',
-                description: 'Gestão centralizada de dashboards',
-                category: 'Relatórios e Dashboards',
-                icon: 'ph-monitor'
-            }
+            '5_porques': { name: '5 Porquês', description: 'Análise de causa raiz através dos 5 porquês', category: 'Análise de Problemas', icon: 'ph-question' },
+            '8d': { name: 'Relatório 8D', description: 'Metodologia 8D para resolução de problemas', category: 'Análise de Problemas', icon: 'ph-clipboard-text' },
+            'ishikawa': { name: 'Diagrama Ishikawa', description: 'Diagrama de causa e efeito (espinha de peixe)', category: 'Análise de Problemas', icon: 'ph-tree-structure' },
+            'fmea': { name: 'FMEA', description: 'Análise de Modo e Efeito de Falha', category: 'Análise de Problemas', icon: 'ph-warning' },
+            'masp': { name: 'MASP', description: 'Método de Análise e Solução de Problemas', category: 'Análise de Problemas', icon: 'ph-flow-arrow' },
+            'root-cause-analysis': { name: 'Análise de Causa Raiz', description: 'RCA Avançada com 5 Porquês, Ishikawa e Timeline', category: 'Análise de Problemas', icon: 'ph-magnifying-glass' },
+            '5s': { name: 'Auditoria 5S', description: 'Sistema de organização e limpeza 5S', category: 'Qualidade e Controle', icon: 'ph-broom' },
+            'cep': { name: 'CEP e Capabilidade', description: 'Controle Estatístico de Processo', category: 'Qualidade e Controle', icon: 'ph-chart-line' },
+            'msa': { name: 'MSA', description: 'Análise do Sistema de Medição', category: 'Qualidade e Controle', icon: 'ph-ruler' },
+            'apqp': { name: 'APQP', description: 'Planejamento Avançado da Qualidade do Produto', category: 'Qualidade e Controle', icon: 'ph-calendar-check' },
+            'ppap': { name: 'PPAP', description: 'Processo de Aprovação de Peça de Produção', category: 'Qualidade e Controle', icon: 'ph-certificate' },
+            'gap-analysis': { name: 'Gap Analysis', description: 'Análise de Lacunas entre Estado Atual e Desejado', category: 'Qualidade e Controle', icon: 'ph-arrows-left-right' },
+            'pareto': { name: 'Diagrama de Pareto', description: 'Análise de Pareto para priorização', category: 'Análise Estatística', icon: 'ph-chart-bar' },
+            'histograma': { name: 'Histograma', description: 'Análise de distribuição de dados', category: 'Análise Estatística', icon: 'ph-chart-bar-horizontal' },
+            'diagrama-dispersao': { name: 'Diagrama de Dispersão', description: 'Análise de correlação entre variáveis', category: 'Análise Estatística', icon: 'ph-scatter-chart' },
+            'folha_verificacao': { name: 'Folha de Verificação', description: 'Coleta estruturada de dados', category: 'Análise Estatística', icon: 'ph-check-square' },
+            'kaizen': { name: 'Kaizen', description: 'Melhoria contínua', category: 'Processos e Melhoria', icon: 'ph-trend-up' },
+            'dmaic': { name: 'DMAIC', description: 'Metodologia DMAIC para projetos Seis Sigma', category: 'Processos e Melhoria', icon: 'ph-cycle' },
+            'vsm': { name: 'VSM', description: 'Mapeamento do Fluxo de Valor', category: 'Processos e Melhoria', icon: 'ph-map-trifold' },
+            'mapeamento-processos': { name: 'Mapeamento de Processos', description: 'Desenho e análise de fluxos de trabalho', category: 'Processos e Melhoria', icon: 'ph-flow-chart' },
+            'cronoanalise-mtm': { name: 'Cronoanálise MTM', description: 'Estudo de tempos e movimentos', category: 'Processos e Melhoria', icon: 'ph-timer' },
+            'smed': { name: 'SMED', description: 'Troca Rápida de Ferramentas', category: 'Processos e Melhoria', icon: 'ph-gear-six' },
+            'planejamento': { name: 'Planejamento', description: 'Ferramentas de planejamento estratégico e tático', category: 'Gestão e Planejamento', icon: 'ph-calendar' },
+            'treinamento': { name: 'Treinamento', description: 'Gestão de treinamentos e competências', category: 'Gestão e Planejamento', icon: 'ph-graduation-cap' },
+            'manutencao': { name: 'Manutenção', description: 'Planejamento e Controle de Manutenção', category: 'Gestão e Planejamento', icon: 'ph-wrench' },
+            'analise-swot': { name: 'Análise SWOT', description: 'Análise de Forças, Fraquezas, Oportunidades e Ameaças', category: 'Análise Estratégica', icon: 'ph-target' },
+            'matriz-gut': { name: 'Matriz GUT', description: 'Priorização por Gravidade, Urgência e Tendência', category: 'Análise Estratégica', icon: 'ph-matrix-logo' },
+            'matriz-esforco-impacto': { name: 'Matriz Esforço x Impacto', description: 'Priorização de ações com base em esforço e impacto', category: 'Análise Estratégica', icon: 'ph-chart-scatter' },
+            'controle_injecao': { name: 'Controle de Injeção', description: 'Controle de processo de injeção plástica', category: 'Controle de Produção', icon: 'ph-factory' },
+            'estamparia': { name: 'Estamparia', description: 'Controle de processo de estamparia', category: 'Controle de Produção', icon: 'ph-hammer' },
+            'sucata': { name: 'Controle de Sucata', description: 'Gestão e controle de sucata na produção', category: 'Controle de Produção', icon: 'ph-trash' },
+            'relatorio-a3': { name: 'Relatório A3', description: 'Relatório estruturado A3 para resolução de problemas', category: 'Relatórios', icon: 'ph-file-text' }
         };
-
-        this.populateToolsGrid();
-
-
+        this.addStaticTools();
+        this.renderSidebarMenu();
+        this.renderDashboardToolCards();
     }
 
-    populateToolsGrid() {
-        const toolsGrid = document.getElementById('toolsGrid');
-        if (!toolsGrid) return;
+    getIconForTool(toolName) {
+        const iconMap = {
+            '5 Porquês': 'ph-question', 'Relatório 8D': 'ph-clipboard-text', 'Diagrama Ishikawa': 'ph-tree-structure', 'FMEA': 'ph-warning', 'MASP': 'ph-flow-arrow', 'Auditoria 5S': 'ph-broom', 'CEP e Capabilidade': 'ph-chart-line', 'MSA': 'ph-ruler', 'APQP': 'ph-calendar-check', 'PPAP': 'ph-certificate', 'Diagrama de Pareto': 'ph-chart-bar', 'Histograma': 'ph-chart-bar-horizontal', 'Diagrama de Dispersão': 'ph-scatter-chart', 'Folha de Verificação': 'ph-check-square', 'Kaizen': 'ph-trend-up', 'DMAIC': 'ph-cycle', 'VSM': 'ph-map-trifold', 'Mapeamento de Processos': 'ph-flow-chart', 'Cronoanálise MTM': 'ph-timer', 'SMED': 'ph-gear-six', 'Planejamento': 'ph-calendar', 'Treinamento': 'ph-graduation-cap', 'Manutenção': 'ph-wrench', 'Análise SWOT': 'ph-target', 'Matriz GUT': 'ph-matrix-logo', 'Matriz Esforço x Impacto': 'ph-chart-scatter', 'Controle de Injeção': 'ph-factory', 'Estamparia': 'ph-hammer', 'Controle de Sucata': 'ph-trash', 'Relatório A3': 'ph-file-text', 'Análise de Causa Raiz': 'ph-magnifying-glass', 'Gap Analysis': 'ph-arrows-left-right', 'Dashboard de Indicadores': 'ph-chart-pie', 'Integração Externa': 'ph-link', 'Gerenciar Usuários': 'ph-users'
+        };
+        return iconMap[toolName] || 'ph-gear';
+    }
 
+    renderSidebarMenu() {
+        const sidebarMenu = document.querySelector('.sidebar .menu');
+        if (!sidebarMenu) return;
+
+        sidebarMenu.innerHTML = '';
+        const categories = {};
+        for (const key in this.tools) {
+            const tool = this.tools[key];
+            if (!categories[tool.category]) categories[tool.category] = [];
+            categories[tool.category].push({ key, ...tool });
+        }
+
+        const orderedCategories = [ 'Sistema', 'Análise de Problemas', 'Qualidade e Controle', 'Análise Estatística', 'Processos e Melhoria', 'Gestão e Planejamento', 'Análise Estratégica', 'Controle de Produção', 'Relatórios' ];
+
+        orderedCategories.forEach(categoryName => {
+            if (categories[categoryName]) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'menu-category';
+                categoryDiv.textContent = categoryName;
+                sidebarMenu.appendChild(categoryDiv);
+
+                categories[categoryName].sort((a, b) => a.name.localeCompare(b.name)).forEach(tool => {
+                    const menuItem = document.createElement('div');
+                    menuItem.className = 'menu-item';
+                    menuItem.setAttribute('data-tool', tool.key);
+                    menuItem.innerHTML = `<i class="ph ${tool.icon}"></i><span>${tool.name}</span>`;
+                    sidebarMenu.appendChild(menuItem);
+                });
+            }
+        });
+    }
+
+    renderDashboardToolCards() {
+        const dashboardView = document.getElementById('dashboardView');
+        if (!dashboardView) return;
+
+        let toolsGrid = dashboardView.querySelector('.tools-grid');
+        if (!toolsGrid) {
+            toolsGrid = document.createElement('div');
+            toolsGrid.className = 'tools-grid';
+            dashboardView.appendChild(toolsGrid);
+        }
         toolsGrid.innerHTML = '';
 
-        Object.entries(this.tools).forEach(([key, tool]) => {
-            if (key === 'dashboard' || key === 'reports-dashboard' || key === 'external-integration') return; // Skip system tools in tools grid
+        const toolKeys = Object.keys(this.tools).filter(key => !['dashboard', 'reports-dashboard', 'external-integration', 'user-management'].includes(key));
 
+        toolKeys.sort((a, b) => this.tools[a].name.localeCompare(this.tools[b].name)).forEach(key => {
+            const tool = this.tools[key];
             const toolCard = document.createElement('div');
             toolCard.className = 'tool-card';
             toolCard.setAttribute('data-tool', key);
-            
-            toolCard.innerHTML = `
-                <h4><i class="${tool.icon}"></i> ${tool.name}</h4>
-                <p>${tool.description}</p>
-                <small style="color: var(--accent); font-size: 12px;">${tool.category}</small>
-            `;
-
+            toolCard.innerHTML = `<h4><i class="ph ${tool.icon}"></i> ${tool.name}</h4><p>${tool.description}</p>`;
             toolsGrid.appendChild(toolCard);
         });
     }
@@ -503,15 +367,11 @@ class EPQSApp {
     async loadTool(toolName, updateHistory = true) {
         console.log('Loading tool:', toolName);
         
-        // Update active menu item
         document.querySelectorAll('.menu-item').forEach(item => {
             item.classList.remove('active');
-            if (item.getAttribute('data-tool') === toolName) {
-                item.classList.add('active');
-            }
+            if (item.getAttribute('data-tool') === toolName) item.classList.add('active');
         });
 
-        // Update URL and history
         if (updateHistory) {
             const url = new URL(window.location);
             url.searchParams.set('tool', toolName);
@@ -520,172 +380,104 @@ class EPQSApp {
 
         this.currentTool = toolName;
 
-        if (toolName === 'dashboard') {
-            this.showDashboard();
-        } else if (toolName === 'reports-dashboard') {
-            this.showReportsDashboard();
-        } else if (toolName === 'external-integration') {
-            this.showExternalIntegration();
-        } else if (toolName === 'user-management') {
-            this.showUserManagement();
-        } else {
-            await this.showTool(toolName);
-        }
-    }
+        // Hide all views first
+        ['dashboardView', 'reportsDashboardView', 'externalIntegrationView', 'userManagementView', 'toolIframe'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.classList.add('hidden');
+        });
 
-    showDashboard() {
-        const dashboard = document.getElementById('dashboard');
-        const toolFrame = document.getElementById('toolFrame');
-
-        if (dashboard) dashboard.classList.remove('hidden');
-        if (toolFrame) toolFrame.classList.add('hidden');
-        
-        // Hide reports dashboard if visible
-        const reportsDashboard = document.getElementById('reportsDashboard');
-        if (reportsDashboard) reportsDashboard.classList.add('hidden');
-    }
-
-    showReportsDashboard() {
-        const dashboard = document.getElementById('dashboard');
-        const toolFrame = document.getElementById('toolFrame');
-        let reportsDashboard = document.getElementById('reportsDashboard');
-
-        if (dashboard) dashboard.classList.add('hidden');
-        if (toolFrame) toolFrame.classList.add('hidden');
-
-        // Hide external integration if visible
-        const externalIntegration = document.getElementById('externalIntegration');
-        if (externalIntegration) externalIntegration.classList.add('hidden');
-
-        // Create reports dashboard if it doesn't exist
-        if (!reportsDashboard) {
-            reportsDashboard = window.epqsReportsDashboard.createMainDashboard();
-            reportsDashboard.id = 'reportsDashboard';
-            document.getElementById('mainContent').appendChild(reportsDashboard);
-            
-            // Initialize charts after a short delay
-            setTimeout(() => {
-                window.epqsReportsDashboard.initializeCharts();
-            }, 100);
-        } else {
-            reportsDashboard.classList.remove('hidden');
-        }
-    }
-
-    showExternalIntegration() {
-        const dashboard = document.getElementById('dashboard');
-        const toolFrame = document.getElementById('toolFrame');
-        const reportsDashboard = document.getElementById('reportsDashboard');
-        let externalIntegration = document.getElementById('externalIntegration');
-
-        if (dashboard) dashboard.classList.add('hidden');
-        if (toolFrame) toolFrame.classList.add('hidden');
-        if (reportsDashboard) reportsDashboard.classList.add('hidden');
-
-        // Create external integration if it doesn't exist
-        if (!externalIntegration) {
-            externalIntegration = window.epqsExternalIntegration.createIntegrationGuide();
-            externalIntegration.id = 'externalIntegration';
-            document.getElementById('mainContent').appendChild(externalIntegration);
-        } else {
-            externalIntegration.classList.remove('hidden');
-        }
-    }
-
-    showUserManagement() {
-        const dashboard = document.getElementById('dashboard');
-        const toolFrame = document.getElementById('toolFrame');
-        const reportsDashboard = document.getElementById('reportsDashboard');
-        const externalIntegration = document.getElementById('externalIntegration');
-        let userManagement = document.getElementById('userManagement');
-
-        if (dashboard) dashboard.classList.add('hidden');
-        if (toolFrame) toolFrame.classList.add('hidden');
-        if (reportsDashboard) reportsDashboard.classList.add('hidden');
-        if (externalIntegration) externalIntegration.classList.add('hidden');
-
-        // Create user management if it doesn't exist
-        if (!userManagement) {
-            userManagement = document.createElement('div');
-            userManagement.id = 'userManagement';
-            userManagement.className = 'user-management-view';
-            
-            // Check if user has permission to manage users
-            if (this.currentUser && this.currentUser.permissions && this.currentUser.permissions.includes('manage_users')) {
-                userManagement.innerHTML = window.userManagementUI.render();
-                document.getElementById('mainContent').appendChild(userManagement);
-            } else {
-                userManagement.innerHTML = `
-                    <div style="padding: 40px; text-align: center; color: var(--text);">
-                        <i class="ph ph-lock" style="font-size: 4rem; color: var(--warn); margin-bottom: 20px;"></i>
-                        <h2>Acesso Negado</h2>
-                        <p>Você não tem permissão para acessar o gerenciamento de usuários.</p>
-                        <p>Entre em contato com um administrador para obter acesso.</p>
-                        <button class="btn btn-primary" onclick="epqsApp.loadTool('dashboard')" style="margin-top: 20px;">
-                            <i class="ph ph-house"></i> Voltar ao Dashboard
-                        </button>
-                    </div>
-                `;
-                document.getElementById('mainContent').appendChild(userManagement);
-            }
-        } else {
-            userManagement.classList.remove('hidden');
-        }
-    }
-
-    async showTool(toolName) {
-        const dashboard = document.getElementById('dashboard');
-        const toolFrame = document.getElementById('toolFrame');
-        const reportsDashboard = document.getElementById('reportsDashboard');
-        const externalIntegration = document.getElementById('externalIntegration');
-
-        if (dashboard) dashboard.classList.add('hidden');
-        if (reportsDashboard) reportsDashboard.classList.add('hidden');
-        if (externalIntegration) externalIntegration.classList.add('hidden');
-        if (toolFrame) {
-            toolFrame.classList.remove('hidden');
-            
-            // Load the tool HTML file
-            try {
-                const toolUrl = `tools/${toolName}.html`;
-                toolFrame.src = toolUrl;
-                
-                // Show loading state
-                this.showNotification(`Carregando ${this.tools[toolName]?.name || toolName}...`, 'info');
-                
-                // Handle iframe load
-                toolFrame.onload = () => {
-                    console.log(`Tool ${toolName} loaded successfully`);
-                    
-                    // Process tool for integration
-                    if (window.epqsToolProcessor) {
-                        window.epqsToolProcessor.processToolForIntegration(toolName);
-                        
-                        // Inject integration script after a short delay
-                        setTimeout(() => {
-                            window.epqsToolProcessor.injectIntegrationScript(toolFrame, toolName);
-                        }, 500);
+        // Show the correct view
+        switch (toolName) {
+            case 'dashboard':
+                const dashboardView = document.getElementById('dashboardView');
+                if (dashboardView) {
+                    dashboardView.classList.remove('hidden');
+                    this.renderDashboardToolCards();
+                }
+                break;
+            case 'reports-dashboard':
+                const reportsDashboardView = document.getElementById('reportsDashboardView');
+                if (reportsDashboardView) {
+                    reportsDashboardView.classList.remove('hidden');
+                    if (window.epqsReportsDashboard) {
+                        window.epqsReportsDashboard.createMainDashboard();
+                    } else {
+                        console.error('Reports Dashboard module not loaded');
+                        this.showNotification('Módulo de Dashboard de Indicadores não carregado', 'error');
                     }
-                };
-                
-                toolFrame.onerror = () => {
-                    console.error(`Failed to load tool: ${toolName}`);
-                    this.showNotification(`Erro ao carregar a ferramenta ${toolName}`, 'error');
-                    this.loadTool('dashboard');
-                };
-                
-            } catch (error) {
-                console.error('Error loading tool:', error);
-                this.showNotification('Erro ao carregar a ferramenta', 'error');
-                this.loadTool('dashboard');
-            }
+                }
+                break;
+            case 'external-integration':
+                const externalIntegrationView = document.getElementById('externalIntegrationView');
+                if (externalIntegrationView) {
+                    externalIntegrationView.classList.remove('hidden');
+                    if (window.epqsExternalIntegration) {
+                        externalIntegrationView.innerHTML = '';
+                        externalIntegrationView.appendChild(window.epqsExternalIntegration.createIntegrationGuide());
+                    } else {
+                        console.error('External Integration module not loaded');
+                        this.showNotification('Módulo de Integração Externa não carregado', 'error');
+                    }
+                }
+                break;
+            case 'user-management':
+                const userManagementView = document.getElementById('userManagementView');
+                if (userManagementView) {
+                    userManagementView.classList.remove('hidden');
+                    if (window.userManagementUI) {
+                        window.userManagementUI.render();
+                    } else {
+                        console.error('User Management module not loaded');
+                        this.showNotification('Módulo de Gerenciamento de Usuários não carregado', 'error');
+                    }
+                }
+                break;
+            default:
+                const toolFrame = document.getElementById('toolIframe');
+                if (toolFrame) {
+                    toolFrame.classList.remove('hidden');
+                    const toolUrl = `tools/${toolName}.html`;
+                    
+                    // Check if tool exists in our tools list
+                    if (!this.tools[toolName]) {
+                        console.error(`Tool ${toolName} not found in tools list`);
+                        this.showNotification(`Ferramenta ${toolName} não encontrada`, 'error');
+                        this.loadTool('dashboard');
+                        return;
+                    }
+                    
+                    if (toolFrame.src.endsWith(toolUrl)) {
+                        toolFrame.contentWindow.location.reload();
+                    } else {
+                        toolFrame.src = toolUrl;
+                    }
+                    
+                    this.showNotification(`Carregando ${this.tools[toolName]?.name || toolName}...`, 'info', 2000);
+                    
+                    // Setup iframe load handlers
+                    toolFrame.onload = () => {
+                        console.log(`Tool ${toolName} loaded successfully`);
+                        if (window.epqsToolProcessor) {
+                            window.epqsToolProcessor.processToolForIntegration(toolName);
+                            setTimeout(() => {
+                                window.epqsToolProcessor.injectIntegrationScript(toolFrame, toolName);
+                            }, 500);
+                        }
+                    };
+                    
+                    toolFrame.onerror = () => {
+                        console.error(`Failed to load tool: ${toolName}`);
+                        this.showNotification(`Erro ao carregar a ferramenta ${toolName}`, 'error');
+                        this.loadTool('dashboard');
+                    };
+                }
+                break;
         }
     }
 
     toggleMobileMenu() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobileOverlay');
-        
         if (sidebar && overlay) {
             sidebar.classList.toggle('mobile-open');
             overlay.classList.toggle('active');
@@ -695,7 +487,6 @@ class EPQSApp {
     closeMobileMenu() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobileOverlay');
-        
         if (sidebar && overlay) {
             sidebar.classList.remove('mobile-open');
             overlay.classList.remove('active');
@@ -706,13 +497,10 @@ class EPQSApp {
         try {
             if (window.epqsDataManager) {
                 const success = await window.epqsDataManager.createBackup();
-                if (success) {
-                    this.showNotification('Dados exportados com sucesso!', 'success');
-                } else {
-                    this.showNotification('Erro ao exportar dados', 'error');
-                }
+                if (success) this.showNotification('Dados exportados com sucesso!', 'success');
+                else this.showNotification('Erro ao exportar dados', 'error');
             } else {
-                // Fallback to simple localStorage export
+                // Fallback export
                 const exportData = {
                     version: '1.0.0',
                     exportDate: new Date().toISOString(),
@@ -720,7 +508,6 @@ class EPQSApp {
                     data: {}
                 };
 
-                // Collect all EPQS data from localStorage
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (key && key.startsWith('epqs_')) {
@@ -732,10 +519,7 @@ class EPQSApp {
                     }
                 }
 
-                // Create and download file
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
-                    type: 'application/json' 
-                });
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -761,85 +545,154 @@ class EPQSApp {
         }
     }
 
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
+    setupGlobalNotificationSystem() {
+        if (!document.getElementById("epqs-notification-container")) {
+            const container = document.createElement("div");
+            container.id = "epqs-notification-container";
+            container.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            `;
+            document.body.appendChild(container);
+        }
+    }
+
+    showNotification(message, type = "info", duration = 5000) {
+        const container = document.getElementById("epqs-notification-container");
+        if (!container) return;
+
+        const notification = document.createElement("div");
+        notification.className = `epqs-notification epqs-notification-${type}`;
         notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? 'var(--ok)' : type === 'error' ? 'var(--bad)' : 'var(--accent)'};
-            color: white;
+            background-color: var(--${type === 'success' ? 'ok' : type === 'error' ? 'bad' : type === 'warning' ? 'warn' : 'accent'});
+            color: var(--bg);
             padding: 12px 20px;
             border-radius: 8px;
-            box-shadow: var(--shadow);
-            z-index: 1000;
-            font-weight: 600;
-            max-width: 300px;
-            word-wrap: break-word;
-            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            min-width: 250px;
         `;
-        notification.textContent = message;
+        notification.innerHTML = `
+            <i class="ph ph-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : type === 'warning' ? 'warning' : 'info'}"></i>
+            <span>${message}</span>
+        `;
 
-        document.body.appendChild(notification);
+        container.appendChild(notification);
 
         setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
+            notification.style.opacity = 1;
+            notification.style.transform = "translateX(0)";
+        }, 10);
+
+        setTimeout(() => {
+            notification.style.opacity = 0;
+            notification.style.transform = "translateX(100%)";
+            notification.addEventListener("transitionend", () => notification.remove());
+        }, duration);
+    }
+
+    setupGlobalModals() {
+        if (!document.getElementById("epqs-modal-container")) {
+            const container = document.createElement("div");
+            container.id = "epqs-modal-container";
+            container.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9998;
+                visibility: hidden;
+                opacity: 0;
+                transition: visibility 0s, opacity 0.3s ease-out;
+            `;
+            container.onclick = (e) => { if (e.target.id === 'epqs-modal-container') this.hideModal(); };
+            document.body.appendChild(container);
+        }
+    }
+
+    showModal(title, content, actions = []) {
+        const container = document.getElementById("epqs-modal-container");
+        if (!container) return;
+
+        const actionsHtml = actions.map(action => 
+            `<button class="btn ${action.class || ''}" onclick="${action.onclick || ''};">${action.text}</button>`
+        ).join('');
+
+        container.innerHTML = `
+            <div class="epqs-modal-content" style="
+                background: var(--panel);
+                border-radius: 12px;
+                padding: 24px;
+                max-width: 500px;
+                width: 90%;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            ">
+                <div class="epqs-modal-header" style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    border-bottom: 1px solid var(--muted);
+                    padding-bottom: 15px;
+                ">
+                    <h3 style="margin: 0; color: var(--accent);">${title}</h3>
+                    <button class="close-btn" onclick="window.epqsApp.hideModal()" style="
+                        background: none;
+                        border: none;
+                        color: var(--text);
+                        font-size: 24px;
+                        cursor: pointer;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">&times;</button>
+                </div>
+                <div class="epqs-modal-body" style="margin-bottom: 20px; color: var(--text);">${content}</div>
+                <div class="epqs-modal-actions" style="
+                    display: flex;
+                    gap: 10px;
+                    justify-content: flex-end;
+                ">
+                    <button class="btn" onclick="window.epqsApp.hideModal()">Fechar</button>
+                    ${actionsHtml}
+                </div>
+            </div>
+        `;
+        container.style.visibility = 'visible';
+        container.style.opacity = '1';
+    }
+
+    hideModal() {
+        const container = document.getElementById("epqs-modal-container");
+        if (container) {
+            container.style.visibility = 'hidden';
+            container.style.opacity = '0';
+        }
     }
 
     showUpdateNotification() {
-        const updateNotification = document.createElement('div');
-        updateNotification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: var(--accent);
-            color: white;
-            padding: 16px 20px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            z-index: 1000;
-            font-weight: 600;
-            max-width: 300px;
-        `;
-        updateNotification.innerHTML = `
-            <div>Nova versão disponível!</div>
-            <button onclick="window.location.reload()" style="
-                background: white;
-                color: var(--accent);
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                margin-top: 8px;
-                cursor: pointer;
-                font-weight: 600;
-            ">Atualizar</button>
-        `;
-
-        document.body.appendChild(updateNotification);
+        this.showNotification("Nova versão disponível! Atualizando...", "info", 10000);
+        setTimeout(() => window.location.reload(), 3000);
     }
 }
-
-// Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -848,16 +701,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle app installation
 let deferredPrompt;
-
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    
-    // Show install button or notification
     console.log('App can be installed');
 });
-
 window.addEventListener('appinstalled', () => {
     console.log('App was installed');
     deferredPrompt = null;
 });
+
+
