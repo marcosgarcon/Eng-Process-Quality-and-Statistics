@@ -351,6 +351,37 @@
         @media (max-width: 768px) {
             .app-container {
                 grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            header {
+                grid-column: 1;
+                padding: 12px 16px;
+            }
+
+            .header-title h1 {
+                font-size: 18px;
+            }
+
+            .header-title .subtitle {
+                font-size: 12px;
+            }
+
+            .header-title .dev-credit {
+                font-size: 10px;
+            }
+
+            .header-actions {
+                gap: 6px;
+            }
+
+            .header-actions .btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+
+            #mobileMenuBtn {
+                display: block !important;
             }
 
             .sidebar {
@@ -365,6 +396,7 @@
                 width: 280px;
                 height: 100vh;
                 z-index: 100;
+                box-shadow: 0 0 20px rgba(0,0,0,0.5);
             }
 
             .mobile-overlay {
@@ -381,6 +413,246 @@
             .mobile-overlay.active {
                 display: block;
             }
+
+            .main-content {
+                padding: 12px;
+            }
+
+            .tool-frame {
+                height: calc(100vh - 100px);
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .dashboard-card {
+                padding: 16px;
+            }
+
+            .tool-card {
+                padding: 14px;
+            }
+
+            .login-card {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+
+            .login-card h1 {
+                font-size: 24px;
+            }
+
+            .login-card .subtitle {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-title h1 {
+                font-size: 16px;
+            }
+
+            .header-title .subtitle {
+                font-size: 11px;
+            }
+
+            .header-title .dev-credit {
+                display: none;
+            }
+
+            .header-actions .btn {
+                padding: 5px 8px;
+                font-size: 10px;
+            }
+
+            .sidebar.mobile-open {
+                width: 100%;
+            }
+
+            .main-content {
+                padding: 8px;
+            }
+
+            .tool-frame {
+                height: calc(100vh - 80px);
+            }
+
+            .login-card {
+                margin: 10px;
+                padding: 20px 15px;
+            }
+
+            .login-card h1 {
+                font-size: 20px;
+            }
+
+            .menu-item {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .menu-item i {
+                font-size: 18px;
+            }
+        }
+
+        /* Support Developer Button */
+        .support-developer {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin: 16px 0;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .support-developer:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+            background: linear-gradient(135deg, #16a34a, #15803d);
+        }
+
+        .support-developer:active {
+            transform: translateY(0);
+        }
+
+        .support-developer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .support-developer:hover::before {
+            left: 100%;
+        }
+
+        .support-developer i {
+            font-size: 16px;
+        }
+
+        /* PIX Modal */
+        .pix-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pix-modal.active {
+            display: flex;
+        }
+
+        .pix-modal-content {
+            background: var(--panel);
+            border: 1px solid var(--muted);
+            border-radius: var(--radius);
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .pix-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .pix-modal-close:hover {
+            background: var(--muted);
+        }
+
+        .pix-qr-code {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 10px;
+            background: white;
+        }
+
+        .pix-qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .pix-key {
+            background: var(--muted);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--accent);
+            word-break: break-all;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .pix-key:hover {
+            background: #334155;
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #0891b2;
+            transform: translateY(-1px);
         }
 
         .hidden {
@@ -444,6 +716,12 @@
 
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
+            <!-- Support Developer Button -->
+            <button class="support-developer" id="supportDeveloperBtn">
+                <i class="ph ph-heart"></i>
+                <span>Apoie o Desenvolvedor</span>
+            </button>
+            
             <div class="menu">
                 <div class="menu-item active" data-tool="dashboard">
                     <i class="ph ph-house"></i>
@@ -637,6 +915,41 @@
         </div>
     </div>
 
+    <!-- PIX Modal -->
+    <div class="pix-modal" id="pixModal">
+        <div class="pix-modal-content">
+            <button class="pix-modal-close" id="pixModalClose">
+                <i class="ph ph-x"></i>
+            </button>
+            
+            <h3 style="color: var(--accent); margin: 0 0 20px 0;">Apoie o Desenvolvedor</h3>
+            
+            <p style="color: var(--text); margin-bottom: 20px; font-size: 14px;">
+                Ajude a manter este projeto ativo e em constante evolução!
+            </p>
+            
+            <div class="pix-qr-code">
+                <img src="pix-qr-code.png" alt="QR Code PIX" />
+            </div>
+            
+            <p style="color: var(--text); font-size: 12px; margin: 10px 0;">
+                Escaneie o QR Code ou copie a chave PIX:
+            </p>
+            
+            <div class="pix-key" id="pixKey" title="Clique para copiar">
+                https://cobranca.c6pix.com.br/01K77BPNA1JZ341S4QFS0YV3CM
+            </div>
+            
+            <button class="copy-btn" id="copyPixBtn">
+                <i class="ph ph-copy"></i> Copiar Chave PIX
+            </button>
+            
+            <p style="color: #64748b; font-size: 11px; margin-top: 20px;">
+                Desenvolvido com ❤️ por Marcos Garçon
+            </p>
+        </div>
+    </div>
+
     <!-- Main Application Scripts -->
     <script src="data-manager.js"></script>
     <script src="settings.js"></script>
@@ -648,5 +961,95 @@
     <script src="app.js"></script>
     <script src="system-validator.js"></script>
     <script src="main.js"></script>
+    
+    <!-- PIX Modal JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const supportBtn = document.getElementById('supportDeveloperBtn');
+            const pixModal = document.getElementById('pixModal');
+            const pixModalClose = document.getElementById('pixModalClose');
+            const copyPixBtn = document.getElementById('copyPixBtn');
+            const pixKey = document.getElementById('pixKey');
+            
+            // Open PIX modal
+            supportBtn.addEventListener('click', function() {
+                pixModal.classList.add('active');
+            });
+            
+            // Close PIX modal
+            pixModalClose.addEventListener('click', function() {
+                pixModal.classList.remove('active');
+            });
+            
+            // Close modal when clicking outside
+            pixModal.addEventListener('click', function(e) {
+                if (e.target === pixModal) {
+                    pixModal.classList.remove('active');
+                }
+            });
+            
+            // Copy PIX key function
+            function copyPixKey() {
+                const pixKeyText = 'https://cobranca.c6pix.com.br/01K77BPNA1JZ341S4QFS0YV3CM';
+                
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(pixKeyText).then(function() {
+                        showCopySuccess();
+                    }).catch(function() {
+                        fallbackCopyTextToClipboard(pixKeyText);
+                    });
+                } else {
+                    fallbackCopyTextToClipboard(pixKeyText);
+                }
+            }
+            
+            // Fallback copy method
+            function fallbackCopyTextToClipboard(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    showCopySuccess();
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+                
+                document.body.removeChild(textArea);
+            }
+            
+            // Show copy success feedback
+            function showCopySuccess() {
+                const originalText = copyPixBtn.innerHTML;
+                copyPixBtn.innerHTML = '<i class="ph ph-check"></i> Copiado!';
+                copyPixBtn.style.background = '#22c55e';
+                
+                setTimeout(function() {
+                    copyPixBtn.innerHTML = originalText;
+                    copyPixBtn.style.background = '';
+                }, 2000);
+            }
+            
+            // Copy button click
+            copyPixBtn.addEventListener('click', copyPixKey);
+            
+            // PIX key click to copy
+            pixKey.addEventListener('click', copyPixKey);
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && pixModal.classList.contains('active')) {
+                    pixModal.classList.remove('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
