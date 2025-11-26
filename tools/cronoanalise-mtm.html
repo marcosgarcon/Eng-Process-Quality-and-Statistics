@@ -8,7 +8,7 @@
   <!-- Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <!-- libs para export e ZIP -->
+  <!-- libs para export e ZIP (opcional) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -17,15 +17,15 @@
   <style>
     :root{--bg:#071026;--card:#071220;--muted:#233044;--accent:#22d3ee;--text:#e6eef6}
     *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,Arial;background:linear-gradient(120deg,#071026,#091233);color:var(--text);display:grid;grid-template-columns:260px 1fr;gap:0;height:100vh}
+    body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:linear-gradient(120deg,#071026,#091233);color:var(--text);display:grid;grid-template-columns:260px 1fr;gap:0;height:100vh}
     header{grid-column:1/3;padding:12px 18px;background:linear-gradient(90deg,#081424,#0b2a44);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.03)}
     aside{padding:14px;border-right:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg,#071226,#061a2f)}
     main{padding:14px;overflow:auto}
     button{cursor:pointer;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:var(--text)}
     button.primary{background:linear-gradient(180deg,#06b6d4,#2563eb);color:#001}
     .video-wrapper{position:relative;border-radius:8px;overflow:hidden;background:#000}
-    video{width:100%;display:block;max-height:720px}
-    .video-marker{position:absolute;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#ff5a4a;border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.6)}
+    video{width:100%;display:block;max-height:720px;background:#000}
+    .video-marker{position:absolute;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#ff5a4a;border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.6)}
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     table{width:100%;border-collapse:collapse;margin-top:12px;background:transparent;font-size:13px}
     th,td{padding:8px;border:1px solid rgba(255,255,255,0.03);text-align:left}
@@ -109,7 +109,7 @@
         <div style="flex:1;">
           <div id="video-wrapper" class="video-wrapper" style="height:420px;display:flex;align-items:center;justify-content:center;background:var(--card);">
             <div id="video-placeholder" class="small">Carregue um vídeo para começar.</div>
-            <video id="analysis-video" controls style="display:none"></video>
+            <video id="analysis-video" controls style="display:none" playsinline webkit-playsinline></video>
           </div>
 
           <div class="controls">
@@ -174,12 +174,12 @@
 
 <script>
 /*
-  Funcionalidades adicionadas/atualizadas:
-  - Autosave em localStorage (reabertura automática) com UI para ativar/intervalo.
-  - Opção de escolher pasta (File System Access API) para salvar JSON e thumbnails; autosave tenta gravar lá também.
-  - Download em lote de miniaturas (ZIP) usando JSZip.
-  - Export .xlsx com imagens embutidas (ExcelJS) — tentativa com ExcelJS (browser bundle).
-  - PDF avançado já implementado com capa, sumário e páginas por etapa (jsPDF).
+  Versão completa com correções de carregamento/paint do vídeo e funcionalidades essenciais:
+  - autosave (localStorage)
+  - carregar vídeo, capturar miniaturas, criar etapas
+  - export PDF básico
+  - salvar .json e salvar em pasta (File System Access, quando suportado)
+  A correção principal está em loadVideoFromInput e no final do arquivo: força paint (play/pause muted), espera por loadeddata e tenta capturar frame.
 */
 
 ////////////////////
@@ -333,11 +333,6 @@ async function clearStoredDir() { storedDirHandle = null; await idbDelete('stora
 
 ////////////////////
 // vídeo e miniaturas
-function loadVideoFromInput(e) {
-  const f = e.target.files && e.target.files[0]; if (!f) return;
-  video.src = URL.createObjectURL(f); video.style.display = 'block'; placeholder.style.display = 'none';
-  document.getElementById('last-action').textContent = 'Vídeo carregado: ' + f.name;
-}
 function formatTime(t=0) {
   if (!isFinite(t)) return '00:00.000';
   const mm = Math.floor(t/60).toString().padStart(2,'0'), ss = Math.floor(t%60).toString().padStart(2,'0');
@@ -348,11 +343,17 @@ function updateCrono() { cronoDisplay.textContent = formatTime(video.currentTime
 requestAnimationFrame(updateCrono);
 
 function captureFrame() {
-  if (!video || video.readyState < 2) return null;
-  const w = video.videoWidth || 640, h = video.videoHeight || 360;
-  const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const ctx = c.getContext('2d');
-  try { ctx.drawImage(video, 0, 0, w, h); return c.toDataURL('image/png'); } catch (e) { console.warn(e); return null; }
+  try {
+    if (!video || video.readyState < 2) return null;
+    const w = video.videoWidth || 640, h = video.videoHeight || 360;
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    return c.toDataURL('image/png');
+  } catch (e) {
+    console.warn('captureFrame error', e);
+    return null;
+  }
 }
 
 ////////////////////
@@ -360,7 +361,7 @@ function captureFrame() {
 function insertStepRow(step) {
   const tr = document.createElement('tr'); tr.dataset.stepId = step.id;
   tr.innerHTML = `<td>${step.index}</td>
-    <td contenteditable="true">${step.description || ''}</td>
+    <td contenteditable="true">${(step.description || '').replace(/</g,'&lt;')}</td>
     <td style="width:160px;">${step.thumbnail ? `<img src="${step.thumbnail}" style="width:140px;border-radius:6px">` : '(sem imagem)'}</td>
     <td>${formatTime(step.time)}</td>
     <td><button onclick="downloadThumbnail('${step.id}')">baixar</button> <button onclick="removeStep('${step.id}')">remover</button></td>`;
@@ -369,7 +370,9 @@ function insertStepRow(step) {
 function createStepUI() {
   const thumb = captureFrame(); const time = video.currentTime || 0; stepCounter++;
   const step = { id:`s${Date.now()}-${stepCounter}`, index: stepCounter, time, thumbnail: thumb, description: '' };
-  steps.push(step); insertStepRow(step); updateStats(); showLastThumbnail(thumb); createVideoMarker({time,label:'Etapa '+step.index}); video.play().catch(()=>{});
+  steps.push(step); insertStepRow(step); updateStats(); showLastThumbnail(thumb); createVideoMarker({time,label:'Etapa '+step.index});
+  // try play to force paint if needed (non-blocking)
+  video.play().then(()=>video.pause()).catch(()=>{});
 }
 function removeStep(id) { steps = steps.filter(s=>s.id!==id); const tr = tbody.querySelector(`tr[data-step-id="${id}"]`); if (tr) tr.remove(); updateStats(); }
 function downloadThumbnail(stepId) {
@@ -391,8 +394,28 @@ function createVideoMarker({time,label}) {
   el.addEventListener('dblclick', (e)=>{ el.remove(); markersDom = markersDom.filter(m=>m!==el); e.stopPropagation(); });
   wrapper.appendChild(el); markersDom.push(el);
 }
-function startCycleUI(){ if (currentCycle) { if (!confirm('Ciclo ativo. Reiniciar?')) return; currentCycle = null; } currentCycle = { id:'c'+Date.now(), start: video.currentTime||0, steps: [] }; cycles.push(currentCycle); createVideoMarker({time:currentCycle.start,label:'Início Ciclo'}); updateStats(); video.play().catch(()=>{}); }
-function endCycleUI(){ if (!currentCycle) { createVideoMarker({time:video.currentTime||0,label:'Ponto'}); return; } currentCycle.end = video.currentTime||0; createVideoMarker({time:currentCycle.end,label:'Fim Ciclo'}); const tr = document.createElement('tr'); tr.innerHTML = `<td colspan="5"><strong>Ciclo ${currentCycle.id}</strong> Início ${formatTime(currentCycle.start)} • Fim ${formatTime(currentCycle.end)} • Duração ${(currentCycle.end-currentCycle.start).toFixed(3)}s</td>`; tbody.appendChild(tr); currentCycle = null; updateStats(); video.play().catch(()=>{}); }
+function startCycleUI(){
+  if (currentCycle) {
+    if (!confirm('Ciclo ativo. Reiniciar?')) return;
+    currentCycle = null;
+  }
+  currentCycle = { id:'c'+Date.now(), start: video.currentTime||0, end: null, steps: [] };
+  document.getElementById('last-action').textContent = 'Ciclo iniciado';
+  updateStats();
+}
+function endCycleUI(){
+  if (!currentCycle) {
+    createVideoMarker({time:video.currentTime||0,label:'Ponto'});
+    document.getElementById('last-action').textContent = 'Marcador criado';
+    return;
+  }
+  currentCycle.end = video.currentTime||0;
+  cycles.push(currentCycle);
+  createVideoMarker({time:currentCycle.end,label:'Fim ciclo'});
+  currentCycle = null;
+  document.getElementById('last-action').textContent = 'Ciclo finalizado';
+  updateStats();
+}
 
 ////////////////////
 // save JSON local/download
@@ -408,7 +431,7 @@ function gatherAnalysisData(){
     const desc = tr.querySelector('td[contenteditable]')?.innerText || '';
     const s = steps.find(x=>x.id===id); if (s) s.description = desc;
   });
-  return { name: document.getElementById('analysis-name').value||'', analyst: document.getElementById('analyst-name').value||'', created_at: new Date().toISOString(), steps: steps.slice(), cycles: cycles.slice(), markers: markersDom.map(m=>({time:parseFloat(m.dataset.time)})) };
+  return { name: document.getElementById('analysis-name').value||'', analyst: document.getElementById('analyst-name').value||'', created_at: new Date().toISOString(), steps: steps.slice(), cycles: cycles.slice() , markers: markersDom.map(m=>({time: parseFloat(m.dataset.time), title: m.title})) };
 }
 function applyRestoredAnalysis(data) {
   try {
@@ -464,28 +487,25 @@ async function downloadAllThumbnailsZip() {
 }
 
 ////////////////////
-// Export XLSX with images (ExcelJS)
+// Export XLSX with images (ExcelJS) - kept simple and guarded
 async function exportAnalysisXLSX(includeImages = true) {
+  if (!window.ExcelJS) return alert('ExcelJS não carregado no ambiente.');
   const data = gatherAnalysisData();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Etapas');
 
-  ws.columns = [{header:'#', key:'i', width:6},{header:'Descrição',key:'desc', width:40},{header:'Tempo(s)',key:'time',width:12},{header:'Tempo formatado',key:'tform',width:14},{header:'Miniatura',key:'thumb',width:20}];
+  ws.columns = [{header:'#', key:'i', width:6},{header:'Descrição',key:'desc', width:40},{header:'Tempo(s)',key:'time',width:12},{header:'Tempo formatado',key:'tform',width:14}];
 
-  // add rows without images first
   for (let s of data.steps) ws.addRow({i:s.index, desc:s.description || '', time:(s.time||0).toFixed(3), tform:formatTime(s.time)});
 
-  // embed images row by row if requested
   if (includeImages) {
     for (let i=0;i<data.steps.length;i++){
       const s = data.steps[i];
       if (!s.thumbnail) continue;
       try {
         const imgBlob = dataURLtoBlob(s.thumbnail);
-        // ExcelJS expects ArrayBuffer
         const arrayBuffer = await imgBlob.arrayBuffer();
         const imageId = wb.addImage({buffer: arrayBuffer, extension: 'png'});
-        // place image in the cell: rows start at 1 and header is first row
         const rowNumber = i + 2; // header row + index
         ws.addImage(imageId, {tl: {col:4, row: rowNumber-1}, ext: {width:80, height:60}});
       } catch (e) { console.warn('Erro embed imagem XLSX', e); }
@@ -496,12 +516,13 @@ async function exportAnalysisXLSX(includeImages = true) {
   const blob = new Blob([buf], {type:'application/octet-stream'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${(data.name||'cronoanalise')}.xlsx`; document.body.appendChild(a); a.click(); a.remove();
   document.getElementById('last-action').textContent = 'XLSX gerado';
-  alert('XLSX gerado. Obs.: navegadores podem demorar com arquivos grandes (muitas imagens).');
+  alert('XLSX gerado.');
 }
 
 ////////////////////
 // Export PDF (cover + TOC + pages per step) - uses jsPDF
 async function exportAnalysisPDF() {
+  if (!window.jspdf) return alert('jsPDF não carregado.');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const margin = 12, pageWidth = doc.internal.pageSize.getWidth(), pageHeight = doc.internal.pageSize.getHeight(), usableW = pageWidth - margin*2;
@@ -615,7 +636,19 @@ function recreateOverlayMarkers() {
 }
 
 ////////////////////
-// Keyboard shortcuts
+// Keyboard shortcuts and simple controls
+function togglePlayPause() {
+  if (video.paused) video.play().catch(()=>{});
+  else video.pause();
+}
+function frameForward() {
+  if (!video.duration) return;
+  video.currentTime = Math.min(video.duration, video.currentTime + (1/30));
+}
+function frameBackward() {
+  video.currentTime = Math.max(0, video.currentTime - (1/30));
+}
+
 document.addEventListener('keydown', (ev) => {
   const tag = document.activeElement?.tagName?.toLowerCase();
   const editing = document.activeElement?.isContentEditable || ['input','textarea','select'].includes(tag);
@@ -636,29 +669,104 @@ window.chooseStorageDir = chooseStorageDir; window.saveAllToStorage = saveAllToS
 ////////////////////
 // Init: restore autosave enabled state (default enabled) and schedule autosave
 (function init(){
-  // restore autosave setting from localStorage if present
   try {
     const asEnabled = localStorage.getItem('crono_autosave_enabled');
     const asInterval = localStorage.getItem('crono_autosave_interval');
     if (asEnabled !== null) document.getElementById('autosave-enabled').checked = asEnabled === 'true';
     if (asInterval !== null) document.getElementById('autosave-interval').value = parseInt(asInterval,10) || 5;
   } catch(e){}
-  // persist UI changes
   document.getElementById('autosave-enabled').addEventListener('change', (e)=>{ localStorage.setItem('crono_autosave_enabled', e.target.checked); scheduleAutosave(); });
   document.getElementById('autosave-interval').addEventListener('change', (e)=>{ localStorage.setItem('crono_autosave_interval', e.target.value); scheduleAutosave(); });
 
-  // try to restore last autosave automatically if present
   const last = localStorage.getItem(AUTOSAVE_KEY);
   if (last) {
     try {
       const data = JSON.parse(last);
-      // prompt user to restore or not
       if (confirm('Encontrado autosave local. Deseja restaurar a última análise?')) applyRestoredAnalysis(data);
     } catch(e){}
   }
-
-  // schedule autosave if enabled
   scheduleAutosave();
+})();
+
+////////////////////
+// --- FIX: versão reforçada do loadVideoFromInput (forçar paint/thumbnail) ---
+// Substitui a função global loadVideoFromInput utilizada pelo input file onchange.
+// Essa função espera loadeddata, tenta capturar frame e faz um play() muted rápido para forçar renderização.
+(function(){
+  function ensureVideoVisible() {
+    video.style.display = 'block';
+    video.style.background = '#000';
+    placeholder.style.display = 'none';
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+  }
+
+  async function loadVideoFromInputFixed(e){
+    const f = e?.target?.files?.[0];
+    if (!f) return;
+    try {
+      const url = URL.createObjectURL(f);
+      video.src = url;
+      ensureVideoVisible();
+      console.log('[crono-fix] video src set:', f.name, url);
+
+      await new Promise((resolve) => {
+        let resolved = false;
+        const t = setTimeout(() => { if (!resolved) { resolved = true; console.warn('[crono-fix] loadeddata timeout'); resolve(); } }, 4000);
+        function onLoaded() { if (resolved) return; resolved = true; clearTimeout(t); video.removeEventListener('loadeddata', onLoaded); resolve(); }
+        video.addEventListener('loadeddata', onLoaded);
+        video.addEventListener('loadedmetadata', onLoaded, {once:true});
+      });
+
+      // tenta capturar o frame imediatamente para forçar renderizar e mostrar miniatura
+      try {
+        const thumb = captureFrame();
+        if (thumb) {
+          console.log('[crono-fix] thumbnail gerada');
+          showLastThumbnail(thumb);
+        } else {
+          console.warn('[crono-fix] captureFrame retornou null — frame pode não estar pronto');
+        }
+      } catch (e) {
+        console.warn('[crono-fix] falha ao gerar thumbnail', e);
+      }
+
+      // Força um pequeno play/pause com muted para browsers que só pintam quando há reprodução
+      try {
+        const wasMuted = video.muted;
+        video.muted = true;
+        await video.play().catch(err => { console.warn('[crono-fix] play() rejeitado', err); });
+        video.pause();
+        video.muted = wasMuted;
+      } catch (err) {
+        console.warn('[crono-fix] tentativa de play/pause falhou', err);
+      }
+
+      document.getElementById('last-action').textContent = 'Vídeo carregado: ' + f.name;
+    } catch (err) {
+      console.error('[crono-fix] erro ao carregar vídeo', err);
+      alert('Erro ao carregar vídeo: ver console do navegador para detalhes.');
+    }
+  }
+
+  // listeners para logs
+  video.addEventListener('error', (ev) => {
+    console.error('[crono-fix] video element error', ev, video.error);
+    alert('Erro no elemento de vídeo. Ver console (video.error).');
+  });
+  video.addEventListener('loadedmetadata', () => {
+    console.log('[crono-fix] loadedmetadata:', video.videoWidth, 'x', video.videoHeight, 'duration=', video.duration);
+    ensureVideoVisible();
+  });
+  video.addEventListener('loadeddata', () => {
+    console.log('[crono-fix] loadeddata - primeiro frame disponível');
+    ensureVideoVisible();
+  });
+
+  // substitui a função global
+  window.loadVideoFromInput = loadVideoFromInputFixed;
+  // expõe para console
+  window._crono_fix = { loadVideoFromInputFixed };
 })();
 </script>
 </body>
