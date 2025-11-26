@@ -1,1795 +1,665 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eng Process & Quality - Cronoanálise MTM Avançada</title>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #111827;
-            --muted: #1f2937;
-            --card: #0b1220;
-            --text: #e5e7eb;
-            --accent: #22d3ee;
-            --accent2: #a78bfa;
-            --ok: #22c55e;
-            --warn: #f59e0b;
-            --bad: #ef4444;
-            --shadow: 0 10px 30px rgba(0,0,0,.35);
-            --radius: 16px;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Inter, Arial, sans-serif;
-            background: linear-gradient(120deg, #0b1020, #0a1328);
-            color: var(--text);
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            grid-template-rows: auto 1fr;
-            gap: 0;
-        }
-
-        header {
-            grid-column: 1/3;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 20px;
-            background: linear-gradient(90deg, #0b1020, #0a1a35);
-            border-bottom: 1px solid #1e293b;
-            position: sticky;
-            top: 0;
-            z-index: 5;
-        }
-
-        .header-title h1 {
-            margin: 0;
-            font-size: 20px;
-            letter-spacing: .4px;
-            color: var(--text);
-        }
-
-        .header-title .subtitle {
-            margin: 4px 0 0 0;
-            font-size: 14px;
-            font-weight: normal;
-            color: var(--accent);
-        }
-
-        .header-title .dev-credit {
-            margin: 4px 0 0 0;
-            font-size: 11px;
-            font-weight: normal;
-            color: #64748b;
-        }
-
-        header .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        button, .btn {
-            background: var(--muted);
-            color: var(--text);
-            border: 1px solid #243041;
-            border-radius: 12px;
-            padding: 10px 14px;
-            cursor: pointer;
-            box-shadow: var(--shadow);
-            transition: .2s;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        button:hover, .btn:hover {
-            transform: translateY(-1px);
-            border-color: #334155;
-        }
-
-        button.primary, .btn.primary {
-            background: linear-gradient(180deg, #0ea5e9, #2563eb);
-            border-color: transparent;
-        }
-
-        button.ghost, .btn.ghost {
-            background: transparent;
-            border-color: #334155;
-        }
-
-        aside {
-            border-right: 1px solid #1f2937;
-            background: linear-gradient(180deg, #0b1020, #0a1328);
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            justify-content: space-between;
-        }
-
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .menu .tab-link {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            text-decoration: none;
-            color: #cbd5e1;
-            padding: 10px 12px;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            background: rgba(255,255,255,.02);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .menu .tab-link.active, .menu .tab-link:hover {
-            border-color: #334155;
-            background: rgba(34,211,238,.08);
-            color: #e2e8f0;
-        }
-
-        main {
-            padding: 18px;
-            overflow: auto;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        section {
-            background: rgba(255,255,255,.03);
-            border: 1px solid #1f2937;
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 18px;
-            box-shadow: var(--shadow);
-        }
-
-        h2, h3 {
-            margin: 0 0 12px 0;
-            font-size: 18px;
-            color: var(--accent);
-        }
-
-        h4 {
-            margin: 0 0 12px 0;
-            font-size: 16px;
-            color: var(--accent2);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 12px;
-        }
-
-        .col-6 { grid-column: span 6; }
-        .col-4 { grid-column: span 4; }
-        .col-3 { grid-column: span 3; }
-        .col-12 { grid-column: span 12; }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        label {
-            font-size: 12px;
-            color: #93c5fd;
-        }
-
-        input, select, textarea {
-            background: #0b1220;
-            border: 1px solid #243041;
-            color: var(--text);
-            padding: 10px 12px;
-            border-radius: 10px;
-            outline: none;
-            font-family: inherit;
-            font-size: 14px;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--accent);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-        }
-
-        th, td {
-            padding: 8px 12px;
-            border: 1px solid var(--muted);
-            text-align: left;
-            font-size: 14px;
-            vertical-align: middle;
-        }
-
-        th {
-            background: rgba(255,255,255,.05);
-            font-weight: 600;
-        }
-
-        tfoot td {
-            font-weight: bold;
-            background: rgba(34,211,238,.08);
-        }
-
-        .analysis-card {
-            padding: 16px;
-            border: 1px solid var(--muted);
-            border-radius: var(--radius);
-            margin-bottom: 12px;
-            background: var(--card);
-        }
-
-        .analysis-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        video {
-            width: 100%;
-            border-radius: 8px;
-            background: #000;
-            max-height: 400px;
-        }
-
-        #crono-display {
-            font-size: 3rem;
-            font-weight: bold;
-            text-align: center;
-            color: var(--accent);
-            background: var(--card);
-            padding: 20px;
-            border-radius: 8px;
-            font-family: monospace;
-            border: 2px solid var(--muted);
-        }
-
-        .video-controls {
-            display: flex;
-            gap: 8px;
-            margin: 12px 0;
-            flex-wrap: wrap;
-        }
-
-        .video-controls button {
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin: 16px 0;
-        }
-
-        .stat-card {
-            background: var(--card);
-            border: 1px solid var(--muted);
-            border-radius: 8px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--accent);
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        .mtm-database {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .mtm-code {
-            background: var(--accent);
-            color: #000;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .ergonomia-indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .ergonomia-1 { background: var(--ok); }
-        .ergonomia-2 { background: var(--warn); }
-        .ergonomia-3 { background: var(--bad); }
-
-        .action-plans {
-            margin-top: 20px;
-        }
-
-        .action-plan-item {
-            background: var(--card);
-            border: 1px solid var(--muted);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
-        }
-
-        /* Support Developer Button */
-        .support-developer {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 12px 20px;
-            margin: 16px 0;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            text-align: center;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .support-developer:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
-            background: linear-gradient(135deg, #16a34a, #15803d);
-        }
-
-        .support-developer:active {
-            transform: translateY(0);
-        }
-
-        .support-developer::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .support-developer:hover::before {
-            left: 100%;
-        }
-
-        .support-developer i {
-            font-size: 16px;
-        }
-
-        /* PIX Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--panel);
-            border: 1px solid var(--muted);
-            border-radius: var(--radius);
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-            box-shadow: var(--shadow);
-            position: relative;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .pix-qr {
-            max-width: 200px;
-            margin: 20px auto;
-            border-radius: 8px;
-        }
-
-        .pix-key {
-            background: var(--card);
-            border: 1px solid var(--muted);
-            border-radius: 8px;
-            padding: 12px;
-            margin: 16px 0;
-            font-family: monospace;
-            word-break: break-all;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .copy-btn {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            padding: 6px 12px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        .copy-btn:hover {
-            background: #0891b2;
-        }
-
-        .shortcuts-modal .modal-content {
-            max-width: 600px;
-        }
-
-        .shortcuts-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            text-align: left;
-        }
-
-        .shortcut-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--muted);
-        }
-
-        .shortcut-key {
-            background: var(--card);
-            border: 1px solid var(--muted);
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-family: monospace;
-            font-size: 12px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            body {
-                grid-template-columns: 1fr;
-            }
-
-            aside {
-                display: none;
-            }
-
-            .grid {
-                grid-template-columns: 1fr;
-            }
-
-            .shortcuts-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Registros sidebar */
-        .registros {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--muted);
-        }
-
-        .registros h4 {
-            margin: 0 0 12px 0;
-            font-size: 14px;
-            color: var(--accent2);
-        }
-
-        .registro-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-
-        .registro-count {
-            background: var(--accent);
-            color: #000;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        /* Template cards */
-        .template-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .template-card {
-            background: var(--card);
-            border: 1px solid var(--muted);
-            border-radius: var(--radius);
-            padding: 20px;
-            text-align: center;
-        }
-
-        .template-card h4 {
-            color: var(--accent);
-            margin-bottom: 8px;
-        }
-
-        .template-card p {
-            color: #94a3b8;
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .use-template-btn {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        .use-template-btn:hover {
-            background: #0891b2;
-            transform: translateY(-1px);
-        }
-    </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cronoanálise MTM — Avançado</title>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- libs para export e ZIP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.8.0/pptxgen.min.js"></script>
+
+  <style>
+    :root{--bg:#071026;--card:#071220;--muted:#233044;--accent:#22d3ee;--text:#e6eef6}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Arial;background:linear-gradient(120deg,#071026,#091233);color:var(--text);display:grid;grid-template-columns:260px 1fr;gap:0;height:100vh}
+    header{grid-column:1/3;padding:12px 18px;background:linear-gradient(90deg,#081424,#0b2a44);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.03)}
+    aside{padding:14px;border-right:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg,#071226,#061a2f)}
+    main{padding:14px;overflow:auto}
+    button{cursor:pointer;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:var(--text)}
+    button.primary{background:linear-gradient(180deg,#06b6d4,#2563eb);color:#001}
+    .video-wrapper{position:relative;border-radius:8px;overflow:hidden;background:#000}
+    video{width:100%;display:block;max-height:720px}
+    .video-marker{position:absolute;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#ff5a4a;border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.6)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    table{width:100%;border-collapse:collapse;margin-top:12px;background:transparent;font-size:13px}
+    th,td{padding:8px;border:1px solid rgba(255,255,255,0.03);text-align:left}
+    thead th{background:rgba(255,255,255,0.02)}
+    .panel{background:linear-gradient(180deg,#071526,#041427);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+    .small{font-size:12px;color:#9fbfd0}
+    input,select{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:6px;color:var(--text)}
+    /* Overlay para vídeo expandido */
+    #video-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; align-items:center; justify-content:center; }
+    #video-overlay .overlay-content { width:92%; max-width:1400px; max-height:92%; background:#000; border-radius:8px; position:relative; display:flex; flex-direction:column; padding:8px; }
+    #video-overlay .close-btn { position:absolute; right:10px; top:10px; z-index:20; background:rgba(255,255,255,0.06); border:none;color:var(--text);padding:8px;border-radius:6px;cursor:pointer; }
+    #video-overlay .overlay-video { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    #video-overlay .overlay-controls { margin-top:8px; display:flex; gap:8px; justify-content:center; }
+    @media (max-width:900px){body{grid-template-columns:1fr}aside{display:none}}
+  </style>
 </head>
 <body>
-    <header>
-        <div class="header-title">
-            <h1>Eng Process & Quality</h1>
-            <div class="subtitle">Cronoanálise MTM Avançada - Versão 2.0</div>
-            <div class="dev-credit">Desenvolvido por Marcos Garçon</div>
-        </div>
-        <div class="actions">
-            <button class="ghost" onclick="showShortcuts()">
-                <i class="ph ph-keyboard"></i> Atalhos
-            </button>
-            <button class="ghost" onclick="restoreBackup()">
-                <i class="ph ph-upload"></i> Restaurar Backup (.json)
-            </button>
-            <button class="ghost" onclick="downloadBackup()">
-                <i class="ph ph-download"></i> Baixar Backup (.json)
-            </button>
-            <button class="ghost" onclick="archiveAndClear()">
-                <i class="ph ph-archive"></i> Arquivar e Limpar
-            </button>
-            <button class="primary" onclick="exportToPDF()">
-                <i class="ph ph-file-pdf"></i> Exportar FIT (PDF)
-            </button>
-        </div>
-    </header>
+  <header>
+    <div>
+      <strong>Eng Process & Quality</strong> — Cronoanálise MTM
+      <div class="small">Autosave, download em lote (ZIP), XLSX com imagens, PDF avançado</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="primary" onclick="exportAnalysisPDF()">Exportar PDF</button>
+      <button onclick="exportAnalysisPPTX()">Exportar PPTX</button>
+      <button onclick="exportAnalysisXLSX(true)">Exportar XLSX (com imagens)</button>
+      <button onclick="downloadAllThumbnailsZip()">Baixar miniaturas (ZIP)</button>
+    </div>
+  </header>
 
-    <aside>
-        <div class="menu">
-            <a href="#" class="tab-link active" data-tab="cronoanalises">
-                <i class="ph ph-timer"></i>
-                <span>Cronoanálises</span>
-            </a>
-            <a href="#" class="tab-link" data-tab="base-mtm">
-                <i class="ph ph-database"></i>
-                <span>Base MTM</span>
-            </a>
-            <a href="#" class="tab-link" data-tab="estatisticas">
-                <i class="ph ph-chart-bar"></i>
-                <span>Estatísticas</span>
-            </a>
-            <a href="#" class="tab-link" data-tab="templates">
-                <i class="ph ph-files"></i>
-                <span>Templates</span>
-            </a>
-            <a href="#" class="tab-link" data-tab="configuracoes">
-                <i class="ph ph-gear"></i>
-                <span>Configurações</span>
-            </a>
-            <a href="#" class="tab-link" data-tab="ajuda">
-                <i class="ph ph-question"></i>
-                <span>Ajuda</span>
-            </a>
-        </div>
-
-        <div class="registros">
-            <h4>Registros</h4>
-            <div class="registro-item">
-                <span>Análises Salvas:</span>
-                <span class="registro-count" id="count-analyses">0</span>
-            </div>
-            <div class="registro-item">
-                <span>Códigos MTM:</span>
-                <span class="registro-count" id="count-mtm">35</span>
-            </div>
-            <div class="registro-item">
-                <span>Templates:</span>
-                <span class="registro-count" id="count-templates">3</span>
-            </div>
-        </div>
-
-        <button class="support-developer" onclick="showPixModal()">
-            <i class="ph ph-heart"></i>
-            <span>Apoie o Desenvolvedor</span>
-        </button>
-    </aside>
-
-    <main>
-        <!-- Cronoanálises Tab -->
-        <div id="cronoanalises" class="tab-content active">
-            <section>
-                <div class="grid">
-                    <div class="col-3">
-                        <input type="text" placeholder="Buscar análises..." id="search-analyses">
-                    </div>
-                    <div class="col-3">
-                        <select id="filter-analyst">
-                            <option>Todos os analistas</option>
-                        </select>
-                    </div>
-                    <div class="col-3">
-                        <select id="filter-date">
-                            <option>Todas as datas</option>
-                            <option>Hoje</option>
-                            <option>Esta semana</option>
-                            <option>Este mês</option>
-                        </select>
-                    </div>
-                    <div class="col-3">
-                        <button class="primary" onclick="newAnalysis()">
-                            <i class="ph ph-plus"></i> Nova Cronoanálise
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="analyses-list">
-                <p style="text-align: center; color: #64748b; padding: 40px;">
-                    Nenhuma análise salva. Clique em "+ Nova Cronoanálise" para começar.
-                </p>
-            </section>
-
-            <!-- Nova Análise Form -->
-            <section id="new-analysis-form" class="hidden">
-                <h3>Nova Cronoanálise</h3>
-                <div class="grid">
-                    <div class="col-3">
-                        <div class="field">
-                            <label>Nome da Análise / Processo</label>
-                            <input type="text" id="analysis-name">
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="field">
-                            <label>Nome do Analista</label>
-                            <input type="text" id="analyst-name">
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="field">
-                            <label>Data da Análise</label>
-                            <input type="date" id="analysis-date">
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="field">
-                            <label>Tipo de Processo</label>
-                            <select id="process-type">
-                                <option>Selecione...</option>
-                                <option>Montagem</option>
-                                <option>Usinagem</option>
-                                <option>Embalagem</option>
-                                <option>Inspeção</option>
-                                <option>Transporte</option>
-                                <option>Outro</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="field">
-                            <label>Sistema MTM</label>
-                            <select id="mtm-system">
-                                <option>MTM-1</option>
-                                <option>MTM-UAS</option>
-                                <option>MOST</option>
-                                <option>Misto</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Video Section -->
-                <h4>Medição</h4>
-                <div class="grid">
-                    <div class="col-8">
-                        <video id="analysis-video" controls style="display: none;">
-                            Seu navegador não suporta vídeo.
-                        </video>
-                        <div id="video-placeholder" style="background: var(--card); border: 2px dashed var(--muted); border-radius: 8px; padding: 40px; text-align: center; color: #64748b;">
-                            Carregue um vídeo para começar a análise
-                        </div>
-                        
-                        <div class="video-controls">
-                            <button onclick="togglePlayPause()">
-                                <i class="ph ph-play"></i> Play/Pause
-                            </button>
-                            <button onclick="frameBackward()">
-                                <i class="ph ph-skip-back"></i> -Frame
-                            </button>
-                            <button onclick="frameForward()">
-                                <i class="ph ph-skip-forward"></i> +Frame
-                            </button>
-                            <button onclick="markPoint()">
-                                <i class="ph ph-map-pin"></i> Marcar
-                            </button>
-                            <div class="field" style="flex-direction: row; align-items: center; gap: 8px;">
-                                <label>Velocidade:</label>
-                                <select id="playback-speed" onchange="changeSpeed()">
-                                    <option value="0.25">0.25x</option>
-                                    <option value="0.5">0.5x</option>
-                                    <option value="0.75">0.75x</option>
-                                    <option value="1" selected>1x</option>
-                                    <option value="1.25">1.25x</option>
-                                    <option value="1.5">1.5x</option>
-                                    <option value="2">2x</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="field">
-                            <label>Carregar vídeo:</label>
-                            <input type="file" id="video-upload" accept="video/*" onchange="loadVideo()">
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div id="crono-display">00:00.000</div>
-                        
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-value" id="stat-steps">0</div>
-                                <div class="stat-label">Etapas</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value" id="stat-tmu">0.0</div>
-                                <div class="stat-label">TMU Médio</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value" id="stat-efficiency">0%</div>
-                                <div class="stat-label">Eficiência</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value" id="stat-ergonomics">1.0</div>
-                                <div class="stat-label">Ergonomia</div>
-                            </div>
-                        </div>
-
-                        <button class="primary" onclick="addStep()" style="width: 100%; margin-top: 16px;">
-                            <i class="ph ph-plus"></i> Adicionar Etapa
-                        </button>
-                        <button class="ghost" onclick="previewFIT()" style="width: 100%; margin-top: 8px;">
-                            <i class="ph ph-eye"></i> Visualizar FIT
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Analysis Table -->
-                <h4>Tabela de Tempos e Movimentos</h4>
-                <div style="overflow-x: auto;">
-                    <table id="analysis-table">
-                        <thead>
-                            <tr>
-                                <th>Nº</th>
-                                <th>Descrição da Etapa</th>
-                                <th>Foto (Key Point)</th>
-                                <th>Código MTM</th>
-                                <th>Sistema</th>
-                                <th>TMU</th>
-                                <th>Fator (%)</th>
-                                <th>TMU Corrig.</th>
-                                <th>Tempo (s)</th>
-                                <th>Ergonomia</th>
-                                <th>Qualidade</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="analysis-tbody">
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td><strong>TOTAIS</strong></td>
-                                <td colspan="5"></td>
-                                <td><strong id="total-tmu">0.00</strong></td>
-                                <td><strong id="total-time">0.000</strong></td>
-                                <td><strong>-</strong></td>
-                                <td><strong>-</strong></td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                <!-- Action Plans -->
-                <h4>Planos de Ação e Melhorias</h4>
-                <div class="action-plans" id="action-plans">
-                    <button class="ghost" onclick="addActionPlan()">
-                        <i class="ph ph-plus"></i> Adicionar Plano de Ação
-                    </button>
-                </div>
-
-                <div style="margin-top: 24px; display: flex; gap: 12px;">
-                    <button class="primary" onclick="saveAnalysis()">
-                        <i class="ph ph-floppy-disk"></i> Salvar Cronoanálise
-                    </button>
-                    <button class="ghost" onclick="cancelAnalysis()">
-                        <i class="ph ph-x"></i> Cancelar
-                    </button>
-                    <button class="ghost" onclick="validateQuality()">
-                        <i class="ph ph-check-circle"></i> Validar Qualidade
-                    </button>
-                </div>
-            </section>
-        </div>
-
-        <!-- Base MTM Tab -->
-        <div id="base-mtm" class="tab-content">
-            <section>
-                <h3>Base de Dados MTM Expandida</h3>
-                <p>Base de dados completa com MTM-1, MTM-UAS, MOST e dados ergonômicos. Filtre por sistema ou categoria.</p>
-                
-                <div class="mtm-database">
-                    <table id="mtm-table">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Sistema</th>
-                                <th>Categoria</th>
-                                <th>Descrição</th>
-                                <th>TMU Padrão</th>
-                                <th>Ergonomia</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mtm-tbody">
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
-
-        <!-- Estatísticas Tab -->
-        <div id="estatisticas" class="tab-content">
-            <section>
-                <h3>Análises Estatísticas</h3>
-                
-                <h4>Distribuição de Tempos</h4>
-                <canvas id="time-distribution-chart" width="400" height="200"></canvas>
-                
-                <h4>Análise de Pareto - Códigos MTM</h4>
-                <canvas id="pareto-chart" width="400" height="200"></canvas>
-            </section>
-        </div>
-
-        <!-- Templates Tab -->
-        <div id="templates" class="tab-content">
-            <section>
-                <h3>Templates de Análise</h3>
-                <p>Templates pré-configurados para processos comuns.</p>
-                
-                <div class="template-grid">
-                    <div class="template-card">
-                        <h4>Montagem Manual</h4>
-                        <p>Template para operações de montagem manual com componentes pequenos.</p>
-                        <button class="use-template-btn" onclick="useTemplate('montagem')">Usar Template</button>
-                    </div>
-                    <div class="template-card">
-                        <h4>Embalagem</h4>
-                        <p>Template para operações de embalagem e acondicionamento.</p>
-                        <button class="use-template-btn" onclick="useTemplate('embalagem')">Usar Template</button>
-                    </div>
-                    <div class="template-card">
-                        <h4>Inspeção Visual</h4>
-                        <p>Template para operações de inspeção e controle de qualidade.</p>
-                        <button class="use-template-btn" onclick="useTemplate('inspecao')">Usar Template</button>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Configurações Tab -->
-        <div id="configuracoes" class="tab-content">
-            <section>
-                <h3>Configurações</h3>
-                
-                <h4>Preferências Gerais</h4>
-                <div class="grid">
-                    <div class="col-4">
-                        <div class="field">
-                            <label>Analista Padrão</label>
-                            <input type="text" id="default-analyst" placeholder="Nome do analista">
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="field">
-                            <label>Sistema MTM Padrão</label>
-                            <select id="default-mtm-system">
-                                <option>MTM-1</option>
-                                <option>MTM-UAS</option>
-                                <option>MOST</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="field">
-                            <label>Auto-salvar (minutos)</label>
-                            <input type="number" id="autosave-interval" value="5" min="1" max="60">
-                        </div>
-                    </div>
-                </div>
-
-                <h4>Validação de Qualidade</h4>
-                <div class="grid">
-                    <div class="col-4">
-                        <label>
-                            <input type="checkbox" id="enable-quality-checks" checked>
-                            Habilitar verificações de qualidade
-                        </label>
-                    </div>
-                    <div class="col-4">
-                        <label>
-                            <input type="checkbox" id="show-ergonomic-alerts" checked>
-                            Mostrar alertas ergonômicos
-                        </label>
-                    </div>
-                    <div class="col-4">
-                        <label>
-                            <input type="checkbox" id="suggest-mtm-codes" checked>
-                            Sugerir códigos MTM automaticamente
-                        </label>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Ajuda Tab -->
-        <div id="ajuda" class="tab-content">
-            <section>
-                <h3>Guia de Utilização - Cronoanálise MTM Avançada</h3>
-                
-                <h4>Novidades da Versão 2.0</h4>
-                <ul>
-                    <li><strong>Base MTM Expandida:</strong> Inclui MTM-1, MTM-UAS, MOST e dados ergonômicos</li>
-                    <li><strong>Atalhos de Teclado:</strong> Navegação rápida e controles de vídeo</li>
-                    <li><strong>Análises Estatísticas:</strong> Gráficos e métricas de produtividade</li>
-                    <li><strong>Templates:</strong> Modelos pré-configurados para processos comuns</li>
-                    <li><strong>Validação de Qualidade:</strong> Verificações automáticas e alertas</li>
-                    <li><strong>Controles de Vídeo Avançados:</strong> Frame-by-frame, marcadores, velocidade variável</li>
-                </ul>
-
-                <h4>Atalhos de Teclado</h4>
-                <ul>
-                    <li><code>F1</code> - Mostrar/ocultar atalhos</li>
-                    <li><code>Espaço</code> - Play/Pause do vídeo</li>
-                    <li><code>Ctrl + N</code> - Nova cronoanálise</li>
-                    <li><code>Ctrl + S</code> - Salvar cronoanálise</li>
-                    <li><code>Ctrl + E</code> - Adicionar etapa</li>
-                    <li><code>Delete</code> - Excluir etapa selecionada</li>
-                    <li><code>← / →</code> - Navegar frame por frame</li>
-                    <li><code>Shift + ← / →</code> - Pular 5 segundos</li>
-                    <li><code>M</code> - Marcar ponto no vídeo</li>
-                    <li><code>C</code> - Capturar screenshot</li>
-                </ul>
-
-                <h4>Base de Dados MTM</h4>
-                <p>A versão 2.0 inclui uma base completa com mais de 100 códigos MTM pré-configurados:</p>
-                <ul>
-                    <li><strong>MTM-1:</strong> Movimentos básicos (Reach, Move, Turn, Grasp, Position, Release)</li>
-                    <li><strong>MTM-UAS:</strong> Sistema de análise universal com 77 códigos</li>
-                    <li><strong>MOST:</strong> Modelos de sequência para atividades complexas</li>
-                    <li><strong>Dados Ergonômicos:</strong> Avaliação EAWS integrada</li>
-                </ul>
-
-                <h4>Análises Estatísticas</h4>
-                <p>Visualize tendências e padrões em suas análises:</p>
-                <ul>
-                    <li>Distribuição de tempos por operação</li>
-                    <li>Análise de Pareto dos códigos MTM mais utilizados</li>
-                    <li>Métricas de eficiência e produtividade</li>
-                    <li>Comparação entre analistas e períodos</li>
-                </ul>
-
-                <h4>Validação de Qualidade</h4>
-                <p>O sistema agora inclui verificações automáticas:</p>
-                <ul>
-                    <li>Detecção de discrepâncias entre tempos observados e padrão</li>
-                    <li>Alertas para movimentos com alto risco ergonômico</li>
-                    <li>Sugestões de melhoria baseadas em boas práticas</li>
-                    <li>Indicadores visuais de qualidade da análise</li>
-                </ul>
-            </section>
-        </div>
-    </main>
-
-    <!-- PIX Modal -->
-    <div id="pix-modal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closePixModal()">&times;</button>
-            <h3 style="color: var(--accent); margin-bottom: 16px;">
-                <i class="ph ph-heart"></i> Apoie o Desenvolvedor
-            </h3>
-            <p style="margin-bottom: 20px;">Sua contribuição é muito importante para o desenvolvimento e manutenção desta ferramenta.</p>
-            
-            <img src="../pix-qr-code.png" alt="QR Code PIX" class="pix-qr">
-            
-            <div class="pix-key">
-                <span>01K77BPNA1JZ341S4QFS0YV3CM</span>
-                <button class="copy-btn" onclick="copyPixKey()">Copiar</button>
-            </div>
-            
-            <p style="margin-top: 16px; font-size: 14px; color: #64748b;">
-                Obrigado pelo seu apoio!
-            </p>
-        </div>
+  <aside>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Autosave</strong></div>
+      </div>
+      <div class="small" style="margin-top:8px">Salvar automaticamente a cada N minutos.</div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <label class="small">Ativar</label>
+        <input type="checkbox" id="autosave-enabled" />
+        <label class="small">Intervalo (min)</label>
+        <input type="number" id="autosave-interval" value="5" min="1" style="width:70px"/>
+      </div>
+      <div class="small" style="margin-top:8px">Destino: localStorage (reabertura automática). Se escolher pasta (rede), autosave também pode gravar lá.</div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button onclick="restoreFromLocalStorage()">Restaurar Última</button>
+        <button onclick="clearAutosave()">Limpar Autosave</button>
+      </div>
     </div>
 
-    <!-- Shortcuts Modal -->
-    <div id="shortcuts-modal" class="modal shortcuts-modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeShortcutsModal()">&times;</button>
-            <h3 style="color: var(--accent); margin-bottom: 20px;">Atalhos de Teclado</h3>
-            
-            <div class="shortcuts-grid">
-                <div class="shortcut-item">
-                    <span>Mostrar/Ocultar Atalhos</span>
-                    <span class="shortcut-key">F1</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Play/Pause Vídeo</span>
-                    <span class="shortcut-key">Espaço</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Nova Cronoanálise</span>
-                    <span class="shortcut-key">Ctrl + N</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Salvar Cronoanálise</span>
-                    <span class="shortcut-key">Ctrl + S</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Adicionar Etapa</span>
-                    <span class="shortcut-key">Ctrl + E</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Frame Anterior/Próximo</span>
-                    <span class="shortcut-key">← / →</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Pular 5 segundos</span>
-                    <span class="shortcut-key">Shift + ← / →</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Marcar Ponto</span>
-                    <span class="shortcut-key">M</span>
-                </div>
-                <div class="shortcut-item">
-                    <span>Capturar Screenshot</span>
-                    <span class="shortcut-key">C</span>
-                </div>
-            </div>
-            
-            <button class="primary" onclick="closeShortcutsModal()" style="margin-top: 20px;">Fechar</button>
-        </div>
+    <div style="height:12px"></div>
+
+    <div class="panel">
+      <div><strong>Storage (opcional)</strong></div>
+      <div class="small" style="margin-top:8px">Escolha uma pasta (rede) para salvar arquivos completos (JSON + miniaturas)</div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button onclick="chooseStorageDir()">Escolher Pasta</button>
+        <button onclick="clearStoredDir()">Limpar</button>
+      </div>
+      <div class="small" id="storage-info" style="margin-top:8px">Local: (não definido)</div>
     </div>
 
-    <script>
-        // Global variables
-        let currentAnalysis = null;
-        let analysisSteps = [];
-        let mtmDatabase = [];
-        let savedAnalyses = [];
-        let currentVideo = null;
-        let stepCounter = 0;
+    <div style="height:12px"></div>
 
-        // Initialize application
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTabs();
-            loadMTMDatabase();
-            loadSavedAnalyses();
-            setupKeyboardShortcuts();
-            setDefaultDate();
-            
-            // Load saved settings
-            loadSettings();
-        });
+    <div class="panel">
+      <div><strong>Última ação</strong></div>
+      <div id="last-action" class="small">—</div>
+    </div>
+  </aside>
 
-        // Tab management
-        function initializeTabs() {
-            const tabLinks = document.querySelectorAll('.tab-link');
-            const tabContents = document.querySelectorAll('.tab-content');
+  <main>
+    <section class="panel">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="analysis-name" placeholder="Nome da análise / processo" style="flex:1"/>
+        <input id="analyst-name" placeholder="Analista" style="width:220px"/>
+        <input id="video-upload" type="file" accept="video/*" style="display:none" onchange="loadVideoFromInput(event)"/>
+        <button onclick="document.getElementById('video-upload').click()">Carregar Vídeo</button>
+        <button onclick="expandVideo()">Expandir Vídeo</button>
+      </div>
 
-            tabLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetTab = this.getAttribute('data-tab');
-                    
-                    // Remove active class from all tabs and contents
-                    tabLinks.forEach(l => l.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding content
-                    this.classList.add('active');
-                    document.getElementById(targetTab).classList.add('active');
-                });
-            });
+      <div style="margin-top:12px;display:flex;gap:12px">
+        <div style="flex:1;">
+          <div id="video-wrapper" class="video-wrapper" style="height:420px;display:flex;align-items:center;justify-content:center;background:var(--card);">
+            <div id="video-placeholder" class="small">Carregue um vídeo para começar.</div>
+            <video id="analysis-video" controls style="display:none"></video>
+          </div>
+
+          <div class="controls">
+            <button onclick="togglePlayPause()">Play/Pause (Espaço)</button>
+            <button onclick="frameBackward()">-Frame</button>
+            <button onclick="frameForward()">+Frame</button>
+            <button onclick="createStepUI()" title="Ctrl+E">Criar Etapa (Ctrl+E)</button>
+            <button onclick="startCycleUI()" title="Ctrl+C">Iniciar Ciclo (Ctrl+C)</button>
+            <button onclick="endCycleUI()" title="Ctrl+F">Finalizar Ciclo (Ctrl+F)</button>
+          </div>
+
+          <div style="margin-top:8px" class="small">Dica: Expanda o vídeo para trabalhar em tela maior. Esc fecha o modo expandido.</div>
+        </div>
+
+        <div style="width:360px">
+          <div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong>Resumo</strong></div>
+              <div class="small" id="crono-display">00:00.000</div>
+            </div>
+
+            <div style="margin-top:10px">
+              <div><strong>Etapas:</strong> <span id="stat-steps">0</span></div>
+              <div><strong>Ciclos:</strong> <span id="stat-cycles">0</span></div>
+              <div style="margin-top:8px"><strong>Última Miniatura:</strong></div>
+              <div id="last-thumb" style="margin-top:6px;border-radius:6px;overflow:hidden;background:#06121a;height:120px;display:flex;align-items:center;justify-content:center;color:#789ab0">(nenhuma)</div>
+            </div>
+
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button onclick="saveAnalysis()">Salvar (.json)</button>
+              <button onclick="saveAllToStorage()">Salvar na Pasta (se escolhida)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h4>Tabela de Etapas</h4>
+      <div style="overflow:auto;max-height:280px">
+        <table id="analysis-table">
+          <thead><tr><th>#</th><th>Descrição</th><th>Miniatura</th><th>Tempo</th><th>Ação</th></tr></thead>
+          <tbody id="analysis-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Overlay para vídeo expandido -->
+  <div id="video-overlay" tabindex="-1">
+    <div class="overlay-content">
+      <button class="close-btn" onclick="collapseVideo()">Fechar (Esc)</button>
+      <div class="overlay-video" id="overlay-video-container"></div>
+      <div class="overlay-controls">
+        <button onclick="togglePlayPause()">Play / Pause</button>
+        <button onclick="frameBackward()">-Frame</button>
+        <button onclick="frameForward()">+Frame</button>
+        <button onclick="createStepUI()">Criar Etapa</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  Funcionalidades adicionadas/atualizadas:
+  - Autosave em localStorage (reabertura automática) com UI para ativar/intervalo.
+  - Opção de escolher pasta (File System Access API) para salvar JSON e thumbnails; autosave tenta gravar lá também.
+  - Download em lote de miniaturas (ZIP) usando JSZip.
+  - Export .xlsx com imagens embutidas (ExcelJS) — tentativa com ExcelJS (browser bundle).
+  - PDF avançado já implementado com capa, sumário e páginas por etapa (jsPDF).
+*/
+
+////////////////////
+// DOM & estado
+const video = document.getElementById('analysis-video');
+const wrapper = document.getElementById('video-wrapper');
+const placeholder = document.getElementById('video-placeholder');
+const tbody = document.getElementById('analysis-tbody');
+const cronoDisplay = document.getElementById('crono-display');
+const lastThumb = document.getElementById('last-thumb');
+
+let steps = [], cycles = [], markers = [], currentCycle = null;
+let stepCounter = 0;
+
+// storage directory handle (File System Access API)
+let storedDirHandle = null;
+
+////////////////////
+// IndexedDB small helpers (used earlier to persist directory handle)
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('crono-store-v1', 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbPut(key, val) {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(val, key);
+    return tx.complete;
+  } catch (e) { console.warn(e); }
+}
+async function idbGet(key) {
+  try {
+    const db = await openIDB();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('kv', 'readonly');
+      const r = tx.objectStore('kv').get(key);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  } catch (e) { console.warn(e); return null; }
+}
+async function idbDelete(key) {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction('kv','readwrite'); tx.objectStore('kv').delete(key); return tx.complete;
+  } catch (e) { console.warn(e); }
+}
+
+(async function restoreStoredDirHandle() {
+  try {
+    if (!window.indexedDB || !window.showDirectoryPicker) return;
+    const h = await idbGet('storage-dir-handle');
+    if (h) { storedDirHandle = h; document.getElementById('storage-info').textContent = `Local: ${h.name} (recuperado)`; }
+  } catch (e) { console.warn('restoreStoredDirHandle', e); }
+})();
+
+////////////////////
+// Autosave (localStorage + optional folder)
+let autosaveTimer = null;
+const AUTOSAVE_KEY = 'crono_last_autosave_v1';
+
+document.getElementById('autosave-enabled').addEventListener('change', (e) => {
+  scheduleAutosave();
+});
+document.getElementById('autosave-interval').addEventListener('change', () => scheduleAutosave());
+
+function scheduleAutosave() {
+  if (autosaveTimer) clearInterval(autosaveTimer);
+  const enabled = document.getElementById('autosave-enabled').checked;
+  const minutes = Math.max(1, parseFloat(document.getElementById('autosave-interval').value || 5));
+  if (enabled) {
+    autosaveTimer = setInterval(() => {
+      autosaveToLocalAndMaybeFolder();
+    }, minutes * 60 * 1000);
+    // also do immediate first save
+    autosaveToLocalAndMaybeFolder();
+    document.getElementById('last-action').textContent = `Autosave ativado (a cada ${minutes} min)`;
+  } else {
+    document.getElementById('last-action').textContent = 'Autosave desativado';
+  }
+}
+
+// perform autosave into localStorage and, if folder chosen, to folder
+async function autosaveToLocalAndMaybeFolder() {
+  const data = gatherAnalysisData();
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+    document.getElementById('last-action').textContent = 'Autosave em localStorage: ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    console.warn('Autosave localStorage falhou', e);
+  }
+  // if folder chosen, try to write there (non-blocking)
+  if (storedDirHandle) {
+    try {
+      const name = (data.name || 'cronoanalise') + '_' + (new Date().toISOString().slice(0,19).replace(/[:T]/g,'-'));
+      const folder = await storedDirHandle.getDirectoryHandle(name, {create:true});
+      // write JSON
+      const fileHandle = await folder.getFileHandle('analysis.json', {create:true});
+      const w = await fileHandle.createWritable();
+      await w.write(JSON.stringify(data, null, 2));
+      await w.close();
+      // write thumbnails
+      for (let s of data.steps) {
+        if (!s.thumbnail) continue;
+        const fh = await folder.getFileHandle(`thumb_${s.index}.png`, {create:true});
+        const wr = await fh.createWritable();
+        await wr.write(dataURLtoBlob(s.thumbnail));
+        await wr.close();
+      }
+      document.getElementById('last-action').textContent = `Autosave: salvo em pasta ${storedDirHandle.name}/${name}`;
+    } catch (e) {
+      console.warn('autosave to folder failed', e);
+    }
+  }
+}
+
+function restoreFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return alert('Nenhuma autosave encontrada no localStorage.');
+    const data = JSON.parse(raw);
+    applyRestoredAnalysis(data);
+    alert('Análise restaurada do localStorage.');
+  } catch (e) {
+    console.warn('restoreFromLocalStorage', e); alert('Falha ao restaurar: ver console.');
+  }
+}
+function clearAutosave() {
+  localStorage.removeItem(AUTOSAVE_KEY);
+  alert('Autosave limpa.');
+}
+
+////////////////////
+// Choose folder (File System Access API)
+async function chooseStorageDir() {
+  if (!window.showDirectoryPicker) return alert('Seu navegador não suporta escolha de pasta (File System Access API).');
+  try {
+    const dir = await window.showDirectoryPicker();
+    storedDirHandle = dir;
+    try { await idbPut('storage-dir-handle', dir); } catch (e) { console.warn(e); }
+    document.getElementById('storage-info').textContent = `Local: ${dir.name} (gravado)`;
+    document.getElementById('last-action').textContent = 'Pasta escolhida: ' + dir.name;
+  } catch (e) { console.warn('chooseStorageDir', e); }
+}
+async function clearStoredDir() { storedDirHandle = null; await idbDelete('storage-dir-handle'); document.getElementById('storage-info').textContent = 'Local: (não definido)'; }
+
+////////////////////
+// vídeo e miniaturas
+function loadVideoFromInput(e) {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  video.src = URL.createObjectURL(f); video.style.display = 'block'; placeholder.style.display = 'none';
+  document.getElementById('last-action').textContent = 'Vídeo carregado: ' + f.name;
+}
+function formatTime(t=0) {
+  if (!isFinite(t)) return '00:00.000';
+  const mm = Math.floor(t/60).toString().padStart(2,'0'), ss = Math.floor(t%60).toString().padStart(2,'0');
+  const ms = Math.floor((t - Math.floor(t))*1000).toString().padStart(3,'0');
+  return `${mm}:${ss}.${ms}`;
+}
+function updateCrono() { cronoDisplay.textContent = formatTime(video.currentTime || 0); requestAnimationFrame(updateCrono); }
+requestAnimationFrame(updateCrono);
+
+function captureFrame() {
+  if (!video || video.readyState < 2) return null;
+  const w = video.videoWidth || 640, h = video.videoHeight || 360;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  try { ctx.drawImage(video, 0, 0, w, h); return c.toDataURL('image/png'); } catch (e) { console.warn(e); return null; }
+}
+
+////////////////////
+// steps & table
+function insertStepRow(step) {
+  const tr = document.createElement('tr'); tr.dataset.stepId = step.id;
+  tr.innerHTML = `<td>${step.index}</td>
+    <td contenteditable="true">${step.description || ''}</td>
+    <td style="width:160px;">${step.thumbnail ? `<img src="${step.thumbnail}" style="width:140px;border-radius:6px">` : '(sem imagem)'}</td>
+    <td>${formatTime(step.time)}</td>
+    <td><button onclick="downloadThumbnail('${step.id}')">baixar</button> <button onclick="removeStep('${step.id}')">remover</button></td>`;
+  tbody.appendChild(tr);
+}
+function createStepUI() {
+  const thumb = captureFrame(); const time = video.currentTime || 0; stepCounter++;
+  const step = { id:`s${Date.now()}-${stepCounter}`, index: stepCounter, time, thumbnail: thumb, description: '' };
+  steps.push(step); insertStepRow(step); updateStats(); showLastThumbnail(thumb); createVideoMarker({time,label:'Etapa '+step.index}); video.play().catch(()=>{});
+}
+function removeStep(id) { steps = steps.filter(s=>s.id!==id); const tr = tbody.querySelector(`tr[data-step-id="${id}"]`); if (tr) tr.remove(); updateStats(); }
+function downloadThumbnail(stepId) {
+  const s = steps.find(x=>x.id===stepId); if (!s || !s.thumbnail) return alert('Sem miniatura');
+  const a = document.createElement('a'); a.href = s.thumbnail; a.download = `${(document.getElementById('analysis-name').value||'crono')}_thumb_${s.index}.png`; document.body.appendChild(a); a.click(); a.remove();
+}
+function showLastThumbnail(dataUrl) { lastThumb.innerHTML = dataUrl ? `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover">` : '<div class="small">(nenhuma)</div>'; }
+function updateStats() { document.getElementById('stat-steps').textContent = steps.length; document.getElementById('stat-cycles').textContent = cycles.length + (currentCycle?1:0); }
+
+////////////////////
+// markers & cycles
+let markersDom = [];
+function createVideoMarker({time,label}) {
+  const dur = video.duration || 1; const pct = Math.max(0, Math.min(1, time/dur));
+  const left = pct*100; const top = 6 + (markersDom.length % 6)*3;
+  const el = document.createElement('div'); el.className='video-marker'; el.style.left = left+'%'; el.style.top = top+'%';
+  el.textContent = markersDom.length+1; el.title = `${label || 'Marcador'} • ${formatTime(time)}`; el.dataset.time = time;
+  el.addEventListener('click', (e)=>{ video.currentTime = parseFloat(el.dataset.time); e.stopPropagation(); });
+  el.addEventListener('dblclick', (e)=>{ el.remove(); markersDom = markersDom.filter(m=>m!==el); e.stopPropagation(); });
+  wrapper.appendChild(el); markersDom.push(el);
+}
+function startCycleUI(){ if (currentCycle) { if (!confirm('Ciclo ativo. Reiniciar?')) return; currentCycle = null; } currentCycle = { id:'c'+Date.now(), start: video.currentTime||0, steps: [] }; cycles.push(currentCycle); createVideoMarker({time:currentCycle.start,label:'Início Ciclo'}); updateStats(); video.play().catch(()=>{}); }
+function endCycleUI(){ if (!currentCycle) { createVideoMarker({time:video.currentTime||0,label:'Ponto'}); return; } currentCycle.end = video.currentTime||0; createVideoMarker({time:currentCycle.end,label:'Fim Ciclo'}); const tr = document.createElement('tr'); tr.innerHTML = `<td colspan="5"><strong>Ciclo ${currentCycle.id}</strong> Início ${formatTime(currentCycle.start)} • Fim ${formatTime(currentCycle.end)} • Duração ${(currentCycle.end-currentCycle.start).toFixed(3)}s</td>`; tbody.appendChild(tr); currentCycle = null; updateStats(); video.play().catch(()=>{}); }
+
+////////////////////
+// save JSON local/download
+function saveAnalysis() {
+  const data = gatherAnalysisData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${(data.name||'cronoanalise')}.json`; document.body.appendChild(a); a.click(); a.remove();
+  document.getElementById('last-action').textContent = 'JSON baixado';
+}
+function gatherAnalysisData(){
+  document.querySelectorAll('#analysis-tbody tr').forEach(tr => {
+    const id = tr.dataset.stepId; if (!id) return;
+    const desc = tr.querySelector('td[contenteditable]')?.innerText || '';
+    const s = steps.find(x=>x.id===id); if (s) s.description = desc;
+  });
+  return { name: document.getElementById('analysis-name').value||'', analyst: document.getElementById('analyst-name').value||'', created_at: new Date().toISOString(), steps: steps.slice(), cycles: cycles.slice(), markers: markersDom.map(m=>({time:parseFloat(m.dataset.time)})) };
+}
+function applyRestoredAnalysis(data) {
+  try {
+    steps = data.steps || []; cycles = data.cycles || []; currentCycle = null; stepCounter = steps.length;
+    tbody.innerHTML = ''; steps.forEach(s => insertStepRow(s)); updateStats(); if (steps.length && steps[steps.length-1].thumbnail) showLastThumbnail(steps[steps.length-1].thumbnail);
+    document.getElementById('analysis-name').value = data.name || ''; document.getElementById('analyst-name').value = data.analyst || '';
+    document.getElementById('last-action').textContent = 'Análise restaurada';
+  } catch (e) { console.warn(e); }
+}
+
+////////////////////
+// save to folder (JSON + thumbnails)
+async function saveAllToStorage() {
+  const data = gatherAnalysisData();
+  if (!storedDirHandle) {
+    if (!window.showDirectoryPicker) return saveAnalysis();
+    await chooseStorageDir();
+  }
+  if (!storedDirHandle) return alert('Nenhuma pasta selecionada.');
+  try {
+    const name = (data.name || 'cronoanalise') + '_' + (new Date().toISOString().slice(0,19).replace(/[:T]/g,'-'));
+    const folder = await storedDirHandle.getDirectoryHandle(name, {create:true});
+    const jsonHandle = await folder.getFileHandle('analysis.json', {create:true});
+    const jw = await jsonHandle.createWritable(); await jw.write(JSON.stringify(data, null, 2)); await jw.close();
+    for (let s of data.steps) {
+      if (!s.thumbnail) continue;
+      const fh = await folder.getFileHandle(`thumb_${s.index}.png`, {create:true});
+      const w = await fh.createWritable(); await w.write(dataURLtoBlob(s.thumbnail)); await w.close();
+    }
+    document.getElementById('last-action').textContent = `Análise salva em ${storedDirHandle.name}/${name}`;
+    alert('Análise salva na pasta selecionada com miniaturas.');
+  } catch (e) { console.error(e); alert('Erro ao salvar na pasta: ver console.'); }
+}
+
+function dataURLtoBlob(dataurl) {
+  const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n=bstr.length, u8 = new Uint8Array(n);
+  while(n--) u8[n] = bstr.charCodeAt(n); return new Blob([u8], {type:mime});
+}
+
+////////////////////
+// Download all thumbnails as ZIP
+async function downloadAllThumbnailsZip() {
+  if (steps.length === 0) return alert('Nenhuma etapa com miniatura para baixar.');
+  const zip = new JSZip();
+  for (let s of steps) {
+    if (!s.thumbnail) continue;
+    const blob = dataURLtoBlob(s.thumbnail);
+    zip.file(`thumb_${s.index}.png`, blob);
+  }
+  const content = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = `${(document.getElementById('analysis-name').value||'cronoanalise')}_thumbnails.zip`; document.body.appendChild(a); a.click(); a.remove();
+  document.getElementById('last-action').textContent = 'Miniaturas baixadas em ZIP';
+}
+
+////////////////////
+// Export XLSX with images (ExcelJS)
+async function exportAnalysisXLSX(includeImages = true) {
+  const data = gatherAnalysisData();
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Etapas');
+
+  ws.columns = [{header:'#', key:'i', width:6},{header:'Descrição',key:'desc', width:40},{header:'Tempo(s)',key:'time',width:12},{header:'Tempo formatado',key:'tform',width:14},{header:'Miniatura',key:'thumb',width:20}];
+
+  // add rows without images first
+  for (let s of data.steps) ws.addRow({i:s.index, desc:s.description || '', time:(s.time||0).toFixed(3), tform:formatTime(s.time)});
+
+  // embed images row by row if requested
+  if (includeImages) {
+    for (let i=0;i<data.steps.length;i++){
+      const s = data.steps[i];
+      if (!s.thumbnail) continue;
+      try {
+        const imgBlob = dataURLtoBlob(s.thumbnail);
+        // ExcelJS expects ArrayBuffer
+        const arrayBuffer = await imgBlob.arrayBuffer();
+        const imageId = wb.addImage({buffer: arrayBuffer, extension: 'png'});
+        // place image in the cell: rows start at 1 and header is first row
+        const rowNumber = i + 2; // header row + index
+        ws.addImage(imageId, {tl: {col:4, row: rowNumber-1}, ext: {width:80, height:60}});
+      } catch (e) { console.warn('Erro embed imagem XLSX', e); }
+    }
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {type:'application/octet-stream'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${(data.name||'cronoanalise')}.xlsx`; document.body.appendChild(a); a.click(); a.remove();
+  document.getElementById('last-action').textContent = 'XLSX gerado';
+  alert('XLSX gerado. Obs.: navegadores podem demorar com arquivos grandes (muitas imagens).');
+}
+
+////////////////////
+// Export PDF (cover + TOC + pages per step) - uses jsPDF
+async function exportAnalysisPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const margin = 12, pageWidth = doc.internal.pageSize.getWidth(), pageHeight = doc.internal.pageSize.getHeight(), usableW = pageWidth - margin*2;
+
+  // ensure descriptions are up-to-date
+  document.querySelectorAll('#analysis-tbody tr').forEach(tr => {
+    const id = tr.dataset.stepId; if (!id) return;
+    const desc = tr.querySelector('td[contenteditable]')?.innerText || '';
+    const s = steps.find(x=>x.id===id); if (s) s.description = desc;
+  });
+
+  const data = gatherAnalysisData();
+
+  // Cover
+  doc.setFontSize(24); doc.setFont(undefined, 'bold'); doc.text(data.name || 'Cronoanálise', margin, 50);
+  doc.setFontSize(12); doc.setFont(undefined, 'normal'); doc.text(`Analista: ${data.analyst || '-'}`, margin, 64);
+  doc.text(`Gerado em: ${new Date().toLocaleString()}`, margin, 72);
+  doc.setDrawColor(34,211,238); doc.setFillColor(34,211,238); doc.rect(pageWidth - margin - 45, 30, 40, 40, 'F');
+
+  // TOC
+  doc.addPage(); doc.setFontSize(18); doc.text('Sumário', margin, 24);
+  doc.setFontSize(11);
+  const tocStartY = 34;
+  let y = tocStartY;
+  const stepPages = [];
+  // create pages for steps
+  for (let i=0;i<data.steps.length;i++){
+    const s = data.steps[i];
+    doc.addPage();
+    const pnum = doc.getNumberOfPages();
+    stepPages.push(pnum);
+
+    doc.setFontSize(14); doc.setFont(undefined,'bold'); doc.text(`Etapa ${s.index} — ${formatTime(s.time)}`, margin, 20);
+    doc.setFontSize(11); doc.setFont(undefined,'normal');
+
+    if (s.thumbnail) {
+      try {
+        const img = new Image(); img.src = s.thumbnail;
+        await new Promise(r => { img.onload = r; img.onerror = r; });
+        const pxToMm = 25.4/96;
+        let imgWmm = (img.naturalWidth || 800)*pxToMm;
+        let imgHmm = (img.naturalHeight || 600)*pxToMm;
+        const scale = Math.min(1, usableW / imgWmm, (pageHeight - 70) / imgHmm);
+        imgWmm *= scale; imgHmm *= scale;
+        doc.addImage(s.thumbnail, 'PNG', margin, 26, imgWmm, imgHmm);
+        if (s.description) {
+          const descY = 26 + imgHmm + 6;
+          doc.setFontSize(10); doc.text(doc.splitTextToSize(s.description, usableW), margin, descY);
         }
+      } catch (e) { console.warn('pdf img', e); doc.setFontSize(10); doc.text('(não foi possível inserir imagem)', margin, 30); }
+    } else {
+      if (s.description) { doc.setFontSize(10); doc.text(doc.splitTextToSize(s.description, usableW), margin, 30); } else { doc.setFontSize(10); doc.text('(sem miniatura)', margin, 30); }
+    }
 
-        // MTM Database
-        function loadMTMDatabase() {
-            mtmDatabase = [
-                // MTM-1 Basic Motions
-                { code: 'R-A', system: 'MTM-1', category: 'Basic Motion', description: 'Reach to object in fixed location', tmu: 2.0, ergonomics: 1 },
-                { code: 'R-B', system: 'MTM-1', category: 'Basic Motion', description: 'Reach to single object in location which may vary', tmu: 2.5, ergonomics: 2 },
-                { code: 'R-C', system: 'MTM-1', category: 'Basic Motion', description: 'Reach to object jumbled with other objects', tmu: 3.5, ergonomics: 3 },
-                { code: 'M-A', system: 'MTM-1', category: 'Basic Motion', description: 'Move object to other hand or against stop', tmu: 2.0, ergonomics: 1 },
-                { code: 'M-B', system: 'MTM-1', category: 'Basic Motion', description: 'Move object to approximate or indefinite location', tmu: 2.9, ergonomics: 1 },
-                { code: 'M-C', system: 'MTM-1', category: 'Basic Motion', description: 'Move object to exact location', tmu: 3.4, ergonomics: 2 },
-                { code: 'T-S', system: 'MTM-1', category: 'Basic Motion', description: 'Turn - Small (0.5 to 1 kg)', tmu: 2.8, ergonomics: 1 },
-                { code: 'T-M', system: 'MTM-1', category: 'Basic Motion', description: 'Turn - Medium (1 to 4.5 kg)', tmu: 4.4, ergonomics: 2 },
-                { code: 'T-L', system: 'MTM-1', category: 'Basic Motion', description: 'Turn - Large (4.5 to 18 kg)', tmu: 8.4, ergonomics: 3 },
-                { code: 'G1A', system: 'MTM-1', category: 'Basic Motion', description: 'Pick up grasp - easily grasped', tmu: 2.0, ergonomics: 1 },
-                { code: 'G1B', system: 'MTM-1', category: 'Basic Motion', description: 'Very small object or lying close against flat surface', tmu: 3.5, ergonomics: 2 },
-                { code: 'G1C1', system: 'MTM-1', category: 'Basic Motion', description: 'Interference with grasp on bottom and one side', tmu: 7.3, ergonomics: 3 },
-                { code: 'P1SE', system: 'MTM-1', category: 'Basic Motion', description: 'Fit - Loose, no pressure required', tmu: 5.6, ergonomics: 1 },
-                { code: 'P1SS', system: 'MTM-1', category: 'Basic Motion', description: 'Fit - Close, light pressure required', tmu: 9.1, ergonomics: 2 },
-                { code: 'P1SD', system: 'MTM-1', category: 'Basic Motion', description: 'Fit - Exact, heavy pressure required', tmu: 16.2, ergonomics: 3 },
-                { code: 'RL1', system: 'MTM-1', category: 'Basic Motion', description: 'Normal release', tmu: 2.0, ergonomics: 1 },
-                
-                // MTM-1 Body Motions
-                { code: 'FM', system: 'MTM-1', category: 'Body Motion', description: 'Foot Motion - pivoted at ankle', tmu: 8.5, ergonomics: 2 },
-                { code: 'SS-C1', system: 'MTM-1', category: 'Body Motion', description: 'Side Step - Case I', tmu: 17.0, ergonomics: 2 },
-                { code: 'B', system: 'MTM-1', category: 'Body Motion', description: 'Bend, Stoop or Kneel', tmu: 29.0, ergonomics: 3 },
-                { code: 'AB', system: 'MTM-1', category: 'Body Motion', description: 'Arise from Bend', tmu: 31.9, ergonomics: 4 },
-                { code: 'W-P', system: 'MTM-1', category: 'Body Motion', description: 'Walk - per pace', tmu: 15.0, ergonomics: 1 },
-                
-                // MTM-1 Eye Motions
-                { code: 'ET', system: 'MTM-1', category: 'Eye Motion', description: 'Eye Travel', tmu: 7.3, ergonomics: 1 },
-                { code: 'EF', system: 'MTM-1', category: 'Eye Motion', description: 'Eye Focus', tmu: 7.3, ergonomics: 1 },
-                
-                // MTM-UAS
-                { code: 'GET', system: 'MTM-UAS', category: 'Basic Operation', description: 'Get and Place', tmu: 3.5, ergonomics: 1 },
-                { code: 'PUT', system: 'MTM-UAS', category: 'Basic Operation', description: 'Put', tmu: 3.5, ergonomics: 1 },
-                { code: 'GET-PUT', system: 'MTM-UAS', category: 'Basic Operation', description: 'Get and Put', tmu: 7.0, ergonomics: 2 },
-                { code: 'APPLY', system: 'MTM-UAS', category: 'Basic Operation', description: 'Apply Pressure', tmu: 10.6, ergonomics: 1 },
-                { code: 'ASIDE', system: 'MTM-UAS', category: 'Basic Operation', description: 'Aside', tmu: 3.5, ergonomics: 2 },
-                { code: 'HANDLE', system: 'MTM-UAS', category: 'Basic Operation', description: 'Handle', tmu: 5.4, ergonomics: 2 },
-                
-                // MOST
-                { code: 'A', system: 'MOST', category: 'Sequence Model', description: 'Action Distance', tmu: 10.0, ergonomics: 1 },
-                { code: 'B', system: 'MOST', category: 'Sequence Model', description: 'Body Motion', tmu: 61.0, ergonomics: 3 },
-                { code: 'G', system: 'MOST', category: 'Sequence Model', description: 'Gain Control', tmu: 10.0, ergonomics: 1 },
-                { code: 'P', system: 'MOST', category: 'Sequence Model', description: 'Place', tmu: 10.0, ergonomics: 1 },
-                { code: 'M', system: 'MOST', category: 'Sequence Model', description: 'Move', tmu: 10.0, ergonomics: 1 },
-                { code: 'X', system: 'MOST', category: 'Sequence Model', description: 'Process Time', tmu: 10.0, ergonomics: 1 }
-            ];
+    doc.setFontSize(9); doc.text(`Página ${pnum}`, pageWidth - margin - 20, pageHeight - 10);
+  }
 
-            renderMTMTable();
-        }
+  // Fill TOC with links to pages
+  doc.setPage(2);
+  y = tocStartY;
+  for (let i=0;i<data.steps.length;i++){
+    const txt = `${i+1}. Etapa ${data.steps[i].index} — ${formatTime(data.steps[i].time)}`;
+    doc.text(txt, margin, y);
+    const tw = doc.getTextWidth(txt);
+    doc.link(margin, y-4, tw+2, 6, { pageNumber: stepPages[i] });
+    y += 8;
+    if (y > pageHeight - margin - 20) { doc.addPage(); y = tocStartY; }
+  }
 
-        function renderMTMTable() {
-            const tbody = document.getElementById('mtm-tbody');
-            tbody.innerHTML = '';
+  // Summary page
+  doc.addPage();
+  doc.setFontSize(14); doc.setFont(undefined,'bold'); doc.text('Resumo', margin, 24);
+  doc.setFontSize(10); doc.text(`Total de etapas: ${steps.length}`, margin, 36);
+  doc.text(`Tempo total (s): ${(steps.reduce((a,s)=>a+(s.time||0),0)).toFixed(3)}`, margin, 44);
 
-            mtmDatabase.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><span class="mtm-code">${item.code}</span></td>
-                    <td>${item.system}</td>
-                    <td>${item.category}</td>
-                    <td>${item.description}</td>
-                    <td>${item.tmu}</td>
-                    <td><span class="ergonomia-indicator ergonomia-${item.ergonomics}"></span> ${item.ergonomics}</td>
-                    <td><button class="ghost" onclick="useMTMCode('${item.code}')">Usar</button></td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+  const filename = `${(data.name||'cronoanalise')}.pdf`;
+  doc.save(filename);
+  document.getElementById('last-action').textContent = 'PDF gerado';
+}
 
-        // Analysis management
-        function newAnalysis() {
-            document.getElementById('new-analysis-form').classList.remove('hidden');
-            document.getElementById('analyses-list').classList.add('hidden');
-            currentAnalysis = {
-                id: Date.now(),
-                steps: [],
-                actionPlans: []
-            };
-            analysisSteps = [];
-            stepCounter = 0;
-            updateStatsDisplay();
-        }
+////////////////////
+// Expand / collapse video overlay
+const overlay = document.getElementById('video-overlay');
+const overlayContainer = document.getElementById('overlay-video-container');
+let videoOriginalParent = null;
+let overlayMarkers = [];
+function expandVideo() {
+  if (!video.src) return alert('Carregue um vídeo primeiro.');
+  videoOriginalParent = video.parentNode;
+  overlayContainer.appendChild(video);
+  video.style.maxHeight = '100%';
+  overlay.style.display = 'flex';
+  recreateOverlayMarkers();
+}
+function collapseVideo() {
+  overlayMarkers.forEach(m=>m.remove()); overlayMarkers = [];
+  if (videoOriginalParent) videoOriginalParent.appendChild(video);
+  video.style.maxHeight = '720px';
+  overlay.style.display = 'none';
+}
+function recreateOverlayMarkers() {
+  overlayMarkers.forEach(m=>m.remove()); overlayMarkers = [];
+  const dur = video.duration || 1;
+  markersDom.forEach((m,i) => {
+    const pct = Math.max(0, Math.min(1, parseFloat(m.dataset.time) / dur));
+    const el = document.createElement('div'); el.className='video-marker'; el.style.left = (pct*100)+'%'; el.style.top = (8 + (i%6)*4)+'%';
+    el.textContent = i+1; el.title = m.title;
+    el.addEventListener('click', ()=>{ video.currentTime = parseFloat(m.dataset.time); });
+    overlayContainer.appendChild(el); overlayMarkers.push(el);
+  });
+}
 
-        function cancelAnalysis() {
-            document.getElementById('new-analysis-form').classList.add('hidden');
-            document.getElementById('analyses-list').classList.remove('hidden');
-            currentAnalysis = null;
-            analysisSteps = [];
-        }
+////////////////////
+// Keyboard shortcuts
+document.addEventListener('keydown', (ev) => {
+  const tag = document.activeElement?.tagName?.toLowerCase();
+  const editing = document.activeElement?.isContentEditable || ['input','textarea','select'].includes(tag);
+  if (editing) return;
+  if (ev.key === ' ') { ev.preventDefault(); togglePlayPause(); }
+  else if (ev.ctrlKey && (ev.key === 'e' || ev.key === 'E')) { ev.preventDefault(); createStepUI(); }
+  else if (ev.ctrlKey && (ev.key === 'c' || ev.key === 'C')) { ev.preventDefault(); startCycleUI(); }
+  else if (ev.ctrlKey && (ev.key === 'f' || ev.key === 'F')) { ev.preventDefault(); endCycleUI(); }
+  else if (ev.key === 'Escape') { if (overlay.style.display === 'flex') collapseVideo(); }
+});
 
-        function addStep() {
-            stepCounter++;
-            const step = {
-                id: stepCounter,
-                description: '',
-                photo: '',
-                mtmCode: '',
-                system: 'MTM-1',
-                tmu: 0,
-                factor: 100,
-                correctedTmu: 0,
-                time: 0,
-                ergonomics: 1,
-                quality: 'OK'
-            };
-            
-            analysisSteps.push(step);
-            renderAnalysisTable();
-            updateStatsDisplay();
-        }
+////////////////////
+// expose minimal functions to console for debug
+window.createStepUI = createStepUI; window.startCycleUI = startCycleUI; window.endCycleUI = endCycleUI;
+window.downloadAllThumbnailsZip = downloadAllThumbnailsZip; window.exportAnalysisXLSX = exportAnalysisXLSX;
+window.chooseStorageDir = chooseStorageDir; window.saveAllToStorage = saveAllToStorage; window.restoreFromLocalStorage = restoreFromLocalStorage;
 
-        function renderAnalysisTable() {
-            const tbody = document.getElementById('analysis-tbody');
-            tbody.innerHTML = '';
+////////////////////
+// Init: restore autosave enabled state (default enabled) and schedule autosave
+(function init(){
+  // restore autosave setting from localStorage if present
+  try {
+    const asEnabled = localStorage.getItem('crono_autosave_enabled');
+    const asInterval = localStorage.getItem('crono_autosave_interval');
+    if (asEnabled !== null) document.getElementById('autosave-enabled').checked = asEnabled === 'true';
+    if (asInterval !== null) document.getElementById('autosave-interval').value = parseInt(asInterval,10) || 5;
+  } catch(e){}
+  // persist UI changes
+  document.getElementById('autosave-enabled').addEventListener('change', (e)=>{ localStorage.setItem('crono_autosave_enabled', e.target.checked); scheduleAutosave(); });
+  document.getElementById('autosave-interval').addEventListener('change', (e)=>{ localStorage.setItem('crono_autosave_interval', e.target.value); scheduleAutosave(); });
 
-            analysisSteps.forEach(step => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${step.id}</td>
-                    <td><input type="text" value="${step.description}" onchange="updateStep(${step.id}, 'description', this.value)"></td>
-                    <td><button class="ghost" onclick="capturePhoto(${step.id})">📷 Capturar</button></td>
-                    <td>
-                        <select onchange="updateStep(${step.id}, 'mtmCode', this.value)">
-                            <option value="">-</option>
-                            ${mtmDatabase.map(mtm => `<option value="${mtm.code}" ${step.mtmCode === mtm.code ? 'selected' : ''}>${mtm.code} - ${mtm.description.substring(0, 30)}...</option>`).join('')}
-                        </select>
-                    </td>
-                    <td><span class="mtm-code">${step.system}</span></td>
-                    <td><span class="mtm-code">${step.tmu}</span></td>
-                    <td><input type="number" value="${step.factor}" min="50" max="150" onchange="updateStep(${step.id}, 'factor', this.value)"></td>
-                    <td>${step.correctedTmu.toFixed(2)}</td>
-                    <td>${step.time.toFixed(3)}</td>
-                    <td><span class="ergonomia-indicator ergonomia-${step.ergonomics}"></span> ${step.ergonomics}</td>
-                    <td><span style="color: ${step.quality === 'OK' ? 'var(--ok)' : 'var(--warn)'}">●</span></td>
-                    <td><button class="ghost" onclick="removeStep(${step.id})">🗑️</button></td>
-                `;
-                tbody.appendChild(row);
-            });
+  // try to restore last autosave automatically if present
+  const last = localStorage.getItem(AUTOSAVE_KEY);
+  if (last) {
+    try {
+      const data = JSON.parse(last);
+      // prompt user to restore or not
+      if (confirm('Encontrado autosave local. Deseja restaurar a última análise?')) applyRestoredAnalysis(data);
+    } catch(e){}
+  }
 
-            updateTotals();
-        }
-
-        function updateStep(stepId, field, value) {
-            const step = analysisSteps.find(s => s.id === stepId);
-            if (step) {
-                step[field] = value;
-                
-                if (field === 'mtmCode') {
-                    const mtmData = mtmDatabase.find(m => m.code === value);
-                    if (mtmData) {
-                        step.tmu = mtmData.tmu;
-                        step.system = mtmData.system;
-                        step.ergonomics = mtmData.ergonomics;
-                    }
-                }
-                
-                // Recalculate corrected TMU and time
-                step.correctedTmu = (step.tmu * step.factor) / 100;
-                step.time = step.correctedTmu * 0.036; // TMU to seconds conversion
-                
-                renderAnalysisTable();
-                updateStatsDisplay();
-            }
-        }
-
-        function removeStep(stepId) {
-            analysisSteps = analysisSteps.filter(s => s.id !== stepId);
-            renderAnalysisTable();
-            updateStatsDisplay();
-        }
-
-        function updateTotals() {
-            const totalTmu = analysisSteps.reduce((sum, step) => sum + step.correctedTmu, 0);
-            const totalTime = analysisSteps.reduce((sum, step) => sum + step.time, 0);
-            
-            document.getElementById('total-tmu').textContent = totalTmu.toFixed(2);
-            document.getElementById('total-time').textContent = totalTime.toFixed(3);
-        }
-
-        function updateStatsDisplay() {
-            document.getElementById('stat-steps').textContent = analysisSteps.length;
-            
-            const avgTmu = analysisSteps.length > 0 ? 
-                analysisSteps.reduce((sum, step) => sum + step.tmu, 0) / analysisSteps.length : 0;
-            document.getElementById('stat-tmu').textContent = avgTmu.toFixed(1);
-            
-            const avgErgonomics = analysisSteps.length > 0 ? 
-                analysisSteps.reduce((sum, step) => sum + step.ergonomics, 0) / analysisSteps.length : 1;
-            document.getElementById('stat-ergonomics').textContent = avgErgonomics.toFixed(1);
-            
-            // Calculate efficiency (placeholder)
-            document.getElementById('stat-efficiency').textContent = '85%';
-        }
-
-        // Video controls
-        function loadVideo() {
-            const input = document.getElementById('video-upload');
-            const video = document.getElementById('analysis-video');
-            const placeholder = document.getElementById('video-placeholder');
-            
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const url = URL.createObjectURL(file);
-                
-                video.src = url;
-                video.style.display = 'block';
-                placeholder.style.display = 'none';
-                currentVideo = video;
-                
-                video.addEventListener('loadedmetadata', function() {
-                    updateCronoDisplay();
-                });
-                
-                video.addEventListener('timeupdate', function() {
-                    updateCronoDisplay();
-                });
-            }
-        }
-
-        function togglePlayPause() {
-            if (currentVideo) {
-                if (currentVideo.paused) {
-                    currentVideo.play();
-                } else {
-                    currentVideo.pause();
-                }
-            }
-        }
-
-        function frameForward() {
-            if (currentVideo) {
-                currentVideo.currentTime += 1/30; // Assume 30fps
-            }
-        }
-
-        function frameBackward() {
-            if (currentVideo) {
-                currentVideo.currentTime -= 1/30;
-            }
-        }
-
-        function changeSpeed() {
-            const speed = document.getElementById('playback-speed').value;
-            if (currentVideo) {
-                currentVideo.playbackRate = parseFloat(speed);
-            }
-        }
-
-        function markPoint() {
-            if (currentVideo) {
-                const time = currentVideo.currentTime;
-                console.log('Marked point at:', time);
-                // Add marker functionality here
-            }
-        }
-
-        function updateCronoDisplay() {
-            if (currentVideo) {
-                const time = currentVideo.currentTime;
-                const minutes = Math.floor(time / 60);
-                const seconds = Math.floor(time % 60);
-                const milliseconds = Math.floor((time % 1) * 1000);
-                
-                const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
-                document.getElementById('crono-display').textContent = display;
-            }
-        }
-
-        // Action plans
-        function addActionPlan() {
-            const container = document.getElementById('action-plans');
-            const planDiv = document.createElement('div');
-            planDiv.className = 'action-plan-item';
-            planDiv.innerHTML = `
-                <div class="grid">
-                    <div class="col-4">
-                        <input type="text" placeholder="Ação proposta">
-                    </div>
-                    <div class="col-3">
-                        <input type="text" placeholder="Responsável">
-                    </div>
-                    <div class="col-3">
-                        <input type="date">
-                    </div>
-                    <div class="col-2">
-                        <button class="ghost" onclick="this.parentElement.parentElement.parentElement.remove()">Remover</button>
-                    </div>
-                </div>
-            `;
-            container.appendChild(planDiv);
-        }
-
-        // Save/Load functions
-        function saveAnalysis() {
-            if (!currentAnalysis) return;
-            
-            currentAnalysis.name = document.getElementById('analysis-name').value;
-            currentAnalysis.analyst = document.getElementById('analyst-name').value;
-            currentAnalysis.date = document.getElementById('analysis-date').value;
-            currentAnalysis.processType = document.getElementById('process-type').value;
-            currentAnalysis.mtmSystem = document.getElementById('mtm-system').value;
-            currentAnalysis.steps = analysisSteps;
-            currentAnalysis.savedAt = new Date().toISOString();
-            
-            savedAnalyses.push(currentAnalysis);
-            localStorage.setItem('cronoanalises', JSON.stringify(savedAnalyses));
-            
-            alert('Cronoanálise salva com sucesso!');
-            cancelAnalysis();
-            updateAnalysesCount();
-        }
-
-        function loadSavedAnalyses() {
-            const saved = localStorage.getItem('cronoanalises');
-            if (saved) {
-                savedAnalyses = JSON.parse(saved);
-            }
-            updateAnalysesCount();
-        }
-
-        function updateAnalysesCount() {
-            document.getElementById('count-analyses').textContent = savedAnalyses.length;
-        }
-
-        // Utility functions
-        function setDefaultDate() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('analysis-date').value = today;
-        }
-
-        function validateQuality() {
-            // Quality validation logic
-            alert('Validação de qualidade executada!');
-        }
-
-        function previewFIT() {
-            // FIT preview logic
-            alert('Visualização FIT em desenvolvimento!');
-        }
-
-        function exportToPDF() {
-            // PDF export logic
-            alert('Exportação PDF em desenvolvimento!');
-        }
-
-        // Modal functions
-        function showPixModal() {
-            document.getElementById('pix-modal').classList.add('active');
-        }
-
-        function closePixModal() {
-            document.getElementById('pix-modal').classList.remove('active');
-        }
-
-        function copyPixKey() {
-            const key = '01K77BPNA1JZ341S4QFS0YV3CM';
-            navigator.clipboard.writeText(key).then(() => {
-                alert('Chave PIX copiada!');
-            });
-        }
-
-        function showShortcuts() {
-            document.getElementById('shortcuts-modal').classList.add('active');
-        }
-
-        function closeShortcutsModal() {
-            document.getElementById('shortcuts-modal').classList.remove('active');
-        }
-
-        // Keyboard shortcuts
-        function setupKeyboardShortcuts() {
-            document.addEventListener('keydown', function(e) {
-                // F1 - Show shortcuts
-                if (e.key === 'F1') {
-                    e.preventDefault();
-                    showShortcuts();
-                }
-                
-                // Space - Play/Pause video
-                if (e.code === 'Space' && currentVideo) {
-                    e.preventDefault();
-                    togglePlayPause();
-                }
-                
-                // Ctrl+N - New analysis
-                if (e.ctrlKey && e.key === 'n') {
-                    e.preventDefault();
-                    newAnalysis();
-                }
-                
-                // Ctrl+S - Save analysis
-                if (e.ctrlKey && e.key === 's') {
-                    e.preventDefault();
-                    saveAnalysis();
-                }
-                
-                // Ctrl+E - Add step
-                if (e.ctrlKey && e.key === 'e') {
-                    e.preventDefault();
-                    addStep();
-                }
-                
-                // Arrow keys for video navigation
-                if (currentVideo) {
-                    if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        if (e.shiftKey) {
-                            currentVideo.currentTime -= 5;
-                        } else {
-                            frameBackward();
-                        }
-                    }
-                    
-                    if (e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        if (e.shiftKey) {
-                            currentVideo.currentTime += 5;
-                        } else {
-                            frameForward();
-                        }
-                    }
-                }
-                
-                // M - Mark point
-                if (e.key === 'm' || e.key === 'M') {
-                    markPoint();
-                }
-                
-                // C - Capture screenshot
-                if (e.key === 'c' || e.key === 'C') {
-                    // Capture functionality
-                    console.log('Capture screenshot');
-                }
-            });
-        }
-
-        // Template functions
-        function useTemplate(templateType) {
-            newAnalysis();
-            
-            // Load template data based on type
-            const templates = {
-                'montagem': [
-                    { description: 'Pegar componente A', mtmCode: 'R-A' },
-                    { description: 'Posicionar componente', mtmCode: 'P1SE' },
-                    { description: 'Soltar componente', mtmCode: 'RL1' }
-                ],
-                'embalagem': [
-                    { description: 'Pegar produto', mtmCode: 'G1A' },
-                    { description: 'Mover para embalagem', mtmCode: 'M-B' },
-                    { description: 'Posicionar na embalagem', mtmCode: 'P1SS' }
-                ],
-                'inspecao': [
-                    { description: 'Pegar peça', mtmCode: 'G1A' },
-                    { description: 'Inspecionar visualmente', mtmCode: 'ET' },
-                    { description: 'Classificar peça', mtmCode: 'M-A' }
-                ]
-            };
-            
-            const templateSteps = templates[templateType] || [];
-            templateSteps.forEach((stepTemplate, index) => {
-                stepCounter++;
-                const step = {
-                    id: stepCounter,
-                    description: stepTemplate.description,
-                    photo: '',
-                    mtmCode: stepTemplate.mtmCode,
-                    system: 'MTM-1',
-                    tmu: 0,
-                    factor: 100,
-                    correctedTmu: 0,
-                    time: 0,
-                    ergonomics: 1,
-                    quality: 'OK'
-                };
-                
-                // Get MTM data
-                const mtmData = mtmDatabase.find(m => m.code === stepTemplate.mtmCode);
-                if (mtmData) {
-                    step.tmu = mtmData.tmu;
-                    step.system = mtmData.system;
-                    step.ergonomics = mtmData.ergonomics;
-                    step.correctedTmu = step.tmu;
-                    step.time = step.tmu * 0.036;
-                }
-                
-                analysisSteps.push(step);
-            });
-            
-            renderAnalysisTable();
-            updateStatsDisplay();
-            alert(`Template "${templateType}" carregado com sucesso!`);
-        }
-
-        // Settings functions
-        function loadSettings() {
-            const settings = localStorage.getItem('cronoanalise-settings');
-            if (settings) {
-                const parsed = JSON.parse(settings);
-                if (parsed.defaultAnalyst) {
-                    document.getElementById('default-analyst').value = parsed.defaultAnalyst;
-                }
-                if (parsed.defaultMtmSystem) {
-                    document.getElementById('default-mtm-system').value = parsed.defaultMtmSystem;
-                }
-                if (parsed.autosaveInterval) {
-                    document.getElementById('autosave-interval').value = parsed.autosaveInterval;
-                }
-            }
-        }
-
-        function saveSettings() {
-            const settings = {
-                defaultAnalyst: document.getElementById('default-analyst').value,
-                defaultMtmSystem: document.getElementById('default-mtm-system').value,
-                autosaveInterval: document.getElementById('autosave-interval').value,
-                enableQualityChecks: document.getElementById('enable-quality-checks').checked,
-                showErgonomicAlerts: document.getElementById('show-ergonomic-alerts').checked,
-                suggestMtmCodes: document.getElementById('suggest-mtm-codes').checked
-            };
-            
-            localStorage.setItem('cronoanalise-settings', JSON.stringify(settings));
-        }
-
-        // Backup functions
-        function downloadBackup() {
-            const data = {
-                analyses: savedAnalyses,
-                settings: JSON.parse(localStorage.getItem('cronoanalise-settings') || '{}'),
-                exportDate: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `cronoanalise-backup-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function restoreBackup() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            if (data.analyses) {
-                                savedAnalyses = data.analyses;
-                                localStorage.setItem('cronoanalises', JSON.stringify(savedAnalyses));
-                                updateAnalysesCount();
-                            }
-                            if (data.settings) {
-                                localStorage.setItem('cronoanalise-settings', JSON.stringify(data.settings));
-                                loadSettings();
-                            }
-                            alert('Backup restaurado com sucesso!');
-                        } catch (error) {
-                            alert('Erro ao restaurar backup: ' + error.message);
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            input.click();
-        }
-
-        function archiveAndClear() {
-            if (confirm('Tem certeza que deseja arquivar e limpar todas as análises? Esta ação não pode ser desfeita.')) {
-                downloadBackup();
-                savedAnalyses = [];
-                localStorage.setItem('cronoanalises', JSON.stringify(savedAnalyses));
-                updateAnalysesCount();
-                alert('Análises arquivadas e limpas!');
-            }
-        }
-
-        // Additional utility functions
-        function useMTMCode(code) {
-            // Add MTM code to current step if in analysis mode
-            console.log('Using MTM code:', code);
-        }
-
-        function capturePhoto(stepId) {
-            // Photo capture functionality
-            console.log('Capturing photo for step:', stepId);
-        }
-    </script>
+  // schedule autosave if enabled
+  scheduleAutosave();
+})();
+</script>
 </body>
 </html>
