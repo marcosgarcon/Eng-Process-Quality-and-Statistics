@@ -1,12 +1,12 @@
 {
-  "name": "Eng Process Quality and Statistics",
-  "short_name": "EPQS",
+  "name": "VILLE SGQ SUITE",
+  "short_name": "VILLE",
   "description": "Sistema Integrado de Ferramentas de Qualidade e Estatística - Desenvolvido por Marcos Garçon",
   "start_url": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "background_color": "#0f172a",
-  "theme_color": "#22d3ee",
+  "background_color": "#0b5b9a",
+  "theme_color": "#ff9500",
   "orientation": "any",
   "scope": "./",
   "lang": "pt-BR",
@@ -18,14 +18,14 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Dashboard principal do EPQS"
+      "label": "Dashboard principal do VILLE SGQ SUITE"
     },
     {
       "src": "screenshots/mobile-screenshot.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "EPQS em dispositivos móveis"
+      "label": "VILLE SGQ SUITE em dispositivos móveis"
     }
   ],
   "icons": [
@@ -155,7 +155,7 @@
   "handle_links": "preferred",
   "protocol_handlers": [
     {
-      "protocol": "web+epqs",
+      "protocol": "web+ville",
       "url": "./?action=%s"
     }
   ],
