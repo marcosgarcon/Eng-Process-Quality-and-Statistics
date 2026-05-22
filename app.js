@@ -290,7 +290,7 @@ class EPQSApp {
             'manutencao': { name: 'Manutenção', description: 'Planejamento e Controle de Manutenção', category: 'Gestão e Planejamento', icon: 'ph-wrench' },
             'analise-swot': { name: 'Análise SWOT', description: 'Análise de Forças, Fraquezas, Oportunidades e Ameaças', category: 'Análise Estratégica', icon: 'ph-target' },
             'matriz-gut': { name: 'Matriz GUT', description: 'Priorização por Gravidade, Urgência e Tendência', category: 'Análise Estratégica', icon: 'ph-matrix-logo' },
-            'matriz-esforco-impacto': { name: 'Matriz Esforço x Impacto', description: 'Priorização de ações com base em esforço e impacto', category: 'Análise Estratégica', icon: 'ph-chart-scatter' },
+            'matriz-esforco-impacto': { name: 'Matriz Esforço x Impacto', description: 'Priorização de ações com base em esforço e impacto', category: 'Análise Estratégica', icon: 'ph-chart-donut' },
             'controle_injecao': { name: 'Controle de Injeção', description: 'Controle de processo de injeção plástica', category: 'Controle de Produção', icon: 'ph-factory' },
             'estamparia': { name: 'Estamparia', description: 'Controle de processo de estamparia', category: 'Controle de Produção', icon: 'ph-hammer' },
             'sucata': { name: 'Controle de Sucata', description: 'Gestão e controle de sucata na produção', category: 'Controle de Produção', icon: 'ph-trash' },
@@ -303,7 +303,7 @@ class EPQSApp {
 
     getIconForTool(toolName) {
         const iconMap = {
-            '5 Porquês': 'ph-question', 'Relatório 8D': 'ph-clipboard-text', 'Diagrama Ishikawa': 'ph-tree-structure', 'FMEA': 'ph-warning', 'MASP': 'ph-flow-arrow', 'Auditoria 5S': 'ph-broom', 'CEP e Capabilidade': 'ph-chart-line', 'MSA': 'ph-ruler', 'APQP': 'ph-calendar-check', 'PPAP': 'ph-certificate', 'Diagrama de Pareto': 'ph-chart-bar', 'Histograma': 'ph-chart-bar-horizontal', 'Diagrama de Dispersão': 'ph-scatter-chart', 'Folha de Verificação': 'ph-check-square', 'Kaizen': 'ph-trend-up', 'DMAIC': 'ph-cycle', 'VSM': 'ph-map-trifold', 'Mapeamento de Processos': 'ph-flow-chart', 'Cronoanálise MTM': 'ph-timer', 'SMED': 'ph-gear-six', 'Planejamento': 'ph-calendar', 'Treinamento': 'ph-graduation-cap', 'Manutenção': 'ph-wrench', 'Análise SWOT': 'ph-target', 'Matriz GUT': 'ph-matrix-logo', 'Matriz Esforço x Impacto': 'ph-chart-scatter', 'Controle de Injeção': 'ph-factory', 'Estamparia': 'ph-hammer', 'Controle de Sucata': 'ph-trash', 'Relatório A3': 'ph-file-text', 'Análise de Causa Raiz': 'ph-magnifying-glass', 'Gap Analysis': 'ph-arrows-left-right', 'Dashboard de Indicadores': 'ph-chart-pie', 'Integração Externa': 'ph-link', 'Gerenciar Usuários': 'ph-users'
+            '5 Porquês': 'ph-question', 'Relatório 8D': 'ph-clipboard-text', 'Diagrama Ishikawa': 'ph-tree-structure', 'FMEA': 'ph-warning', 'MASP': 'ph-flow-arrow', 'Auditoria 5S': 'ph-broom',
         };
         return iconMap[toolName] || 'ph-gear';
     }
@@ -710,5 +710,4 @@ window.addEventListener('appinstalled', () => {
     console.log('App was installed');
     deferredPrompt = null;
 });
-
 
